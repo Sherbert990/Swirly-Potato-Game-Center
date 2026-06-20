@@ -1,0 +1,92 @@
+:root {
+  --bg: #14101f;
+  --panel: #1e1830;
+  --text: #f3eefb;
+  --muted: #b3a8c9;
+  --line: #2c2440;
+  font-family: system-ui, -apple-system, "Segoe UI", sans-serif;
+}
+
+* { box-sizing: border-box; }
+
+body {
+  margin: 0;
+  min-height: 100vh;
+  background: radial-gradient(circle at 20% 0%, #2a2140, var(--bg) 60%);
+  color: var(--text);
+}
+
+/* ---------- Hub ---------- */
+.hub {
+  max-width: 960px;
+  margin: 0 auto;
+  padding: 48px 24px 64px;
+}
+
+.hub-header { text-align: center; margin-bottom: 40px; }
+.eyebrow {
+  text-transform: uppercase;
+  letter-spacing: 0.2em;
+  font-size: 0.75rem;
+  color: var(--muted);
+  margin: 0 0 4px;
+}
+.hub-header h1 { margin: 0; font-size: 2.6rem; }
+.tagline { color: var(--muted); margin-top: 8px; }
+
+.grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+  gap: 20px;
+}
+
+.card {
+  --accent: #8b6fd6;
+  display: flex;
+  flex-direction: column;
+  text-align: left;
+  background: var(--panel);
+  border: 1px solid var(--line);
+  border-radius: 16px;
+  padding: 0;
+  overflow: hidden;
+  cursor: pointer;
+  color: inherit;
+  font: inherit;
+  transition: transform 0.15s ease, border-color 0.15s ease;
+}
+.card:hover { transform: translateY(-4px); border-color: var(--accent); }
+.card:focus-visible { outline: 3px solid var(--accent); outline-offset: 2px; }
+
+.card-art {
+  height: 120px;
+  background: linear-gradient(135deg, var(--accent), transparent 80%), var(--panel);
+}
+.card-body { padding: 18px 20px 22px; display: flex; flex-direction: column; gap: 8px; }
+.card-title { font-size: 1.15rem; font-weight: 600; }
+.card-blurb { color: var(--muted); font-size: 0.92rem; line-height: 1.4; }
+.card-cta { margin-top: 8px; font-weight: 600; color: var(--accent); }
+
+.hub-footer { text-align: center; margin-top: 48px; color: var(--muted); }
+
+/* ---------- Player ---------- */
+.player { position: fixed; inset: 0; display: flex; flex-direction: column; background: var(--bg); }
+.player-bar {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  padding: 10px 16px;
+  border-bottom: 1px solid var(--line);
+}
+.back {
+  background: var(--panel);
+  color: var(--text);
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  padding: 8px 14px;
+  cursor: pointer;
+  font: inherit;
+}
+.back:hover { border-color: var(--text); }
+.player-title { font-weight: 600; }
+.frame { flex: 1; width: 100%; border: 0; }
