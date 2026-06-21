@@ -76,4 +76,11 @@
   }
   if (document.body) injectHomeButton();
   else document.addEventListener('DOMContentLoaded', injectHomeButton);
+
+  // PWA: register the service worker once (loaded on the hub + every game).
+  if ('serviceWorker' in navigator) {
+    window.addEventListener('load', function () {
+      navigator.serviceWorker.register('/sw.js').catch(function () {});
+    });
+  }
 })(window);

@@ -1,0 +1,16 @@
+{
+  "name": "The Stickmen Hub",
+  "short_name": "Stickmen",
+  "description": "A little arcade of stickman games — play, earn coins, climb the leaderboards.",
+  "start_url": "/",
+  "scope": "/",
+  "display": "standalone",
+  "orientation": "any",
+  "background_color": "#150e2b",
+  "theme_color": "#7d2ae8",
+  "icons": [
+    { "src": "/assets/icons/icon-192.png", "sizes": "192x192", "type": "image/png" },
+    { "src": "/assets/icons/icon-512.png", "sizes": "512x512", "type": "image/png" },
+    { "src": "/assets/icons/icon-maskable-512.png", "sizes": "512x512", "type": "image/png", "purpose": "maskable" }
+  ]
+}

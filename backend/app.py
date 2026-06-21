@@ -63,7 +63,19 @@ def hub():
     return FileResponse(REPO / "index.html")
 
 
+@app.get("/sw.js")
+def service_worker():
+    # Served from root so its scope covers the whole origin.
+    return FileResponse(REPO / "sw.js", media_type="application/javascript")
+
+
+@app.get("/manifest.webmanifest")
+def manifest():
+    return FileResponse(REPO / "manifest.webmanifest", media_type="application/manifest+json")
+
+
 # --- static LAST, specific prefixes ---
+app.mount("/assets", StaticFiles(directory=str(REPO / "assets")), name="assets")
 app.mount("/shared", StaticFiles(directory=str(REPO / "shared")), name="shared")
 app.mount("/games", StaticFiles(directory=str(REPO / "games"), html=True), name="games")
 if (REPO / "design").is_dir():
