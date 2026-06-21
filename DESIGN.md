@@ -213,7 +213,18 @@ Each phase is playable. **The first three get a real game live to friends.**
 - **Phase 7 — Expansions** (accepted, on top of the live platform):
   share/invite links · daily streak + login bonus · achievements engine in the SDK
   · login hardening (rate-limit + remember-me, pairs with Phase 1 auth).
-- **Phase 8 — App Store (future).** Capacitor wrap (§9.1–9.2).
+- **Phase 8 — PWA (installable + offline).** Make the whole app a Progressive Web App:
+  - `manifest.webmanifest` (name "The Stickmen Hub", icons 192/512/maskable, `start_url:"/"`,
+    `display:"standalone"`, theme/background colors matching the hub).
+  - Service worker (`/sw.js`): cache the app shell (hub, both games, `/shared/*`,
+    hub art) for offline launch + instant loads; network-first for `/api/*` (never
+    cache auth/score responses).
+  - Link the manifest + register the SW from the hub and each game; add the icons.
+  - Already on HTTPS (Railway), so it becomes **installable** on phones/desktops
+    ("Add to Home Screen") with no app store. Natural stepping stone before Capacitor;
+    cookie-session auth keeps working since the PWA runs same-origin.
+- **Phase 9 — App Store (future).** Capacitor wrap (§9.1–9.2) — only if you want
+  native store presence beyond the installable PWA.
 
 ## 11. Implementation Tasks (P1 = before first ship)
 

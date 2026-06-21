@@ -57,4 +57,23 @@
     buy: (kind, key) => request('/api/store/buy', 'POST', { kind, key }),// kind: 'avatar' | 'item'
     use: (item) => request('/api/use', 'POST', { item }),
   };
+
+  // Every game page gets a consistent "Home" link back to the hub (not on the hub itself).
+  function injectHomeButton() {
+    if (!location.pathname.includes('/games/')) return;       // skip the hub
+    if (document.getElementById('gc-home')) return;
+    const a = document.createElement('a');
+    a.id = 'gc-home';
+    a.href = '/';
+    a.textContent = '← Home';
+    a.setAttribute('aria-label', 'Back to The Stickmen Hub');
+    a.style.cssText =
+      'position:fixed;top:10px;left:10px;z-index:99999;text-decoration:none;' +
+      'font:600 13px/1 Nunito,system-ui,sans-serif;color:#fff;' +
+      'background:rgba(125,42,232,.92);padding:8px 12px;border-radius:20px;' +
+      'box-shadow:0 2px 8px rgba(0,0,0,.25)';
+    document.body.appendChild(a);
+  }
+  if (document.body) injectHomeButton();
+  else document.addEventListener('DOMContentLoaded', injectHomeButton);
 })(window);
