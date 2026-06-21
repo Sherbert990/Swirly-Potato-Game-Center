@@ -4,19 +4,145 @@
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <title>Lavender Leap</title>
-    <link rel="stylesheet" href="styles.css">
+    <link rel="stylesheet" href="styles.css?v=17">
   </head>
   <body>
+    <div id="welcome" class="startup">
+      <div class="startup-card login-card">
+        <p class="eyebrow">Tiny Chaos</p>
+        <h2>Lavender Leap</h2>
+        <p class="login-hint welcome-sub">Sign in to your account, or create a new one.</p>
+        <button id="goSignin" type="button">Sign in</button>
+        <button id="goCreate" type="button" class="ghost-btn">Create account</button>
+      </div>
+    </div>
+
+    <div id="signin" class="startup hidden">
+      <div class="startup-card login-card">
+        <p class="eyebrow">Welcome back</p>
+        <h2>Sign in</h2>
+        <label class="field" for="signinInput">
+          <span>Username</span>
+          <input id="signinInput" type="text" maxlength="12" placeholder="Your username" autocomplete="off">
+        </label>
+        <p id="signinError" class="form-error" aria-live="polite"></p>
+        <button id="signinBtn" type="button">Sign in</button>
+        <button class="link-btn" data-back type="button">Back</button>
+      </div>
+    </div>
+
+    <div id="create" class="startup hidden">
+      <div class="startup-card login-card">
+        <p class="eyebrow">New player</p>
+        <h2>Create account</h2>
+        <label class="field" for="createInput">
+          <span>Pick a username</span>
+          <input id="createInput" type="text" maxlength="12" placeholder="New username" autocomplete="off">
+        </label>
+        <p id="createError" class="form-error" aria-live="polite"></p>
+        <button id="createBtn" type="button">Create account</button>
+        <button class="link-btn" data-back type="button">Back</button>
+      </div>
+    </div>
+
+    <div id="startup" class="startup hidden">
+      <div class="startup-card">
+        <p class="eyebrow">Tiny Chaos</p>
+        <h2>Pick your hero</h2>
+        <label class="field" for="nameInput">
+          <span>Your name</span>
+          <input id="nameInput" type="text" maxlength="12" placeholder="Type a name" autocomplete="off">
+        </label>
+        <p class="field-label">Choose an avatar</p>
+        <div id="avatarPicker" class="avatar-picker"></div>
+        <p class="field-label">Your power-ups</p>
+        <div id="profilePowerups" class="profile-powerups">
+          <span>Revives <strong id="ppLives">0</strong></span>
+          <span>Time boosts <strong id="ppBoosts">0</strong></span>
+        </div>
+        <button id="play" type="button">Play</button>
+      </div>
+    </div>
+
+    <div id="modes" class="startup hidden">
+      <div class="startup-card login-card">
+        <p class="eyebrow">Choose a mode</p>
+        <h2 id="modesGreeting">Pick how to play</h2>
+        <button class="mode-btn" type="button" data-mode="freeplay">
+          <strong>Freeplay</strong>
+          <span>Roam level to level at your own pace. Jump to any level.</span>
+        </button>
+        <button class="mode-btn" type="button" data-mode="timetrial">
+          <strong>Time Trial</strong>
+          <span>2 minutes to clear as many levels as you can.</span>
+        </button>
+        <button class="mode-btn" type="button" data-mode="hard">
+          <strong>Hard Mode</strong>
+          <span>Fall once and you're back to level 1. No skipping.</span>
+        </button>
+        <button id="visitStoreModes" class="ghost-btn" type="button">Visit Store</button>
+        <button class="link-btn" data-back type="button">Back</button>
+      </div>
+    </div>
+
+    <div id="results" class="startup hidden">
+      <div class="startup-card login-card results-card">
+        <p class="eyebrow">Time Trial</p>
+        <h2>Time's up!</h2>
+        <p class="results-score">You cleared <strong id="resultLevels">0</strong> levels</p>
+        <p class="results-best">Best ever: <strong id="bestScore">0</strong> levels</p>
+        <p class="field-label">High scores</p>
+        <ol id="highScores" class="score-list"></ol>
+        <p class="field-label">Recent runs</p>
+        <ul id="runHistory" class="score-list"></ul>
+        <button id="resultsAgain" type="button">Play again</button>
+        <button id="resultsModes" class="ghost-btn" type="button">Back to modes</button>
+      </div>
+    </div>
+
+    <div id="store" class="startup hidden">
+      <div class="startup-card login-card store-card">
+        <p class="eyebrow">Coin Store</p>
+        <h2>Visit Store</h2>
+        <p class="store-balance">You have <strong id="storeCoins">0</strong> coins</p>
+        <p id="storeMsg" class="store-msg" aria-live="polite"></p>
+        <p class="field-label">Power-ups</p>
+        <div id="storePowerups" class="store-list"></div>
+        <p class="field-label">Skins</p>
+        <div id="storeSkins" class="store-list"></div>
+        <button id="storeResume" type="button">Go back to current game</button>
+        <button id="storeBack" class="ghost-btn" type="button">Back to modes</button>
+      </div>
+    </div>
+
+    <div id="revive" class="startup hidden">
+      <div class="startup-card login-card revive-card">
+        <p class="eyebrow">Hard Mode</p>
+        <h2>You fell!</h2>
+        <p class="revive-text">Use a revive to keep going from this level? You have <strong id="reviveCount">0</strong> left.</p>
+        <button id="reviveUse" type="button">Use revive</button>
+        <button id="reviveDecline" class="ghost-btn" type="button">Restart at level 1</button>
+      </div>
+    </div>
+
+    <div id="toast" class="toast hidden" aria-live="polite"></div>
+
     <main class="shell">
       <section class="hud" aria-label="Game status">
         <div>
           <p class="eyebrow">Tiny Chaos</p>
           <h1>Lavender Leap</h1>
+          <span id="modeTag" class="mode-tag"></span>
         </div>
         <div class="stats" aria-live="polite">
-          <span><strong id="score">0</strong> points</span>
-          <span><strong id="timer">0</strong>m</span>
+          <span><strong id="coins">0</strong> coins</span>
+          <span><strong id="timer">0</strong><span id="timerUnit">m</span></span>
           <span>Level <strong id="mood">1/100</strong></span>
+        </div>
+        <div class="account-actions">
+          <button id="visitStore" type="button" title="Spend your coins">Store</button>
+          <button id="editProfile" type="button" title="Change username and avatar">Profile</button>
+          <button id="logout" type="button" title="Log out of your account">Log out</button>
         </div>
       </section>
 
@@ -24,11 +150,16 @@
 
       <section class="controls" aria-label="Game controls">
         <button id="start" type="button">Start</button>
-        <button id="pulse" type="button" title="Dash forward">Dash</button>
-        <p>Arrow keys or WASD to run, space to jump, Dash or Shift to zip. Grab crystals and stay on the moving platforms.</p>
+        <button id="modesBtn" type="button" title="Choose a game mode">Modes</button>
+        <span class="warp">
+          <label for="levelInput">Level</label>
+          <input id="levelInput" type="number" min="1" max="100" value="1" inputmode="numeric">
+          <button id="go" type="button">Go</button>
+        </span>
+        <p>Arrow keys or WASD to run, space to jump. Grab crystals and stay on the moving platforms.</p>
       </section>
     </main>
 
-    <script src="game.js?v=11"></script>
+    <script src="game.js?v=27"></script>
   </body>
 </html>
