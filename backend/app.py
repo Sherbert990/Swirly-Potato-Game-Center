@@ -24,10 +24,12 @@ app = FastAPI(title="The Stickmen Hub")
 
 
 @app.on_event("startup")
-def _maybe_init_db():
-    """First deploy convenience: if AUTO_INIT_DB=1, create tables + seed on boot.
-    Idempotent. Leave unset once Alembic migrations are in place."""
-    if os.getenv("AUTO_INIT_DB") == "1":
+def _init_db():
+    """Ensure schema + reference data on boot. create_all only adds MISSING tables
+    (never drops/alters), and seed is idempotent — so new-table features deploy
+    automatically. Wrapped so a transient DB blip doesn't block startup.
+    (Column changes still need a real migration — see TODOs/Alembic.)"""
+    try:
         from .db import engine, SessionLocal, Base
         from . import models  # noqa: F401
         from .seed import seed
@@ -37,7 +39,9 @@ def _maybe_init_db():
             seed(db)
         finally:
             db.close()
-        log.info("AUTO_INIT_DB: tables created and reference data seeded")
+        log.info("DB ready (tables ensured, reference data seeded)")
+    except Exception as e:  # noqa: BLE001 — never let init crash the boot
+        log.error("startup DB init skipped: %s", e)
 
 
 # --- API first ---

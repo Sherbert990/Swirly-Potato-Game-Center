@@ -1,4 +1,5 @@
 """Account routes: register, login, logout, me, profile."""
+import time
 from typing import Optional
 
 from fastapi import APIRouter, Depends, HTTPException, Request, Response
@@ -7,10 +8,25 @@ from sqlalchemy.orm import Session as OrmSession
 
 from ..db import get_db
 from ..models import User, Avatar, UserAvatar
-from .. import auth
+from .. import auth, config
 from ._common import public_user
 
 router = APIRouter(prefix="/api")
+
+# Login hardening: per-username failed-attempt timestamps (per-process; fine for one instance).
+_login_fails: dict[str, list[float]] = {}
+
+
+def _check_login_rate(key: str) -> None:
+    now = time.time()
+    fails = [t for t in _login_fails.get(key, []) if now - t < config.LOGIN_WINDOW_SEC]
+    _login_fails[key] = fails
+    if len(fails) >= config.LOGIN_MAX_FAILS:
+        raise HTTPException(status_code=429, detail="Too many attempts — wait a few minutes")
+
+
+def _record_login_fail(key: str) -> None:
+    _login_fails.setdefault(key, []).append(time.time())
 
 
 class RegisterBody(BaseModel):
@@ -75,10 +91,13 @@ def register(body: RegisterBody, response: Response, db: OrmSession = Depends(ge
 @router.post("/login")
 def login(body: LoginBody, response: Response, db: OrmSession = Depends(get_db)):
     key = (body.username or "").strip().lower()
+    _check_login_rate(key)  # brute-force lockout
     user = db.query(User).filter_by(username_key=key).first()
     # Generic message either way — do not reveal whether the username exists.
     if not user or not auth.verify_password(body.password, user.password_hash):
+        _record_login_fail(key)
         raise HTTPException(status_code=401, detail="Wrong username or password")
+    _login_fails.pop(key, None)  # success clears the counter
     token = auth.create_session(db, user.id)
     auth.set_session_cookie(response, token)
     return public_user(db, user)

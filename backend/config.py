@@ -41,3 +41,7 @@ SESSION_DAYS = 30
 MAX_COINS_PER_SUBMIT = 1000   # clamp coins credited per score submission
 MAX_SCORE = 1_000_000         # reject obviously impossible scores
 SCORE_MIN_INTERVAL_SEC = 2    # basic rate limit between score posts per user
+
+# Login hardening (Phase 7): lock out brute-force after too many fails in a window.
+LOGIN_MAX_FAILS = 5
+LOGIN_WINDOW_SEC = 300

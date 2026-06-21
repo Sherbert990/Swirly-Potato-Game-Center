@@ -33,3 +33,13 @@ def test_login_wrong_password(client):
 
 def test_me_requires_auth(client):
     assert client.get("/api/me").status_code == 401
+
+
+def test_login_rate_limit_locks_out(client):
+    reg(client, "Rate", "rightpass")
+    client.post("/api/logout")
+    for _ in range(5):  # exhaust the fail budget
+        assert client.post("/api/login", json={"username": "Rate", "password": "nope"}).status_code == 401
+    # even the correct password is now locked out for a while
+    locked = client.post("/api/login", json={"username": "Rate", "password": "rightpass"})
+    assert locked.status_code == 429
