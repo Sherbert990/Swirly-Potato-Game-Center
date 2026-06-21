@@ -9,7 +9,7 @@ from sqlalchemy.orm import Session as OrmSession
 from ..db import get_db
 from ..models import User, Avatar, UserAvatar
 from .. import auth, config
-from ._common import public_user
+from ._common import public_user, me_payload
 
 router = APIRouter(prefix="/api")
 
@@ -85,7 +85,7 @@ def register(body: RegisterBody, response: Response, db: OrmSession = Depends(ge
 
     token = auth.create_session(db, user.id)
     auth.set_session_cookie(response, token)
-    return public_user(db, user)
+    return me_payload(db, user)
 
 
 @router.post("/login")
@@ -100,7 +100,7 @@ def login(body: LoginBody, response: Response, db: OrmSession = Depends(get_db))
     _login_fails.pop(key, None)  # success clears the counter
     token = auth.create_session(db, user.id)
     auth.set_session_cookie(response, token)
-    return public_user(db, user)
+    return me_payload(db, user)
 
 
 @router.post("/logout")
@@ -114,7 +114,7 @@ def logout(request: Request, response: Response, db: OrmSession = Depends(get_db
 
 @router.get("/me")
 def me(user: User = Depends(auth.current_user), db: OrmSession = Depends(get_db)):
-    return public_user(db, user)
+    return me_payload(db, user)
 
 
 @router.post("/profile")

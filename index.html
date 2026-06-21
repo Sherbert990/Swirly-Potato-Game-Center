@@ -98,9 +98,11 @@ h1,.gtitle,.brand,.wm{font-family:Fredoka,sans-serif}
     <div class="brand"><i class="ti ti-mushroom" aria-hidden="true"></i> The Stickmen Hub</div>
     <div class="actions">
       <span class="coin"><i class="ti ti-coin" aria-hidden="true"></i> <span id="coins">0</span></span>
+      <span class="coin" id="streakChip" style="color:#d4730a"><i class="ti ti-flame" aria-hidden="true"></i> <span id="streak">0</span></span>
       <span class="profile"><span class="pav"><i class="ti ti-user" style="font-size:16px;color:var(--accent)" aria-hidden="true"></i></span><b id="who">player</b></span>
       <button class="nav" id="storeBtn"><i class="ti ti-shopping-bag" aria-hidden="true"></i> Store</button>
       <button class="nav" id="lbBtn"><i class="ti ti-trophy" aria-hidden="true"></i> Leaderboards</button>
+      <button class="nav" id="shareBtn"><i class="ti ti-share" aria-hidden="true"></i> Share</button>
       <button class="nav" id="logoutBtn"><i class="ti ti-logout" aria-hidden="true"></i> Log out</button>
       <button class="toggle" id="tgl" aria-label="Toggle light or dark"><i class="ti ti-sun" aria-hidden="true"></i><i class="ti ti-moon" aria-hidden="true"></i><span class="knob"></span></button>
     </div>
@@ -192,9 +194,16 @@ function showHub(user){
   $('authScreen').classList.add('hidden');
   $('hub').classList.remove('hidden');
   $('coins').textContent = user.coins ?? 0;
+  $('streak').textContent = user.streak ?? 0;
   $('who').textContent = user.username;
   $('who2').textContent = user.username;
+  if (user.dailyBonus) toast(`+${user.dailyBonus} coins · ${user.streak}-day streak!`);
 }
+$('shareBtn').onclick = async () => {
+  const url = location.origin;
+  if (navigator.share) { try { await navigator.share({ title: 'The Stickmen Hub', text: 'Come play stickman games with me!', url }); } catch (e) {} }
+  else { try { await navigator.clipboard.writeText(url); toast('Link copied!'); } catch (e) { toast(url); } }
+};
 function showAuth(){
   $('hub').classList.add('hidden');
   $('authScreen').classList.remove('hidden');

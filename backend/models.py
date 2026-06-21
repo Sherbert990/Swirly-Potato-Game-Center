@@ -10,7 +10,7 @@ utf8mb4 so MySQL behaves (eng review). Avatars/items use stable string keys.
 import datetime
 from typing import Optional
 
-from sqlalchemy import String, Integer, Boolean, DateTime, ForeignKey, Index, func
+from sqlalchemy import String, Integer, Boolean, DateTime, Date, ForeignKey, Index, func
 from sqlalchemy.orm import Mapped, mapped_column
 
 from .db import Base
@@ -92,3 +92,13 @@ class UserItem(Base):
     user_id: Mapped[int] = mapped_column(ForeignKey("users.id", ondelete="CASCADE"), primary_key=True)
     item_key: Mapped[str] = mapped_column(ForeignKey("store_items.key"), primary_key=True)
     quantity: Mapped[int] = mapped_column(Integer, nullable=False, default=0)
+
+
+class UserDaily(Base):
+    """Daily streak (Phase 7). One row per user; bonus awarded on the first visit
+    of each new day (day 1 gives a streak but no bonus)."""
+    __tablename__ = "user_daily"
+    __table_args__ = (UTF8,)
+    user_id: Mapped[int] = mapped_column(ForeignKey("users.id", ondelete="CASCADE"), primary_key=True)
+    last_date: Mapped[datetime.date] = mapped_column(Date, nullable=False)
+    streak: Mapped[int] = mapped_column(Integer, nullable=False, default=1)
