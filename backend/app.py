@@ -6,6 +6,7 @@ Route order matters (T10): /api routes are registered FIRST, static mounts LAST,
 so the API is never shadowed by the static file server.
 """
 import logging
+import os
 from pathlib import Path
 
 from fastapi import FastAPI, Request
@@ -20,6 +21,24 @@ REPO = Path(__file__).resolve().parent.parent
 log = logging.getLogger("stickmenhub")
 
 app = FastAPI(title="The Stickmen Hub")
+
+
+@app.on_event("startup")
+def _maybe_init_db():
+    """First deploy convenience: if AUTO_INIT_DB=1, create tables + seed on boot.
+    Idempotent. Leave unset once Alembic migrations are in place."""
+    if os.getenv("AUTO_INIT_DB") == "1":
+        from .db import engine, SessionLocal, Base
+        from . import models  # noqa: F401
+        from .seed import seed
+        Base.metadata.create_all(engine)
+        db = SessionLocal()
+        try:
+            seed(db)
+        finally:
+            db.close()
+        log.info("AUTO_INIT_DB: tables created and reference data seeded")
+
 
 # --- API first ---
 app.include_router(auth_router)
