@@ -13,7 +13,7 @@ Deferred work from the CEO plan review (2026-06-20). Critical-path tasks live in
 - [ ] **Combined avatars** (M–L) — unify two renderers + move to stable keys. NOT mechanical (DESIGN.md §7). Deferred to Phase 6.
 - [ ] **Coin-farm balancing** — normalize earn rates across games when Lavender joins the shared wallet, so one game isn't a coin farm (DESIGN.md §9.5).
 - [ ] **Password reset** — needs email; required before App Store, not before friends.
-- [ ] **Capacitor readiness** — switch session cookies → JWT+CORS and verify ES-module loading under Capacitor's origin before the app-store build (DESIGN.md §9.1–9.2).
+- [ ] **Phase 9 — App Store (Capacitor)** — SAVED FOR LATER (user deferred). Wrap the now-installable PWA with Capacitor for native iOS/Android store presence: switch session cookies → JWT+CORS, verify ES-module loading under Capacitor's origin, add an Apple Developer account ($99/yr) + Play Console. Only needed if the installable PWA isn't enough. (DESIGN.md §9.1–9.2)
 - [ ] **Full anti-cheat** — server-authoritative scoring. Out of scope; sanity caps (D3) cover v1.
 
 ## Recommended next reviews
