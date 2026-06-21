@@ -4,36 +4,12 @@
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <title>Swirly Potato Game Center</title>
-    <link rel="stylesheet" href="styles.css">
   </head>
   <body>
-    <!-- Landing / hub view -->
-    <main class="hub" id="hub">
-      <header class="hub-header">
-        <p class="eyebrow">Swirly Potato</p>
-        <h1>Game Center</h1>
-        <p class="tagline">Pick a game and play. More potatoes coming soon.</p>
-      </header>
-
-      <section class="grid" aria-label="Available games">
-        <!-- Cards are rendered by app.js from the GAMES list -->
-      </section>
-
-      <footer class="hub-footer">
-        <small>Built with vanilla HTML, CSS &amp; JS — no build step.</small>
-      </footer>
-    </main>
-
-    <!-- Player view (hidden until a game is launched) -->
-    <section class="player" id="player" hidden>
-      <div class="player-bar">
-        <button id="back" type="button" class="back">← All games</button>
-        <span id="player-title" class="player-title"></span>
-      </div>
-      <iframe id="frame" class="frame" title="Game" allow="fullscreen"></iframe>
-    </section>
-
-    <script src="games.js"></script>
-    <script src="app.js"></script>
+    <h1>Swirly Potato Game Center</h1>
+    <ul>
+      <li><a href="games/lavender-leap/index.html">Lavender Leap of Doom</a></li>
+      <li><a href="games/dont-look-down/index.html">Don't Look Down</a></li>
+    </ul>
   </body>
 </html>
