@@ -170,6 +170,7 @@ canvas { display: block; width: 100%; height: 100%; background: #1a0b2e; }
   <button class="ctrlBtn" id="jumpBtn">▲ Jump</button>
   <button class="ctrlBtn" id="rightBtn">▶</button>
 </div>
+<script src="/shared/gamecenter.js"></script>
 <script>
 const canvas = document.getElementById('gameCanvas');
 const ctx = canvas.getContext('2d');
@@ -674,15 +675,14 @@ function respFromServer(path, data) {
 }
 
 async function api(path, body) {
+  // Shares the HTTP/error core with every other game via the Game Center SDK.
+  // DLD keeps its local translation (avatar index<->key, height/stars) on top.
   let reqPath = path;
   if (path === '/api/leaderboard/personal' || path === '/api/leaderboard/global') reqPath += '?game=' + DLD_GAME;
-  const opts = { method: body ? 'POST' : 'GET', credentials: 'same-origin' };
-  if (body) { opts.headers = { 'Content-Type': 'application/json' }; opts.body = JSON.stringify(reqToServer(path, body)); }
-  const res = await fetch(reqPath, opts);
-  let data = {};
-  try { data = await res.json(); } catch {}
-  if (!res.ok) return { ok: false, status: res.status, data: { error: (data && (data.detail || data.error)) || 'Something went wrong' } };
-  return { ok: true, status: res.status, data: respFromServer(path, data) };
+  const sent = body ? reqToServer(path, body) : undefined;
+  const res = await GameCenter._request(reqPath, body ? 'POST' : 'GET', sent);
+  if (!res.ok) return { ok: false, status: res.status, data: { error: res.error || 'Something went wrong' } };
+  return { ok: true, status: res.status, data: respFromServer(path, res.data) };
 }
 
 // ---- Screen helpers ----

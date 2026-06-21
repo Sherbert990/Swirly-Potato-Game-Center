@@ -64,6 +64,7 @@ def hub():
 
 
 # --- static LAST, specific prefixes ---
+app.mount("/shared", StaticFiles(directory=str(REPO / "shared")), name="shared")
 app.mount("/games", StaticFiles(directory=str(REPO / "games"), html=True), name="games")
 if (REPO / "design").is_dir():
     app.mount("/design", StaticFiles(directory=str(REPO / "design")), name="design")
