@@ -16,10 +16,21 @@ ENV = os.getenv("ENV", "dev")  # "dev" | "prod"
 SECRET_KEY = os.getenv("SECRET_KEY", "dev-insecure-change-me")
 
 # MySQL by design (D2). utf8mb4 so emoji usernames behave.
-DATABASE_URL = os.getenv(
+def _normalize_db_url(url: str) -> str:
+    """Be forgiving about the DB URL form. Railway/hosts hand out `mysql://…`,
+    which SQLAlchemy maps to the (uninstalled) MySQLdb driver. Force PyMySQL and
+    ensure utf8mb4 so a pasted Railway URL just works."""
+    if url.startswith("mysql://"):
+        url = "mysql+pymysql://" + url[len("mysql://"):]
+    if url.startswith("mysql+pymysql://") and "charset=" not in url:
+        url += ("&" if "?" in url else "?") + "charset=utf8mb4"
+    return url
+
+
+DATABASE_URL = _normalize_db_url(os.getenv(
     "DATABASE_URL",
     "mysql+pymysql://root@127.0.0.1:3306/gamecenter?charset=utf8mb4",
-)
+))
 
 # Cookie flags from config (T11): Secure only in prod so http:// dev still works.
 COOKIE_SECURE = ENV == "prod"
