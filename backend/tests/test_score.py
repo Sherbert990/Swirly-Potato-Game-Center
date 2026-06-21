@@ -43,3 +43,13 @@ def test_global_leaderboard_empty_is_ok(client):
     r = client.get("/api/leaderboard/global", params={"game": "lavender-leap"})
     assert r.status_code == 200
     assert r.json() == []  # empty state, not a 500
+
+
+def test_global_shows_one_row_per_player_best_score(client):
+    reg(client, "Hank")
+    client.post("/api/score", json={"game": "dont-look-down", "score": 100, "coins": 1})
+    client.post("/api/score", json={"game": "dont-look-down", "score": 250, "coins": 2})
+    board = client.get("/api/leaderboard/global", params={"game": "dont-look-down"}).json()
+    mine = [r for r in board if r["username"] == "Hank"]
+    assert len(mine) == 1            # not one row per run
+    assert mine[0]["score"] == 250   # their best

@@ -21,6 +21,9 @@ from backend.db import Base, get_db
 from backend import models  # noqa: F401
 from backend.app import app
 from backend.seed import seed
+from backend import config as _cfg
+
+_cfg.SCORE_MIN_INTERVAL_SEC = 0  # rate limit off in tests (covered separately, avoids flakiness)
 
 engine = create_engine(os.environ["DATABASE_URL"], future=True)
 

@@ -3,6 +3,7 @@ import datetime
 
 from fastapi import APIRouter, Depends, HTTPException, Query
 from pydantic import BaseModel
+from sqlalchemy import func
 from sqlalchemy.orm import Session as OrmSession
 
 from ..db import get_db
@@ -75,10 +76,19 @@ def leaderboard_personal(game: str = Query(...), user: User = Depends(auth.curre
 @router.get("/leaderboard/global")
 def leaderboard_global(game: str = Query(...), db: OrmSession = Depends(get_db)):
     g = get_game_or_404(db, game)
-    rows = (db.query(Score, User).join(User, Score.user_id == User.id)
-            .filter(Score.game_id == g.id, User.show_on_leaderboard.is_(True))
-            .order_by(Score.score.desc()).limit(20).all())
-    return [{"username": u.username, "score": s.score, "coins": s.coins_earned} for s, u in rows]  # [] when empty (T7)
+    # One row per player — their best run (tie-break by earliest). Window function.
+    rn = func.row_number().over(
+        partition_by=Score.user_id,
+        order_by=(Score.score.desc(), Score.id.asc()),
+    ).label("rn")
+    best = (db.query(Score.user_id.label("uid"), Score.score.label("score"),
+                     Score.coins_earned.label("coins"), rn)
+            .filter(Score.game_id == g.id).subquery())
+    rows = (db.query(User.username, best.c.score, best.c.coins)
+            .join(User, User.id == best.c.uid)
+            .filter(best.c.rn == 1, User.show_on_leaderboard.is_(True))
+            .order_by(best.c.score.desc()).limit(20).all())
+    return [{"username": un, "score": sc, "coins": co} for un, sc, co in rows]  # [] when empty (T7)
 
 
 @router.post("/store/buy")
