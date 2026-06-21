@@ -516,13 +516,11 @@ function promptRevive() {
   showScreen(reviveScreen);
 }
 
-function useRevive() {
-  const inv = getInventory(currentUser);
-  if (inv.lives > 0) {
-    inv.lives -= 1;
-    setInventory(currentUser, inv);
-    flashBanner(`Revive used — ${inv.lives} left`);
-  }
+async function useRevive() {
+  const r = await GameCenter.use("extra_life");
+  if (!r.ok) { flashBanner(r.error || "No revives left"); declineRevive(); return; }
+  applyUser(r.data);
+  flashBanner(`Revive used — ${(gc.items && gc.items.extra_life) || 0} left`);
   showScreen(null);
   world.score = world.levelStartScore;
   startLevel(world.level, true);
@@ -534,6 +532,7 @@ function declineRevive() {
 }
 
 function restartFromLevelOne() {
+  commitRun();  // run is ending — flush collected coins to the wallet
   world.score = 0;
   world.level = 0;
   world.levelStartScore = 0;
@@ -1111,17 +1110,37 @@ function buildAvatarPicker() {
   });
 }
 
-function loadProfiles() {
-  try {
-    return JSON.parse(localStorage.getItem("llod_profiles")) || {};
-  } catch (err) {
-    return {};
+// ===== Game Center backend integration (Phase 5) =====
+// Wallet/skins/items live on the server now (shared with the hub + other games).
+// Coins collected in a run are committed at run boundaries (model A).
+const LL_KEYS = ["ll-cyber-ninja","ll-mecha-bot","ll-galaxy-slime","ll-flame-fox","ll-star-cadet","ll-phantom-knight","ll-lava-golem","ll-frost-sprite","ll-neon-bee"];
+const LL_GAME = "lavender-leap";
+let gc = null;     // backend user: {username, coins, items:{}, ownedAvatars:[keys], avatarKey}
+let runCoins = 0;  // collected this run; flushed to the wallet at run boundaries
+
+function applyUser(u) {
+  if (!u) return;
+  gc = u;
+  userCoins = u.coins || 0;
+  if (typeof u.avatarKey === "string" && u.avatarKey.indexOf("ll-") === 0) {
+    const i = LL_KEYS.indexOf(u.avatarKey);
+    if (i >= 0) selectedAvatar = i;
   }
+  updateCoinHud();
 }
 
-function saveProfiles(profiles) {
-  localStorage.setItem("llod_profiles", JSON.stringify(profiles));
+async function commitRun() {
+  if (!gc || runCoins <= 0) return;
+  const coins = runCoins; runCoins = 0;
+  const r = await GameCenter.submitScore(LL_GAME, world.score | 0, coins);
+  if (r.ok && r.data && r.data.wallet) applyUser(r.data.wallet);
+  else runCoins += coins;  // submit failed — keep the coins for the next boundary
+  updateCoinHud();
 }
+
+// Legacy local-profile helpers are no longer used (login is the shared account).
+function loadProfiles() { return {}; }
+function saveProfiles() { /* server-authoritative; no-op */ }
 
 function loadJson(key) {
   try {
@@ -1131,43 +1150,35 @@ function loadJson(key) {
   }
 }
 
-function getCoins(user) {
-  return loadJson("llod_coins")[user] || 0;
+function getCoins() {
+  return gc ? gc.coins : 0;  // the shared wallet (committed)
 }
 
-function setCoins(user, amount) {
-  const data = loadJson("llod_coins");
-  data[user] = amount;
-  localStorage.setItem("llod_coins", JSON.stringify(data));
-}
+function setCoins() { /* server-authoritative; no-op */ }
 
 function updateCoinHud() {
-  coinsEl.textContent = userCoins;
-  if (storeCoinsEl) storeCoinsEl.textContent = userCoins;
+  const wallet = gc ? gc.coins : 0;
+  if (coinsEl) coinsEl.textContent = wallet + runCoins;       // in-game: wallet + this run
+  if (storeCoinsEl) storeCoinsEl.textContent = wallet;        // store: spendable wallet only
 }
 
 function addCoins(amount) {
-  if (!currentUser) return;
-  userCoins = Math.max(0, userCoins + amount);
-  setCoins(currentUser, userCoins);
+  // Earn only — collected coins accumulate this run, flushed at run boundaries.
+  if (amount > 0) runCoins += amount;
   updateCoinHud();
 }
 
-function getInventory(user) {
-  const inv = loadJson("llod_store")[user] || {};
-  return {
-    skins: Array.isArray(inv.skins) ? inv.skins : [],
-    lives: inv.lives || 0,
-    boosts: inv.boosts || 0,
-  };
+function getInventory() {
+  if (!gc) return { skins: [], lives: 0, boosts: 0 };
+  const items = gc.items || {};
+  const skins = (gc.ownedAvatars || [])
+    .filter((k) => k.indexOf("ll-") === 0)
+    .map((k) => LL_KEYS.indexOf(k))
+    .filter((i) => i >= 0);
+  return { skins, lives: items.extra_life || 0, boosts: items.boost || 0 };
 }
 
-function setInventory(user, inv) {
-  if (!user) return;
-  const data = loadJson("llod_store");
-  data[user] = inv;
-  localStorage.setItem("llod_store", JSON.stringify(data));
-}
+function setInventory() { /* server-authoritative; no-op */ }
 
 function ownsSkin(index) {
   if (FREE_SKINS.includes(index)) return true;
@@ -1228,42 +1239,42 @@ function makeStoreItem({ title, desc, price, thumb, state, onAction, actionLabel
   return card;
 }
 
-function buyConsumable(kind, price, label) {
-  if (userCoins < price) {
-    storeMsg.textContent = "Not enough coins for that yet.";
-    return;
+async function buyConsumable(kind, price, label) {
+  const itemKey = kind === "lives" ? "extra_life" : "boost";
+  const r = await GameCenter.buy("item", itemKey);
+  if (r.ok) {
+    applyUser(r.data);
+    storeMsg.textContent = `Bought ${label}!`;
+    renderStore();
+    renderProfilePowerups();
+  } else {
+    storeMsg.textContent = r.error || "Not enough coins for that yet.";
   }
-  addCoins(-price);
-  const inv = getInventory(currentUser);
-  inv[kind] += 1;
-  setInventory(currentUser, inv);
-  storeMsg.textContent = `Bought ${label}! You now own ${inv[kind]}.`;
-  renderStore();
 }
 
-function buySkin(index) {
-  const price = SKIN_PRICES[index];
-  if (userCoins < price) {
-    storeMsg.textContent = "Not enough coins for that skin yet.";
-    return;
+async function buySkin(index) {
+  const r = await GameCenter.buy("avatar", LL_KEYS[index]);
+  if (r.ok) {
+    applyUser(r.data);
+    storeMsg.textContent = `Unlocked ${AVATARS[index].name}! Tap Equip to wear it.`;
+    buildAvatarPicker();
+    renderStore();
+  } else {
+    storeMsg.textContent = r.error || "Not enough coins for that skin yet.";
   }
-  addCoins(-price);
-  const inv = getInventory(currentUser);
-  inv.skins.push(index);
-  setInventory(currentUser, inv);
-  storeMsg.textContent = `Unlocked ${AVATARS[index].name}! Tap Equip to wear it.`;
-  buildAvatarPicker();
-  renderStore();
 }
 
-function equipSkin(index) {
-  selectedAvatar = index;
-  const profiles = loadProfiles();
-  profiles[currentUser] = index;
-  saveProfiles(profiles);
-  storeMsg.textContent = `Equipped ${AVATARS[index].name}.`;
-  buildAvatarPicker();
-  renderStore();
+async function equipSkin(index) {
+  const r = await GameCenter.setProfile({ avatar: LL_KEYS[index] });
+  if (r.ok) {
+    applyUser(r.data);
+    selectedAvatar = index;
+    storeMsg.textContent = `Equipped ${AVATARS[index].name}.`;
+    buildAvatarPicker();
+    renderStore();
+  } else {
+    storeMsg.textContent = r.error || "Could not equip that skin.";
+  }
 }
 
 function renderStore() {
@@ -1342,6 +1353,7 @@ function showScreen(target) {
 
 function showModes() {
   stopLoop();
+  commitRun();  // flush coins collected this run to the wallet
   modesGreeting.textContent = `Hi ${currentUser || "hero"}! Pick a mode`;
   showScreen(modesScreen);
 }
@@ -1406,6 +1418,7 @@ function renderResults(latest, runs) {
 
 function endTimeTrial() {
   stopLoop();
+  commitRun();  // flush coins collected this run to the wallet
   startBtn.textContent = "Start";
   const all = loadTrialRuns();
   const list = all[currentUser] || [];
@@ -1461,31 +1474,16 @@ function handleCreate() {
   showScreen(startupOverlay);
 }
 
-function startGameFromMenu() {
-  const name = (nameInput.value || "").trim().slice(0, 12) || "Hero";
-  const profiles = loadProfiles();
-  if (editingProfile && editingOldName && editingOldName !== name) {
-    delete profiles[editingOldName];
-    const coinData = loadJson("llod_coins");
-    if (Object.prototype.hasOwnProperty.call(coinData, editingOldName)) {
-      coinData[name] = coinData[editingOldName];
-      delete coinData[editingOldName];
-      localStorage.setItem("llod_coins", JSON.stringify(coinData));
-    }
-    const storeData = loadJson("llod_store");
-    if (Object.prototype.hasOwnProperty.call(storeData, editingOldName)) {
-      storeData[name] = storeData[editingOldName];
-      delete storeData[editingOldName];
-      localStorage.setItem("llod_store", JSON.stringify(storeData));
-    }
-  }
-  profiles[name] = selectedAvatar;
-  saveProfiles(profiles);
-  playerName = name;
-  currentUser = name;
+async function startGameFromMenu() {
+  const name = (nameInput.value || "").trim().slice(0, 32) || currentUser;
+  const r = await GameCenter.setProfile({ username: name, avatar: LL_KEYS[selectedAvatar] });
+  if (!r.ok) { flashBanner(r.error || "Could not save profile"); return; }
+  applyUser(r.data);
+  currentUser = r.data.username;
+  playerName = currentUser;
   editingProfile = false;
   editingOldName = "";
-  syncUserState();
+  buildAvatarPicker();
   showModes();
 }
 
@@ -1499,15 +1497,9 @@ function editProfile() {
   showScreen(startupOverlay);
 }
 
-function logout() {
-  currentUser = "";
-  editingProfile = false;
-  editingOldName = "";
-  userCoins = 0;
-  updateCoinHud();
-  signinInput.value = "";
-  createInput.value = "";
-  showWelcome();
+async function logout() {
+  await GameCenter.logout();
+  location.href = "/";  // back to the hub
 }
 
 buildAvatarPicker();
@@ -1574,3 +1566,27 @@ window.addEventListener("keyup", (event) => {
 
 buildLevel();
 draw();
+
+// ===== Shared-session login gate (Phase 5) =====
+// Best-effort coin commit if the player leaves mid-run (Home button, tab close).
+window.addEventListener("pagehide", () => {
+  if (gc && runCoins > 0) {
+    try {
+      navigator.sendBeacon(
+        "/api/score",
+        new Blob([JSON.stringify({ game: LL_GAME, score: world.score | 0, coins: runCoins })],
+                 { type: "application/json" })
+      );
+    } catch (e) {}
+  }
+});
+
+(async () => {
+  const r = await GameCenter.me();
+  if (!r.ok) { location.href = "/"; return; }  // not logged in -> hub
+  applyUser(r.data);
+  currentUser = r.data.username;
+  playerName = r.data.username;
+  buildAvatarPicker();
+  showModes();
+})();
