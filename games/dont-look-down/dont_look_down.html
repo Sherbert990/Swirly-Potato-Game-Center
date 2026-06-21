@@ -618,13 +618,71 @@ function ownedIndices() {
   return list;
 }
 
+// ── Game Center contract adapter ────────────────────────────────────────────
+// The shared backend speaks a normalized contract (game/score/coins, avatar
+// KEYS). This game was written against an older shape (height/stars, avatar
+// INDICES). Translate at this boundary so the rest of the game is untouched.
+const DLD_GAME = 'dont-look-down';
+const AVATAR_KEYS = ['dld-aqua','dld-ember','dld-leaf','dld-wave','dld-rose','dld-bolt','dld-grape','dld-bot','dld-mint','dld-volt','dld-nova','dld-phantom','dld-aurora','dld-cosmo'];
+const keyToIndex = k => { const i = AVATAR_KEYS.indexOf(k); return i < 0 ? 0 : i; };
+const indexToKey = i => AVATAR_KEYS[i] || AVATAR_KEYS[0];
+
+function userFromServer(u) {
+  // Normalized user object -> the flat shape this game expects.
+  if (!u || (u.coins === undefined && u.avatarKey === undefined)) return u;
+  const items = u.items || {};
+  return {
+    username: u.username,
+    avatar: keyToIndex(u.avatarKey),
+    ownedAvatars: (u.ownedAvatars || []).filter(k => AVATAR_KEYS.includes(k)).map(keyToIndex),
+    stars: u.coins || 0,
+    revives: items.revive || 0,
+    headStarts: items.headstart || 0,
+    doublers: items.doubler || 0,
+    showName: u.showName !== false,
+  };
+}
+
+function reqToServer(path, body) {
+  if (!body) return body;
+  if (path === '/api/register' || path === '/api/profile') {
+    const b = { ...body };
+    if (typeof b.avatar === 'number') b.avatar = indexToKey(b.avatar);
+    return b;
+  }
+  if (path === '/api/score') return { game: DLD_GAME, score: body.height, coins: body.stars };
+  if (path === '/api/store/buy') {
+    if (body.kind === 'avatar') return { kind: 'avatar', key: indexToKey(body.avatar) };
+    if (body.kind === 'item') return { kind: 'item', key: body.item };
+  }
+  return body; // login, logout, use (item keys already match)
+}
+
+function lbRows(arr) {
+  return (Array.isArray(arr) ? arr : []).map(r => ({ id: r.id, height: r.score, stars: r.coins || 0, date: r.date }));
+}
+
+function respFromServer(path, data) {
+  if (path.startsWith('/api/leaderboard/personal')) return { scores: lbRows(data) };
+  if (path.startsWith('/api/leaderboard/global')) {
+    return { entries: (Array.isArray(data) ? data : []).map(r => ({ name: r.username, height: r.score, stars: r.coins || 0, isMe: false })) };
+  }
+  if (path === '/api/score' && data && data.wallet !== undefined) {
+    return { wallet: userFromServer(data.wallet), currentId: data.currentId, scores: lbRows(data.scores) };
+  }
+  return userFromServer(data);
+}
+
 async function api(path, body) {
+  let reqPath = path;
+  if (path === '/api/leaderboard/personal' || path === '/api/leaderboard/global') reqPath += '?game=' + DLD_GAME;
   const opts = { method: body ? 'POST' : 'GET', credentials: 'same-origin' };
-  if (body) { opts.headers = { 'Content-Type': 'application/json' }; opts.body = JSON.stringify(body); }
-  const res = await fetch(path, opts);
+  if (body) { opts.headers = { 'Content-Type': 'application/json' }; opts.body = JSON.stringify(reqToServer(path, body)); }
+  const res = await fetch(reqPath, opts);
   let data = {};
   try { data = await res.json(); } catch {}
-  return { ok: res.ok, status: res.status, data };
+  if (!res.ok) return { ok: false, status: res.status, data: { error: (data && (data.detail || data.error)) || 'Something went wrong' } };
+  return { ok: true, status: res.status, data: respFromServer(path, data) };
 }
 
 // ---- Screen helpers ----

@@ -32,6 +32,13 @@ class UseBody(BaseModel):
     item: str
 
 
+def _personal_rows(db: OrmSession, user_id: int, game_id: int) -> list[dict]:
+    rows = (db.query(Score).filter_by(user_id=user_id, game_id=game_id)
+            .order_by(Score.score.desc()).limit(20).all())
+    return [{"id": r.id, "score": r.score, "coins": r.coins_earned,
+             "date": r.created_at.isoformat()} for r in rows]
+
+
 @router.post("/score")
 def submit_score(body: ScoreBody, user: User = Depends(auth.current_user), db: OrmSession = Depends(get_db)):
     game = get_game_or_404(db, body.game)
@@ -46,20 +53,23 @@ def submit_score(body: ScoreBody, user: User = Depends(auth.current_user), db: O
     _last_score_at[user.id] = now
     coins = max(0, min(int(body.coins), config.MAX_COINS_PER_SUBMIT))
 
-    db.add(Score(user_id=user.id, game_id=game.id, score=int(body.score), coins_earned=coins))
+    row = Score(user_id=user.id, game_id=game.id, score=int(body.score), coins_earned=coins)
+    db.add(row)
     user.coins += coins  # wallet credited server-side, never trusted from the client
     db.commit()
     db.refresh(user)
-    return public_user(db, user)
+    db.refresh(row)
+    # Returns the refreshed wallet + this game's personal board for the game-over screen.
+    return {"wallet": public_user(db, user),
+            "scores": _personal_rows(db, user.id, game.id),
+            "currentId": row.id}
 
 
 @router.get("/leaderboard/personal")
 def leaderboard_personal(game: str = Query(...), user: User = Depends(auth.current_user),
                          db: OrmSession = Depends(get_db)):
     g = get_game_or_404(db, game)
-    rows = (db.query(Score).filter_by(user_id=user.id, game_id=g.id)
-            .order_by(Score.score.desc()).limit(20).all())
-    return [{"score": r.score, "coins": r.coins_earned, "date": r.created_at.isoformat()} for r in rows]
+    return _personal_rows(db, user.id, g.id)
 
 
 @router.get("/leaderboard/global")
@@ -68,7 +78,7 @@ def leaderboard_global(game: str = Query(...), db: OrmSession = Depends(get_db))
     rows = (db.query(Score, User).join(User, Score.user_id == User.id)
             .filter(Score.game_id == g.id, User.show_on_leaderboard.is_(True))
             .order_by(Score.score.desc()).limit(20).all())
-    return [{"username": u.username, "score": s.score} for s, u in rows]  # [] when empty (T7)
+    return [{"username": u.username, "score": s.score, "coins": s.coins_earned} for s, u in rows]  # [] when empty (T7)
 
 
 @router.post("/store/buy")

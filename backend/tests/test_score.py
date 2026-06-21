@@ -9,7 +9,10 @@ def test_score_saved_and_credits_wallet(client):
     reg(client, "Dana")
     r = client.post("/api/score", json={"game": "dont-look-down", "score": 500, "coins": 10})
     assert r.status_code == 200, r.text
-    assert r.json()["coins"] == 10
+    body = r.json()
+    assert body["wallet"]["coins"] == 10
+    assert body["scores"][0]["score"] == 500
+    assert body["currentId"]
     board = client.get("/api/leaderboard/personal", params={"game": "dont-look-down"})
     assert board.status_code == 200
     assert board.json()[0]["score"] == 500
@@ -19,7 +22,7 @@ def test_coins_are_clamped(client):
     reg(client, "Evan")
     r = client.post("/api/score", json={"game": "dont-look-down", "score": 100, "coins": 999999})
     assert r.status_code == 200
-    assert r.json()["coins"] == config.MAX_COINS_PER_SUBMIT  # not 999999
+    assert r.json()["wallet"]["coins"] == config.MAX_COINS_PER_SUBMIT  # not 999999
 
 
 def test_impossible_score_rejected(client):
