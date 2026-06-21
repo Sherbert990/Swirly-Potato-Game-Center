@@ -56,6 +56,7 @@
     leaderboard: (game, scope) => request(lb(game, scope), 'GET'),       // scope: 'personal' | 'global'
     buy: (kind, key) => request('/api/store/buy', 'POST', { kind, key }),// kind: 'avatar' | 'item'
     use: (item) => request('/api/use', 'POST', { item }),
+    achievements: (game) => request('/api/achievements' + (game ? '?game=' + encodeURIComponent(game) : ''), 'GET'),
   };
 
   // Every game page gets a consistent "Home" link back to the hub (not on the hub itself).

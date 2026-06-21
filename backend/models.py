@@ -94,6 +94,26 @@ class UserItem(Base):
     quantity: Mapped[int] = mapped_column(Integer, nullable=False, default=0)
 
 
+class Achievement(Base):
+    """Achievement definitions (seeded). game='' means any game."""
+    __tablename__ = "achievements"
+    __table_args__ = (UTF8,)
+    key: Mapped[str] = mapped_column(String(40), primary_key=True)
+    name: Mapped[str] = mapped_column(String(80), nullable=False)
+    description: Mapped[str] = mapped_column(String(160), nullable=False)
+    game: Mapped[str] = mapped_column(String(40), nullable=False, default="")
+    metric: Mapped[str] = mapped_column(String(16), nullable=False)  # 'score' | 'coins'
+    threshold: Mapped[int] = mapped_column(Integer, nullable=False)
+
+
+class UserAchievement(Base):
+    __tablename__ = "user_achievements"
+    __table_args__ = (UTF8,)
+    user_id: Mapped[int] = mapped_column(ForeignKey("users.id", ondelete="CASCADE"), primary_key=True)
+    achievement_key: Mapped[str] = mapped_column(ForeignKey("achievements.key"), primary_key=True)
+    unlocked_at: Mapped[datetime.datetime] = mapped_column(DateTime, server_default=func.now())
+
+
 class UserDaily(Base):
     """Daily streak (Phase 7). One row per user; bonus awarded on the first visit
     of each new day (day 1 gives a streak but no bonus)."""

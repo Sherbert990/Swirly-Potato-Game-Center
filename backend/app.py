@@ -23,6 +23,17 @@ log = logging.getLogger("stickmenhub")
 app = FastAPI(title="The Stickmen Hub")
 
 
+@app.middleware("http")
+async def no_cache_for_code(request: Request, call_next):
+    """Always revalidate code/markup so SDK/game updates reach users immediately
+    (images still cache normally). Prevents stale-JS bugs."""
+    resp = await call_next(request)
+    p = request.url.path
+    if p == "/" or p.endswith((".js", ".html", ".webmanifest")):
+        resp.headers["Cache-Control"] = "no-cache"
+    return resp
+
+
 @app.on_event("startup")
 def _init_db():
     """Ensure schema + reference data on boot. create_all only adds MISSING tables

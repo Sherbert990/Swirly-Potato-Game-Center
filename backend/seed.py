@@ -4,7 +4,7 @@ a `games` row (FK on scores). Idempotent — safe to run repeatedly.
 """
 from sqlalchemy.orm import Session as OrmSession
 
-from .models import Game, Avatar, StoreItem
+from .models import Game, Avatar, StoreItem, Achievement
 
 GAMES = [
     ("lavender-leap", "Lavender Leap of Doom"),
@@ -48,6 +48,19 @@ STORE_ITEMS = [
     ("boost", "Boost", "boost", 15),
 ]
 
+# (key, name, description, game ('' = any), metric, threshold)
+ACHIEVEMENTS = [
+    ("getting-started", "Getting Started", "Play your first game", "", "score", 1),
+    ("coin-collector", "Coin Collector", "Hold 100 coins", "", "coins", 100),
+    ("coin-baron", "Coin Baron", "Hold 500 coins", "", "coins", 500),
+    ("first-climb", "First Climb", "Score in Don't Look Down", "dont-look-down", "score", 1),
+    ("high-climber", "High Climber", "Reach 500 in Don't Look Down", "dont-look-down", "score", 500),
+    ("sky-high", "Sky High", "Reach 2000 in Don't Look Down", "dont-look-down", "score", 2000),
+    ("first-leap", "First Leap", "Score in Lavender Leap", "lavender-leap", "score", 1),
+    ("big-leaper", "Big Leaper", "Reach 500 in Lavender Leap", "lavender-leap", "score", 500),
+    ("leap-master", "Leap Master", "Reach 1500 in Lavender Leap", "lavender-leap", "score", 1500),
+]
+
 
 def seed(db: OrmSession) -> None:
     for slug, name in GAMES:
@@ -59,4 +72,8 @@ def seed(db: OrmSession) -> None:
     for key, name, typ, price in STORE_ITEMS:
         if not db.get(StoreItem, key):
             db.add(StoreItem(key=key, name=name, type=typ, price=price))
+    for key, name, desc, game, metric, threshold in ACHIEVEMENTS:
+        if not db.get(Achievement, key):
+            db.add(Achievement(key=key, name=name, description=desc, game=game,
+                               metric=metric, threshold=threshold))
     db.commit()

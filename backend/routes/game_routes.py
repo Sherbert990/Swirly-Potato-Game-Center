@@ -7,9 +7,30 @@ from sqlalchemy import func
 from sqlalchemy.orm import Session as OrmSession
 
 from ..db import get_db
-from ..models import User, Game, Score, Avatar, StoreItem, UserAvatar, UserItem
+from ..models import (User, Game, Score, Avatar, StoreItem, UserAvatar, UserItem,
+                      Achievement, UserAchievement)
 from .. import auth, config
 from ._common import public_user, get_game_or_404
+
+
+def evaluate_achievements(db: OrmSession, user: User, game_slug: str, score: int) -> list[dict]:
+    """Auto-unlock any newly earned achievements. Server-side, so every game gets
+    achievements for free just by submitting scores."""
+    have = {ua.achievement_key for ua in db.query(UserAchievement).filter_by(user_id=user.id).all()}
+    newly = []
+    for a in db.query(Achievement).all():
+        if a.key in have:
+            continue
+        if a.game and a.game != game_slug:
+            continue
+        met = (a.metric == "score" and score >= a.threshold) or \
+              (a.metric == "coins" and user.coins >= a.threshold)
+        if met:
+            db.add(UserAchievement(user_id=user.id, achievement_key=a.key))
+            newly.append({"key": a.key, "name": a.name})
+    if newly:
+        db.commit()
+    return newly
 
 router = APIRouter(prefix="/api")
 
@@ -60,10 +81,12 @@ def submit_score(body: ScoreBody, user: User = Depends(auth.current_user), db: O
     db.commit()
     db.refresh(user)
     db.refresh(row)
+    newly = evaluate_achievements(db, user, game.slug, int(body.score))
     # Returns the refreshed wallet + this game's personal board for the game-over screen.
     return {"wallet": public_user(db, user),
             "scores": _personal_rows(db, user.id, game.id),
-            "currentId": row.id}
+            "currentId": row.id,
+            "unlocked": newly}
 
 
 @router.get("/leaderboard/personal")
@@ -131,3 +154,16 @@ def use_item(body: UseBody, user: User = Depends(auth.current_user), db: OrmSess
     db.commit()
     db.refresh(user)
     return public_user(db, user)
+
+
+@router.get("/achievements")
+def list_achievements(game: str = Query(None), user: User = Depends(auth.current_user),
+                      db: OrmSession = Depends(get_db)):
+    have = {ua.achievement_key for ua in db.query(UserAchievement).filter_by(user_id=user.id).all()}
+    out = []
+    for a in db.query(Achievement).order_by(Achievement.game, Achievement.threshold).all():
+        if game and a.game and a.game != game:
+            continue
+        out.append({"key": a.key, "name": a.name, "description": a.description,
+                    "game": a.game, "unlocked": a.key in have})
+    return out
