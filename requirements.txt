@@ -1,1 +1,8 @@
--r backend/requirements.txt
+# Production runtime deps (Railway installs THIS file, in isolation, before the
+# rest of the repo is copied — so it must be self-contained, no -r into subdirs).
+fastapi==0.115.6
+uvicorn[standard]==0.32.1
+SQLAlchemy==2.0.36
+PyMySQL==1.1.1
+bcrypt==4.2.1
+python-dotenv==1.0.1
