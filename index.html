@@ -1,15 +1,208 @@
 <!doctype html>
 <html lang="en">
-  <head>
-    <meta charset="utf-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1">
-    <title>Swirly Potato Game Center</title>
-  </head>
-  <body>
-    <h1>Swirly Potato Game Center</h1>
-    <ul>
-      <li><a href="games/lavender-leap/index.html">Lavender Leap of Doom</a></li>
-      <li><a href="games/dont-look-down/dont_look_down.html">Don't Look Down</a></li>
-    </ul>
-  </body>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>The Stickmen Hub</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fredoka:wght@500;600;700&family=Nunito:wght@400;600;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@2.47.0/tabler-icons.min.css">
+<style>
+:root{--panel:rgba(255,255,255,.94);--ink:#243a5e;--muted:#5a6b86;--line:rgba(190,205,230,.9);--accent:#7d2ae8;--accent2:#1d9e75;
+ --bar:#fbf6ec;--barink:#2c1d4f;--barmuted:#6c5a93;--barline:#ece3d2;--coinbg:#fff;--toggbg:#ece4f6;--scrim:rgba(255,255,255,.10);--imgdim:0;--err:#c0392b}
+[data-theme="dark"]{--panel:rgba(22,28,48,.94);--ink:#e7edfb;--muted:#9aa8c6;--line:rgba(80,60,135,.9);--accent:#9b6bff;--accent2:#2bbf95;
+ --bar:#1c1838;--barink:#ece7fb;--barmuted:#a596d0;--barline:#34285c;--coinbg:#2a2150;--toggbg:#2a2150;--scrim:rgba(8,12,26,.60);--imgdim:.15;--err:#ff8a80}
+*{box-sizing:border-box}html,body{margin:0;min-height:100%}
+body{font-family:Nunito,system-ui,sans-serif;color:var(--ink)}
+#bg{position:fixed;inset:0;background:url('/design/hub/background.png') center/cover no-repeat;z-index:-2}
+#scrim{position:fixed;inset:0;background:var(--scrim);z-index:-1;transition:background .25s}
+.wrap{max-width:1180px;margin:0 auto;padding:16px 22px 40px}
+h1,.gtitle,.brand,.wm{font-family:Fredoka,sans-serif}
+.hidden{display:none!important}
+/* ---- auth ---- */
+.authWrap{min-height:100vh;display:flex;align-items:center;justify-content:center;padding:20px}
+.authCard{width:380px;max-width:94vw;background:var(--panel);border:1px solid var(--line);border-radius:22px;padding:22px;backdrop-filter:blur(4px);box-shadow:0 10px 40px rgba(40,60,110,.25)}
+.authCard .brand{display:flex;align-items:center;justify-content:center;gap:9px;font-weight:700;font-size:22px;color:var(--accent);margin-bottom:4px}
+.authSub{text-align:center;color:var(--muted);font-weight:700;font-size:13px;margin-bottom:16px}
+.authCard input{width:100%;font:inherit;font-size:15px;padding:11px 13px;margin:6px 0;border:1px solid var(--line);border-radius:11px;background:var(--panel);color:var(--ink)}
+.authCard label{font-size:12px;color:var(--muted);font-weight:700}
+.starters{display:flex;flex-wrap:wrap;gap:7px;margin:6px 0 4px}
+.starter{font-size:12px;font-weight:700;border:1px solid var(--line);background:var(--toggbg);color:var(--barink);border-radius:9px;padding:7px 10px;cursor:pointer}
+.starter.sel{background:var(--accent);color:#fff;border-color:var(--accent)}
+.btn{width:100%;border:none;cursor:pointer;color:#fff;background:var(--accent);font-family:Fredoka;font-weight:600;font-size:17px;border-radius:13px;padding:13px;margin-top:10px}
+.linkbtn{display:block;width:100%;text-align:center;background:none;border:none;color:var(--muted);font-weight:700;font-size:13px;cursor:pointer;margin-top:12px}
+.err{color:var(--err);font-weight:700;font-size:13px;min-height:18px;text-align:center;margin-top:6px}
+/* ---- hub ---- */
+.bar{display:flex;align-items:center;justify-content:space-between;gap:14px;flex-wrap:wrap;background:var(--bar);border:1px solid var(--barline);border-radius:16px;padding:8px 18px;box-shadow:0 2px 10px rgba(40,60,110,.13)}
+.brand{display:flex;align-items:center;gap:9px;font-size:20px;font-weight:700;color:var(--accent)}
+.actions{display:flex;align-items:center;gap:14px;flex-wrap:wrap}
+.actions button.nav{display:flex;align-items:center;gap:6px;background:none;border:none;cursor:pointer;color:var(--barmuted);font-weight:700;font-size:14px;font-family:inherit}
+.actions button.nav:hover{color:var(--accent)} .actions .nav i{font-size:18px}
+.coin{display:flex;align-items:center;gap:6px;background:var(--coinbg);border:1px solid var(--barline);color:#c8920c;font-weight:700;border-radius:20px;padding:5px 12px;font-size:14px}
+.coin i{font-size:16px}
+.profile{display:flex;align-items:center;gap:8px}
+.pav{width:32px;height:32px;border-radius:50%;border:2px solid var(--accent);display:flex;align-items:center;justify-content:center;background:var(--toggbg)}
+.profile b{font-size:13px;color:var(--barink);font-weight:700}
+.toggle{position:relative;display:inline-flex;gap:4px;background:var(--toggbg);border-radius:20px;padding:4px;cursor:pointer;border:none}
+.toggle i{width:28px;height:24px;display:flex;align-items:center;justify-content:center;font-size:15px;color:var(--barmuted);z-index:1}
+.knob{position:absolute;top:4px;left:4px;width:28px;height:24px;border-radius:16px;background:var(--accent);transition:left .2s}
+[data-theme="light"] .toggle .ti-sun{color:#fff}
+[data-theme="dark"] .knob{left:36px}
+[data-theme="dark"] .toggle .ti-moon{color:#fff}
+.welcome{margin:16px 2px 16px;display:flex;align-items:center;justify-content:space-between;gap:14px;background:var(--panel);border:1px solid var(--line);border-radius:16px;padding:14px 22px;backdrop-filter:blur(4px)}
+.welcome h1{margin:0;font-size:27px}.welcome p{margin:4px 0 0;color:var(--muted);font-weight:700;font-size:15px}
+.games{display:grid;grid-template-columns:1fr 1fr;gap:22px}
+.card{background:var(--panel);border:1px solid var(--line);border-radius:22px;padding:15px;display:flex;flex-direction:column;backdrop-filter:blur(4px);box-shadow:0 6px 22px rgba(40,60,110,.18)}
+.cover{width:100%;height:300px;object-fit:cover;border-radius:16px;filter:brightness(calc(1 - var(--imgdim)))}
+.gtitle{font-size:27px;margin:13px 4px 4px}.gdesc{color:var(--muted);font-weight:700;font-size:15px;margin:0 4px 13px;flex:1}
+.chips{display:flex;gap:9px;margin:0 0 13px;flex-wrap:wrap}
+.chip{background:rgba(125,42,232,.13);color:var(--accent);font-weight:700;font-size:14px;border-radius:11px;padding:7px 13px}
+.play{text-decoration:none;text-align:center;color:#fff;font-family:Fredoka;font-weight:600;font-size:19px;border-radius:13px;padding:14px;display:flex;align-items:center;justify-content:center;gap:8px}
+.p1{background:var(--accent)}.p2{background:var(--accent2)}
+.journey{margin-top:18px;border-radius:18px;overflow:hidden;border:1px solid var(--line);background:var(--panel);padding:6px;backdrop-filter:blur(4px)}
+.journey img{width:100%;display:block;border-radius:13px;filter:brightness(calc(1 - var(--imgdim)))}
+.toast{position:fixed;left:50%;bottom:22px;transform:translateX(-50%);background:var(--accent);color:#fff;font-weight:700;padding:10px 18px;border-radius:12px;box-shadow:0 6px 20px rgba(40,60,110,.3);opacity:0;transition:opacity .2s;pointer-events:none;z-index:20}
+.toast.show{opacity:1}
+@media(max-width:780px){.games{grid-template-columns:1fr}.welcome{flex-direction:column;align-items:flex-start}}
+</style>
+</head>
+<body data-theme="light">
+<div id="bg"></div><div id="scrim"></div>
+
+<!-- ===== AUTH ===== -->
+<div id="authScreen" class="authWrap hidden">
+  <div class="authCard">
+    <div class="brand"><i class="ti ti-mushroom" aria-hidden="true"></i> The Stickmen Hub</div>
+    <div class="authSub" id="authSub">Sign in to play</div>
+    <input id="authUser" placeholder="Username" autocomplete="username" maxlength="32">
+    <input id="authPass" type="password" placeholder="Password" autocomplete="current-password">
+    <div id="signupOnly" class="hidden">
+      <label>Pick a starter</label>
+      <div class="starters" id="starters"></div>
+    </div>
+    <button class="btn" id="authSubmit">Sign in</button>
+    <div class="err" id="authErr"></div>
+    <button class="linkbtn" id="authToggle">New here? Create an account</button>
+  </div>
+</div>
+
+<!-- ===== HUB ===== -->
+<div id="hub" class="wrap hidden">
+  <header class="bar">
+    <div class="brand"><i class="ti ti-mushroom" aria-hidden="true"></i> The Stickmen Hub</div>
+    <div class="actions">
+      <span class="coin"><i class="ti ti-coin" aria-hidden="true"></i> <span id="coins">0</span></span>
+      <span class="profile"><span class="pav"><i class="ti ti-user" style="font-size:16px;color:var(--accent)" aria-hidden="true"></i></span><b id="who">player</b></span>
+      <button class="nav" id="storeBtn"><i class="ti ti-shopping-bag" aria-hidden="true"></i> Store</button>
+      <button class="nav" id="lbBtn"><i class="ti ti-trophy" aria-hidden="true"></i> Leaderboards</button>
+      <button class="nav" id="logoutBtn"><i class="ti ti-logout" aria-hidden="true"></i> Log out</button>
+      <button class="toggle" id="tgl" aria-label="Toggle light or dark"><i class="ti ti-sun" aria-hidden="true"></i><i class="ti ti-moon" aria-hidden="true"></i><span class="knob"></span></button>
+    </div>
+  </header>
+
+  <div class="welcome">
+    <div><h1>Welcome back, <span id="who2">player</span>!</h1><p>Pick a game, earn coins, climb the leaderboards.</p></div>
+    <svg viewBox="0 0 40 52" width="46" height="60" style="color:var(--accent)" aria-hidden="true"><circle cx="20" cy="8" r="6" fill="none" stroke="currentColor" stroke-width="3"/><line x1="20" y1="14" x2="19" y2="31" stroke="currentColor" stroke-width="3" stroke-linecap="round"/><line x1="20" y1="18" x2="34" y2="4" stroke="currentColor" stroke-width="3" stroke-linecap="round"/><line x1="20" y1="18" x2="8" y2="24" stroke="currentColor" stroke-width="3" stroke-linecap="round"/><line x1="19" y1="31" x2="9" y2="49" stroke="currentColor" stroke-width="3" stroke-linecap="round"/><line x1="19" y1="31" x2="29" y2="47" stroke="currentColor" stroke-width="3" stroke-linecap="round"/></svg>
+  </div>
+
+  <div class="games">
+    <article class="card">
+      <img class="cover" src="/design/hub/lavender-cover.png" alt="Lavender Leap of Doom">
+      <div class="gtitle">Lavender Leap of Doom</div>
+      <div class="gdesc">A leveled parkour game with Time Trial, Freeplay and Hard Mode.</div>
+      <div class="chips"><span class="chip">Time Trial</span><span class="chip">Freeplay</span><span class="chip">Hard Mode</span></div>
+      <a class="play p1" href="/games/lavender-leap/index.html"><i class="ti ti-player-play" aria-hidden="true"></i> Play</a>
+    </article>
+    <article class="card">
+      <img class="cover" src="/design/hub/dontlookdown-cover.png" alt="Don't Look Down">
+      <div class="gtitle">Don't Look Down</div>
+      <div class="gdesc">An endless parkour game. One wrong look and it's all over.</div>
+      <div class="chips"><span class="chip">Endless</span><span class="chip">Beat your best</span></div>
+      <a class="play p2" href="/games/dont-look-down/dont_look_down.html"><i class="ti ti-player-play" aria-hidden="true"></i> Play</a>
+    </article>
+  </div>
+
+  <div class="journey"><img src="/design/hub/journey-strip.png" alt="Play games, earn coins, climb leaderboards, become a legend"></div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script src="/shared/gamecenter.js"></script>
+<script>
+const $ = id => document.getElementById(id);
+// ---- theme (UI pref; localStorage is fine for a non-account setting) ----
+const savedTheme = localStorage.getItem('hubTheme');
+if (savedTheme) document.body.setAttribute('data-theme', savedTheme);
+$('tgl').onclick = () => {
+  const d = document.body.getAttribute('data-theme') === 'dark';
+  document.body.setAttribute('data-theme', d ? 'light' : 'dark');
+  localStorage.setItem('hubTheme', d ? 'light' : 'dark');
+};
+function toast(msg){ const t=$('toast'); t.textContent=msg; t.classList.add('show'); setTimeout(()=>t.classList.remove('show'),2200); }
+
+// ---- starter avatars (free) for signup ----
+const STARTERS = [
+  ['dld-aqua','Aqua'],['dld-ember','Ember'],['dld-leaf','Leaf'],
+  ['ll-cyber-ninja','Cyber Ninja'],['ll-galaxy-slime','Galaxy Slime'],['ll-flame-fox','Flame Fox'],
+];
+let starter = STARTERS[0][0];
+(function buildStarters(){
+  STARTERS.forEach(([key,name],i)=>{
+    const b=document.createElement('button'); b.className='starter'+(i===0?' sel':''); b.textContent=name; b.dataset.k=key;
+    b.onclick=()=>{ starter=key; document.querySelectorAll('.starter').forEach(x=>x.classList.remove('sel')); b.classList.add('sel'); };
+    $('starters').appendChild(b);
+  });
+})();
+
+// ---- auth mode ----
+let mode = 'login';
+function setMode(m){
+  mode = m;
+  $('authSub').textContent = m==='signup' ? 'Create an account to start' : 'Sign in to play';
+  $('authSubmit').textContent = m==='signup' ? 'Create account' : 'Sign in';
+  $('authToggle').textContent = m==='signup' ? 'Already have an account? Sign in' : 'New here? Create an account';
+  $('signupOnly').classList.toggle('hidden', m!=='signup');
+  $('authPass').autocomplete = m==='signup' ? 'new-password' : 'current-password';
+  $('authErr').textContent = '';
+}
+$('authToggle').onclick = () => setMode(mode==='signup'?'login':'signup');
+
+async function doAuth(){
+  const username = $('authUser').value.trim();
+  const password = $('authPass').value;
+  $('authErr').textContent = '';
+  if (!username || !password){ $('authErr').textContent='Enter a username and password.'; return; }
+  const r = mode==='signup'
+    ? await GameCenter.register({username, password, avatar: starter})
+    : await GameCenter.login({username, password});
+  if (!r.ok){ $('authErr').textContent = r.error || 'Something went wrong.'; return; }
+  showHub(r.data);
+}
+$('authSubmit').onclick = doAuth;
+$('authPass').addEventListener('keydown', e => { if(e.key==='Enter') doAuth(); });
+
+// ---- hub ----
+function showHub(user){
+  $('authScreen').classList.add('hidden');
+  $('hub').classList.remove('hidden');
+  $('coins').textContent = user.coins ?? 0;
+  $('who').textContent = user.username;
+  $('who2').textContent = user.username;
+}
+function showAuth(){
+  $('hub').classList.add('hidden');
+  $('authScreen').classList.remove('hidden');
+}
+$('logoutBtn').onclick = async () => { await GameCenter.logout(); showAuth(); };
+$('storeBtn').onclick = () => toast('Open a game to spend your coins in its store.');
+$('lbBtn').onclick = () => toast('Each game has its own leaderboards — jump in!');
+
+// ---- boot: already logged in? ----
+(async () => {
+  const r = await GameCenter.me();
+  if (r.ok) showHub(r.data); else { setMode('login'); showAuth(); }
+})();
+</script>
+</body>
 </html>
