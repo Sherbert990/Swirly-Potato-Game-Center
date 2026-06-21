@@ -1,0 +1,18 @@
+# Secrets — NEVER commit these
+.env
+.env.*
+!.env.example
+backend/.env
+
+# Python
+__pycache__/
+*.pyc
+.venv/
+backend/.venv/
+
+# Local data
+data/
+*.sqlite
+
+# OS
+.DS_Store
