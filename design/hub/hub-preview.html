@@ -1,0 +1,75 @@
+<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>The Stickmen Hub</title>
+<link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fredoka:wght@500;600;700&family=Nunito:wght@400;600;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@2.47.0/tabler-icons.min.css">
+<style>
+:root{--panel:rgba(255,255,255,.94);--ink:#243a5e;--muted:#5a6b86;--line:rgba(190,205,230,.9);--accent:#7d2ae8;--accent2:#1d9e75;
+ --bar:#fbf6ec;--barink:#2c1d4f;--barmuted:#6c5a93;--barline:#ece3d2;--coinbg:#fff;--toggbg:#ece4f6;--scrim:rgba(255,255,255,.06);--imgdim:0}
+[data-theme="dark"]{--panel:rgba(22,28,48,.94);--ink:#e7edfb;--muted:#9aa8c6;--line:rgba(70,84,120,.9);--accent:#9b6bff;--accent2:#2bbf95;
+ --bar:#1c1838;--barink:#ece7fb;--barmuted:#a596d0;--barline:#34285c;--coinbg:#2a2150;--toggbg:#2a2150;--scrim:rgba(8,12,26,.58);--imgdim:.15}
+*{box-sizing:border-box}html,body{margin:0;min-height:100%}
+body{font-family:Nunito,system-ui,sans-serif;color:var(--ink)}
+#bg{position:fixed;inset:0;background:url('background.png') center/cover no-repeat;z-index:-2}
+#scrim{position:fixed;inset:0;background:var(--scrim);z-index:-1;transition:background .25s}
+.wrap{max-width:1180px;margin:0 auto;padding:16px 22px 36px}
+h1,.gtitle,.wm{font-family:Fredoka,sans-serif}
+.bar{display:flex;align-items:center;justify-content:space-between;gap:14px;flex-wrap:wrap;background:var(--bar);border:1px solid var(--barline);border-radius:16px;padding:8px 18px;box-shadow:0 2px 10px rgba(40,60,110,.13);transition:background .25s}
+.brand{display:flex;align-items:center;gap:10px}
+.wm{font-size:22px;font-weight:500;color:var(--barink)} .wm b{font-weight:700} .wm em{font-style:normal;font-weight:700;color:var(--accent)}
+.actions{display:flex;align-items:center;gap:14px;flex-wrap:wrap}
+.actions .nav{display:flex;align-items:center;gap:6px;color:var(--barmuted);text-decoration:none;font-weight:700;font-size:14px}
+.actions .nav:hover{color:var(--accent)} .actions .nav i{font-size:18px}
+.coin{display:flex;align-items:center;gap:6px;background:var(--coinbg);border:1px solid var(--barline);color:#c8920c;font-weight:700;border-radius:20px;padding:5px 12px;font-size:14px}
+.coin i{font-size:16px}
+.profile{display:flex;align-items:center;gap:8px}
+.pav{width:32px;height:32px;border-radius:50%;border:2px solid var(--accent);display:flex;align-items:center;justify-content:center;background:var(--toggbg)}
+.profile b{font-size:13px;color:var(--barink);font-weight:700;line-height:1.1;display:block}.profile small{font-size:11px;color:var(--barmuted);font-weight:700}
+.toggle{position:relative;display:inline-flex;gap:4px;background:var(--toggbg);border-radius:20px;padding:4px;cursor:pointer}
+.toggle i{width:28px;height:24px;display:flex;align-items:center;justify-content:center;font-size:15px;color:var(--barmuted);z-index:1;border-radius:16px}
+.knob{position:absolute;top:4px;left:4px;width:28px;height:24px;border-radius:16px;background:var(--accent);transition:left .2s}
+[data-theme="light"] .toggle .ti-sun{color:#fff}
+[data-theme="dark"] .knob{left:36px}
+[data-theme="dark"] .toggle .ti-moon{color:#fff}
+.welcome{margin:16px 2px 16px;display:flex;align-items:center;justify-content:space-between;gap:14px;background:var(--panel);border:1px solid var(--line);border-radius:16px;padding:14px 22px;backdrop-filter:blur(4px)}
+.welcome h1{margin:0;font-size:27px}.welcome p{margin:4px 0 0;color:var(--muted);font-weight:700;font-size:15px}
+.games{display:grid;grid-template-columns:1fr 1fr;gap:22px}
+.card{background:var(--panel);border:1px solid var(--line);border-radius:22px;padding:15px;display:flex;flex-direction:column;backdrop-filter:blur(4px);box-shadow:0 6px 22px rgba(40,60,110,.18)}
+.cover{width:100%;height:300px;object-fit:cover;border-radius:16px;filter:brightness(calc(1 - var(--imgdim)))}
+.gtitle{font-size:27px;margin:13px 4px 4px}.gdesc{color:var(--muted);font-weight:700;font-size:15px;margin:0 4px 13px;flex:1}
+.chips{display:flex;gap:9px;margin:0 0 13px;flex-wrap:wrap}
+.chip{background:rgba(125,42,232,.13);color:var(--accent);font-weight:700;font-size:14px;border-radius:11px;padding:7px 13px}
+.play{border:none;cursor:pointer;color:#fff;font-family:Fredoka;font-weight:600;font-size:19px;border-radius:13px;padding:14px;display:flex;align-items:center;justify-content:center;gap:8px}
+.p1{background:var(--accent)}.p2{background:var(--accent2)}
+.journey{margin-top:18px;border-radius:18px;overflow:hidden;border:1px solid var(--line);background:var(--panel);padding:6px;backdrop-filter:blur(4px)}
+.journey img{width:100%;display:block;border-radius:13px;filter:brightness(calc(1 - var(--imgdim)))}
+@media(max-width:780px){.games{grid-template-columns:1fr}.welcome{flex-direction:column;align-items:flex-start}}
+</style></head>
+<body data-theme="light">
+<div id="bg"></div><div id="scrim"></div>
+<div class="wrap">
+ <header class="bar">
+  <div class="brand">
+   <svg viewBox="0 0 40 40" width="32" height="32" style="color:var(--barink)" aria-hidden="true"><circle cx="15" cy="9" r="5" fill="none" stroke="currentColor" stroke-width="2.6"/><line x1="15" y1="14" x2="15" y2="27" stroke="currentColor" stroke-width="2.6" stroke-linecap="round"/><line x1="15" y1="18" x2="6" y2="23" stroke="currentColor" stroke-width="2.6" stroke-linecap="round"/><line x1="15" y1="18" x2="27" y2="7" stroke="currentColor" stroke-width="2.6" stroke-linecap="round"/><line x1="15" y1="27" x2="8" y2="38" stroke="currentColor" stroke-width="2.6" stroke-linecap="round"/><line x1="15" y1="27" x2="23" y2="37" stroke="currentColor" stroke-width="2.6" stroke-linecap="round"/></svg>
+   <span class="wm">The <b>Stickmen</b> <em>Hub</em></span>
+  </div>
+  <div class="actions">
+   <span class="coin"><i class="ti ti-coin" aria-hidden="true"></i> 2,450</span>
+   <span class="profile"><span class="pav"><svg viewBox="0 0 24 34" width="14" height="19" style="color:var(--accent)" aria-hidden="true"><circle cx="12" cy="6" r="4.5" fill="none" stroke="currentColor" stroke-width="2.4"/><line x1="12" y1="10.5" x2="12" y2="22" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"/><line x1="12" y1="14" x2="5" y2="18" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"/><line x1="12" y1="14" x2="19" y2="18" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"/><line x1="12" y1="22" x2="6" y2="32" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"/><line x1="12" y1="22" x2="18" y2="32" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"/></svg></span><span><b>Stick Legend</b><small>Level 27</small></span></span>
+   <a class="nav" href="#"><i class="ti ti-shopping-bag" aria-hidden="true"></i> Store</a>
+   <a class="nav" href="#"><i class="ti ti-trophy" aria-hidden="true"></i> Leaderboards</a>
+   <a class="nav" href="#"><i class="ti ti-logout" aria-hidden="true"></i> Log out</a>
+   <div class="toggle" id="tgl" role="button" aria-label="Toggle light or dark mode" title="Toggle light/dark"><i class="ti ti-sun" aria-hidden="true"></i><i class="ti ti-moon" aria-hidden="true"></i><span class="knob"></span></div>
+  </div>
+ </header>
+ <div class="welcome"><div><h1>Welcome back, Stick Legend!</h1><p>Pick a game, earn coins, climb the leaderboards.</p></div>
+  <svg viewBox="0 0 40 52" width="46" height="60" style="color:var(--accent)" aria-hidden="true"><circle cx="20" cy="8" r="6" fill="none" stroke="currentColor" stroke-width="3"/><line x1="20" y1="14" x2="19" y2="31" stroke="currentColor" stroke-width="3" stroke-linecap="round"/><line x1="20" y1="18" x2="34" y2="4" stroke="currentColor" stroke-width="3" stroke-linecap="round"/><line x1="20" y1="18" x2="8" y2="24" stroke="currentColor" stroke-width="3" stroke-linecap="round"/><line x1="19" y1="31" x2="9" y2="49" stroke="currentColor" stroke-width="3" stroke-linecap="round"/><line x1="19" y1="31" x2="29" y2="47" stroke="currentColor" stroke-width="3" stroke-linecap="round"/></svg>
+ </div>
+ <div class="games">
+  <article class="card"><img class="cover" src="lavender-cover.png" alt="Lavender Leap of Doom"><div class="gtitle">Lavender Leap of Doom</div><div class="gdesc">A leveled parkour game with Time Trial, Freeplay and Hard Mode.</div><div class="chips"><span class="chip">&#9201; Time Trial</span><span class="chip">&#9654; Freeplay</span><span class="chip">&#128520; Hard Mode</span></div><button class="play p1">&#9654; Play</button></article>
+  <article class="card"><img class="cover" src="dontlookdown-cover.png" alt="Don't Look Down"><div class="gtitle">Don't Look Down</div><div class="gdesc">An endless parkour game. One wrong look and it's all over.</div><div class="chips"><span class="chip">&#8734; Endless</span><span class="chip">&#11088; Beat your best</span></div><button class="play p2">&#9654; Play</button></article>
+ </div>
+ <div class="journey"><img src="journey-strip.png" alt="Your journey: play games, earn coins, climb leaderboards, become a legend"></div>
+</div>
+<script>var t=document.getElementById('tgl'),b=document.body;t.onclick=function(){b.setAttribute('data-theme',b.getAttribute('data-theme')==='dark'?'light':'dark');};</script>
+</body></html>
