@@ -23,9 +23,12 @@ canvas { display: block; width: 100%; height: 100%; background: #1a0b2e; }
 #startScreen p, #gameOverScreen p { font-size: 18px; color: #c9a9ff; margin-bottom: 10px; }
 .gBtn { background: #ff2e97; color: #fff; border: none; border-radius: 10px; padding: 14px 40px; font-size: 19px; cursor: pointer; margin-top: 18px; box-shadow: 0 0 20px rgba(255,46,151,0.5); }
 .gBtn:hover { background: #c724b1; }
-#controls { position: absolute; bottom: 0; left: 0; display: flex; justify-content: space-between; padding: 14px 18px; width: 100%; z-index: 5; }
-.ctrlBtn { background: rgba(125,42,232,0.35); color: #fff; border: 1px solid rgba(45,226,230,0.4); border-radius: 12px; padding: 16px 36px; font-size: 24px; cursor: pointer; user-select: none; }
-.ctrlBtn:active { background: rgba(45,226,230,0.5); }
+#touchUI { position: absolute; inset: 0; pointer-events: none; z-index: 5; display: none; }
+#joyBase { position: absolute; left: 30px; bottom: 30px; width: 104px; height: 104px; border-radius: 50%; border: 2px solid rgba(45,226,230,0.6); background: rgba(125,42,232,0.22); opacity: 0.45; }
+#joyBase.active { opacity: 0.92; transform: translate(-50%,-50%); }
+#joyKnob { position: absolute; left: 50%; top: 50%; width: 48px; height: 48px; margin: -24px 0 0 -24px; border-radius: 50%; background: rgba(45,226,230,0.88); border: 2px solid #0d0221; }
+#jumpPad { position: absolute; right: 28px; bottom: 28px; width: 96px; height: 96px; border-radius: 50%; pointer-events: auto; border: 2px solid rgba(45,226,230,0.5); background: rgba(255,46,151,0.55); color: #fff; font-size: 16px; font-weight: 600; line-height: 1.15; cursor: pointer; user-select: none; }
+#jumpPad:active { background: rgba(255,46,151,0.82); }
 .histTitle { font-size: 16px; color: #c9a9ff; margin: 18px 0 6px; font-weight: 600; letter-spacing: 0.5px; }
 #scoreHistory, #lbList { width: 340px; max-width: 86vw; max-height: 34vh; overflow-y: auto; }
 .histRow { display: flex; align-items: center; gap: 10px; padding: 7px 14px; margin: 5px 0; border-radius: 8px; background: rgba(125,42,232,0.18); color: #e8d9ff; font-size: 15px; }
@@ -168,10 +171,9 @@ canvas { display: block; width: 100%; height: 100%; background: #1a0b2e; }
     </div>
   </div>
 </div>
-<div id="controls">
-  <button class="ctrlBtn" id="leftBtn">◀</button>
-  <button class="ctrlBtn" id="jumpBtn">▲ Jump</button>
-  <button class="ctrlBtn" id="rightBtn">▶</button>
+<div id="touchUI">
+  <div id="joyBase"><div id="joyKnob"></div></div>
+  <button id="jumpPad">▲<br>Jump</button>
 </div>
 <script src="/shared/gamecenter.js"></script>
 <script>
@@ -905,24 +907,69 @@ document.addEventListener('keydown', e => { keys[e.key]=true; if(['ArrowUp','Arr
 document.addEventListener('keyup', e => { keys[e.key]=false; });
 // Clear all held inputs when the window loses focus, so an alt-tab mid-press
 // can't leave a key/button stuck and shove the player into a wall.
-function clearTouch() { touchLeft = touchRight = touchJump = false; }
+function clearTouch() { touchLeft = touchRight = touchJump = false; if (typeof resetJoy === 'function') resetJoy(); }
 function clearInputs() { keys = {}; clearTouch(); }
 window.addEventListener('blur', clearInputs);
 
-const lb=document.getElementById('leftBtn'), rb=document.getElementById('rightBtn'), jb=document.getElementById('jumpBtn');
-// Press starts on the button; release is bound GLOBALLY so lifting the
-// mouse/finger anywhere (even off the button) always clears the flag.
-// Otherwise a release outside the button leaves it stuck → endless push.
-function bindCtrl(el, set) {
-  el.addEventListener('touchstart', e => { set(true); e.preventDefault(); }, {passive:false});
-  el.addEventListener('mousedown', e => { set(true); e.preventDefault(); });
+// ===== Touch controls: floating joystick (left) + jump pad (right) =====
+const wrapper = document.getElementById('wrapper');
+const touchUI = document.getElementById('touchUI');
+const joyBase = document.getElementById('joyBase');
+const joyKnob = document.getElementById('joyKnob');
+const jumpPad = document.getElementById('jumpPad');
+
+if (matchMedia('(pointer: coarse)').matches || 'ontouchstart' in window) touchUI.style.display = 'block';
+
+const JOY_R = 46, JOY_DEAD = 10;  // travel radius and standstill deadzone
+let joyId = null, joyOX = 0, joyOY = 0;
+
+function joyMove(dx, dy) {
+  const dist = Math.hypot(dx, dy) || 1;
+  const cl = dist > JOY_R ? JOY_R / dist : 1;
+  joyKnob.style.transform = `translate(${dx*cl}px, ${dy*cl}px)`;
+  touchLeft = dx < -JOY_DEAD;
+  touchRight = dx > JOY_DEAD;
 }
-bindCtrl(lb, v => touchLeft = v);
-bindCtrl(rb, v => touchRight = v);
-bindCtrl(jb, v => touchJump = v);
-window.addEventListener('mouseup', clearTouch);
-window.addEventListener('touchend', clearTouch);
-window.addEventListener('touchcancel', clearTouch);
+function resetJoy() {
+  joyId = null; touchLeft = touchRight = false;
+  joyBase.classList.remove('active');
+  joyBase.style.left = ''; joyBase.style.top = ''; joyBase.style.bottom = '';
+  joyKnob.style.transform = '';
+}
+function endJoy(e) {
+  for (const t of e.changedTouches) { if (t.identifier === joyId) resetJoy(); }
+}
+
+wrapper.addEventListener('touchstart', e => {
+  const r = wrapper.getBoundingClientRect();
+  for (const t of e.changedTouches) {
+    if (joyId !== null) continue;
+    if (t.clientX - r.left > r.width / 2) continue;  // left half drives the stick
+    joyId = t.identifier; joyOX = t.clientX; joyOY = t.clientY;
+    joyBase.style.left = (t.clientX - r.left) + 'px';
+    joyBase.style.top = (t.clientY - r.top) + 'px';
+    joyBase.style.bottom = 'auto';
+    joyBase.classList.add('active');  // recenters on the finger via translate(-50%,-50%)
+    joyMove(0, 0);
+    e.preventDefault();
+  }
+}, {passive:false});
+wrapper.addEventListener('touchmove', e => {
+  for (const t of e.changedTouches) {
+    if (t.identifier !== joyId) continue;
+    joyMove(t.clientX - joyOX, t.clientY - joyOY);
+    e.preventDefault();
+  }
+}, {passive:false});
+wrapper.addEventListener('touchend', endJoy);
+wrapper.addEventListener('touchcancel', endJoy);
+
+// Jump pad: held flag, edge-detected in update() so a tap mid-air double-jumps.
+jumpPad.addEventListener('touchstart', e => { e.preventDefault(); e.stopPropagation(); touchJump = true; });
+jumpPad.addEventListener('touchend', e => { e.preventDefault(); touchJump = false; });
+jumpPad.addEventListener('touchcancel', () => { touchJump = false; });
+jumpPad.addEventListener('mousedown', e => { e.preventDefault(); touchJump = true; });
+window.addEventListener('mouseup', () => { touchJump = false; });
 
 initGame(); loop();
 </script>

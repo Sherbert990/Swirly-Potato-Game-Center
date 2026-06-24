@@ -7,7 +7,7 @@
     <link rel="manifest" href="/manifest.webmanifest">
     <meta name="theme-color" content="#7d2ae8">
     <link rel="apple-touch-icon" href="/assets/icons/icon-192.png">
-    <link rel="stylesheet" href="styles.css?v=17">
+    <link rel="stylesheet" href="styles.css?v=18">
   </head>
   <body>
     <div id="welcome" class="startup">
@@ -150,7 +150,13 @@
         </div>
       </section>
 
-      <canvas id="game" width="800" height="520" aria-label="Lavender Leap platformer game area"></canvas>
+      <div class="stage">
+        <canvas id="game" width="800" height="520" aria-label="Lavender Leap platformer game area"></canvas>
+        <div id="touchUI" class="touch-ui hidden" aria-hidden="true">
+          <div id="joyBase" class="joy-base"><div id="joyKnob" class="joy-knob"></div></div>
+          <button id="jumpBtn" class="jump-btn" type="button" tabindex="-1">JUMP</button>
+        </div>
+      </div>
 
       <section class="controls" aria-label="Game controls">
         <button id="start" type="button">Start</button>
@@ -160,11 +166,11 @@
           <input id="levelInput" type="number" min="1" max="100" value="1" inputmode="numeric">
           <button id="go" type="button">Go</button>
         </span>
-        <p>Arrow keys or WASD to run, space to jump. Grab crystals and stay on the moving platforms.</p>
+        <p>Arrow keys or WASD to run, space to jump. On a touch screen, slide the joystick to run and tap JUMP. Grab crystals and stay on the moving platforms.</p>
       </section>
     </main>
 
     <script src="/shared/gamecenter.js"></script>
-    <script src="game.js?v=28"></script>
+    <script src="game.js?v=29"></script>
   </body>
 </html>

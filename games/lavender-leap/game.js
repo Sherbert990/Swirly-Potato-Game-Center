@@ -94,6 +94,7 @@ const world = {
   mode: "freeplay",
   levelsPassed: 0,
   timeLeft: TIME_TRIAL_SECONDS,
+  touchDir: 0,   // -1/0/1 from the on-screen joystick (added to keyboard input)
 };
 
 const player = {
@@ -434,8 +435,8 @@ function updatePlatforms(now) {
 }
 
 function updatePlayer(dt) {
-  const left = world.keys.has("arrowleft") || world.keys.has("a");
-  const right = world.keys.has("arrowright") || world.keys.has("d");
+  const left = world.keys.has("arrowleft") || world.keys.has("a") || world.touchDir < 0;
+  const right = world.keys.has("arrowright") || world.keys.has("d") || world.touchDir > 0;
   const accel = player.grounded ? 2200 : 1250;
   const friction = player.grounded ? 0.82 : 0.95;
 
@@ -1578,6 +1579,77 @@ window.addEventListener("keydown", (event) => {
 });
 window.addEventListener("keyup", (event) => {
   world.keys.delete(event.key.toLowerCase());
+});
+
+// ===== Touch controls: floating joystick (left) + jump pad (right) =====
+const stage = document.querySelector(".stage");
+const touchUI = document.querySelector("#touchUI");
+const joyBase = document.querySelector("#joyBase");
+const joyKnob = document.querySelector("#joyKnob");
+const jumpBtn = document.querySelector("#jumpBtn");
+
+if (matchMedia("(pointer: coarse)").matches || "ontouchstart" in window) {
+  touchUI.classList.remove("hidden");
+}
+
+const JOY_RADIUS = 46;   // how far the knob can travel from its center
+const JOY_DEAD = 10;     // ignore tiny wobbles so standing still is easy
+let joyId = null;        // identifier of the finger currently driving the stick
+let joyOX = 0;
+let joyOY = 0;
+
+function joyMove(dx, dy) {
+  const dist = Math.hypot(dx, dy) || 1;
+  const clamp = dist > JOY_RADIUS ? JOY_RADIUS / dist : 1;
+  joyKnob.style.transform = `translate(${dx * clamp}px, ${dy * clamp}px)`;
+  world.touchDir = dx < -JOY_DEAD ? -1 : dx > JOY_DEAD ? 1 : 0;
+}
+
+function endJoy(event) {
+  for (const t of event.changedTouches) {
+    if (t.identifier !== joyId) continue;
+    joyId = null;
+    world.touchDir = 0;
+    joyBase.classList.remove("active");
+    joyBase.style.left = "";
+    joyBase.style.top = "";
+    joyBase.style.bottom = "";
+    joyKnob.style.transform = "";
+  }
+}
+
+stage.addEventListener("touchstart", (event) => {
+  const rect = stage.getBoundingClientRect();
+  for (const t of event.changedTouches) {
+    if (joyId !== null) continue;
+    if (t.clientX - rect.left > rect.width / 2) continue;  // left half drives the stick
+    joyId = t.identifier;
+    joyOX = t.clientX;
+    joyOY = t.clientY;
+    joyBase.style.left = `${t.clientX - rect.left}px`;
+    joyBase.style.top = `${t.clientY - rect.top}px`;
+    joyBase.style.bottom = "auto";
+    joyBase.classList.add("active");   // recenters on the finger via translate(-50%, -50%)
+    joyMove(0, 0);
+  }
+  event.preventDefault();
+}, { passive: false });
+
+stage.addEventListener("touchmove", (event) => {
+  for (const t of event.changedTouches) {
+    if (t.identifier !== joyId) continue;
+    joyMove(t.clientX - joyOX, t.clientY - joyOY);
+    event.preventDefault();
+  }
+}, { passive: false });
+
+stage.addEventListener("touchend", endJoy);
+stage.addEventListener("touchcancel", endJoy);
+
+jumpBtn.addEventListener("touchstart", (event) => {
+  event.preventDefault();
+  event.stopPropagation();  // keep this finger from also starting the joystick
+  jump();
 });
 
 buildLevel();
