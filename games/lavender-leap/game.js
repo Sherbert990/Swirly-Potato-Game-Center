@@ -263,7 +263,7 @@ function makeGeneratedLevel(index) {
       }
     }
     platforms.push(platform);
-    if (step % 2 === 0 || index < 18) crystals.push({ x: x + w / 2, y: y - 52, r: 13, got: false });
+    if (step % 3 === 0 && index >= 5) crystals.push({ x: x + w / 2, y: y - 52, r: 13, got: false });
 
     const hazardKind = ["spikes", "block", "saw", "beam"][(step + index) % 4];
     if (hazardKind === "block") hazards.push({ x: x + w + 60, y: 442, w: 80, h: 56, kind: "block" });
@@ -1490,14 +1490,26 @@ async function startGameFromMenu() {
   showModes();
 }
 
+let profileCameFromGame = false;
 function editProfile() {
+  profileCameFromGame = world.running;  // capture before stopLoop clears it
   stopLoop();
   editingProfile = true;
   editingOldName = currentUser;
   nameInput.value = currentUser;
+  document.querySelector("#profileResume").style.display = profileCameFromGame ? "" : "none";
   buildAvatarPicker();
   renderProfilePowerups();
   showScreen(startupOverlay);
+}
+
+async function profileBackToGame() {
+  // Apply any name/avatar change, then resume the run that was in progress.
+  const name = (nameInput.value || "").trim().slice(0, 32) || currentUser;
+  const r = await GameCenter.setProfile({ username: name, avatar: LL_KEYS[selectedAvatar] });
+  if (r.ok) { applyUser(r.data); currentUser = r.data.username; playerName = currentUser; }
+  editingProfile = false; editingOldName = "";
+  resumeGame();
 }
 
 async function logout() {
@@ -1509,6 +1521,7 @@ buildAvatarPicker();
 playBtn.addEventListener("click", startGameFromMenu);
 modesBtnControl.addEventListener("click", showModes);
 editProfileBtn.addEventListener("click", editProfile);
+document.querySelector("#profileResume").addEventListener("click", profileBackToGame);
 logoutBtn.addEventListener("click", logout);
 goSigninBtn.addEventListener("click", () => {
   signinError.textContent = "";
