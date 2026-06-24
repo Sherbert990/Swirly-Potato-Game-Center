@@ -1,6 +1,6 @@
 /* The Stickmen Hub service worker — installable + offline app shell.
  * Bump CACHE on any shell change so old caches purge. */
-const CACHE = 'stickmen-v4';
+const CACHE = 'stickmen-v5';
 const SHELL = [
   '/', '/manifest.webmanifest',
   '/shared/gamecenter.js',
@@ -34,14 +34,18 @@ self.addEventListener('fetch', (e) => {
   if (url.origin !== location.origin) return;
   if (url.pathname.startsWith('/api/')) return;       // never cache auth/scores — always live
 
-  if (req.mode === 'navigate') {                       // HTML: network-first, cache fallback offline
+  // Code/markup: NETWORK-FIRST so updates always show when online; cache is only
+  // an offline fallback. (Prevents the stale-code problem during active dev.)
+  const p = url.pathname;
+  const codeLike = req.mode === 'navigate' || p.endsWith('.js') || p.endsWith('.css') || p.endsWith('.webmanifest');
+  if (codeLike) {
     e.respondWith(
       fetch(req).then((r) => { const cp = r.clone(); caches.open(CACHE).then((c) => c.put(req, cp)); return r; })
                 .catch(() => caches.match(req).then((m) => m || caches.match('/')))
     );
     return;
   }
-  // assets: cache-first, fall back to network (and cache it)
+  // images & other assets: cache-first (they rarely change), network fallback
   e.respondWith(
     caches.match(req).then((m) => m || fetch(req).then((r) => {
       if (r.ok) { const cp = r.clone(); caches.open(CACHE).then((c) => c.put(req, cp)); }
