@@ -106,6 +106,7 @@ const player = {
   facing: 1,
   grounded: false,
   coyote: 0,
+  ride: null,   // platform currently standing on (to ride its vertical movement)
 };
 
 let platforms = [];
@@ -449,6 +450,9 @@ function updatePlayer(dt) {
   if (!left && !right) player.vx *= friction;
 
   player.vx = Math.max(-430, Math.min(430, player.vx));
+  // Ride the platform vertically: stick to it as it moves up/down (updatePlatforms
+  // already ran this frame, so .dy is current). Keeps the player from detaching.
+  if (player.grounded && player.ride) player.y += player.ride.dy || 0;
   player.vy += 1550 * dt;
   player.coyote = Math.max(0, player.coyote - dt);
 
@@ -475,6 +479,7 @@ function resolveHorizontal() {
 function resolveVertical() {
   const body = { x: player.x, y: player.y, w: player.w, h: player.h };
   player.grounded = false;
+  player.ride = null;
   platforms.forEach((platform) => {
     if (!rectsOverlap(body, platform)) return;
     if (player.vy > 0) {
@@ -482,10 +487,8 @@ function resolveVertical() {
       player.vy = 0;
       player.grounded = true;
       player.coyote = 0.1;
-      // Ride the platform: carry the full horizontal delta so the player sticks
-      // instead of sliding off. Vertical position is already snapped to the
-      // platform's new top above, so no extra Y carry is needed.
-      player.x += platform.dx || 0;
+      player.ride = platform;        // remember it so we ride its vertical movement next frame
+      player.x += platform.dx || 0;  // carry horizontal delta so the player sticks
     } else if (player.vy < 0) {
       player.y = platform.y + platform.h;
       player.vy = 0;
@@ -1582,6 +1585,7 @@ window.addEventListener("pagehide", () => {
 });
 
 (async () => {
+  showScreen(null);  // hide the welcome screen immediately — no sign-in flash before the gate resolves
   const r = await GameCenter.me();
   if (!r.ok) { location.href = "/"; return; }  // not logged in -> hub
   applyUser(r.data);
