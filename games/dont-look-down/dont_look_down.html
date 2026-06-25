@@ -857,8 +857,13 @@ const STORE_ITEMS = [
 ];
 const PREMIUM_PRICES = { 10: 60, 11: 80, 12: 100, 13: 120 };
 
-document.getElementById('storeBtn').onclick = () => { openStore(); };
+document.getElementById('storeBtn').onclick = () => GameCenter.openStore('dont-look-down');
 document.getElementById('storeBack').onclick = () => enterStartScreen();
+// Shared store: when it closes, pull the latest wallet/skin and refresh the start screen.
+window.addEventListener('gc:storeclose', async () => {
+  const r = await api('/api/me');
+  if (r.ok) { currentUser = r.data; selectedAvatar = currentUser.avatar; refreshStartScreen(); }
+});
 
 function setStoreSection(section) {
   document.getElementById('storePowerSection').style.display = section === 'power' ? '' : 'none';

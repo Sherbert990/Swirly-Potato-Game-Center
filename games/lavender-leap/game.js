@@ -1685,8 +1685,22 @@ modesScreen.querySelectorAll(".mode-btn").forEach((btn) => {
 });
 resultsAgainBtn.addEventListener("click", () => startMode("timetrial"));
 resultsModesBtn.addEventListener("click", showModes);
-visitStoreBtn.addEventListener("click", openStore);
-visitStoreModesBtn.addEventListener("click", openStore);
+visitStoreBtn.addEventListener("click", () => GameCenter.openStore("lavender-leap"));
+visitStoreModesBtn.addEventListener("click", () => GameCenter.openStore("lavender-leap"));
+
+// Shared store integration: pause a live run while shopping, refresh wallet/skin
+// when it closes, and keep coins live as purchases happen.
+let storeWasRunning = false;
+window.addEventListener("gc:storeopen", () => {
+  storeWasRunning = world.running;
+  if (world.running) stopLoop();
+});
+window.addEventListener("gc:storeclose", async () => {
+  const r = await GameCenter.me();
+  if (r.ok) { applyUser(r.data); buildAvatarPicker(); renderProfilePowerups(); }
+  if (storeWasRunning) { storeWasRunning = false; resumeGame(); }
+});
+window.addEventListener("gc:wallet", (e) => { if (e.detail) applyUser(e.detail); });
 storeBackBtn.addEventListener("click", showModes);
 storeResumeBtn.addEventListener("click", resumeGame);
 reviveUseBtn.addEventListener("click", useRevive);

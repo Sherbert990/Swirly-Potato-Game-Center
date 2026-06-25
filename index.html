@@ -279,7 +279,9 @@ function showAuth(){
 }
 $('logoutBtn').onclick = async () => { await GameCenter.logout(); showAuth(); };
 $('settingsBtn').onclick = () => GameCenter.openSettings();
-$('storeBtn').onclick = () => toast('Open a game to spend your coins in its store.');
+$('storeBtn').onclick = () => GameCenter.openStore();   // defaults to last-opened game tab
+// Keep the hub coin count in sync when the player buys something in the store.
+window.addEventListener('gc:wallet', (e) => { if (e.detail) $('coins').textContent = e.detail.coins ?? 0; });
 $('lbBtn').onclick = () => toast('Each game has its own leaderboards — jump in!');
 
 // ---- version badge ----
