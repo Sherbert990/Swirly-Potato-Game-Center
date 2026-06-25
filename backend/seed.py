@@ -9,6 +9,11 @@ from .models import Game, Avatar, StoreItem, Achievement
 GAMES = [
     ("lavender-leap", "Lavender Leap of Doom"),
     ("dont-look-down", "Don't Look Down"),
+    # Per-mode leaderboards for Lavender Leap (separate boards, separate scores):
+    #   -time : levels cleared in a Time Trial
+    #   -hard : highest level reached in Hard Mode
+    ("lavender-leap-time", "Lavender Leap · Time Trial"),
+    ("lavender-leap-hard", "Lavender Leap · Hard Mode"),
 ]
 
 # Combined avatar catalog (DESIGN.md §7). Free = price 0.
@@ -46,7 +51,17 @@ STORE_ITEMS = [
     ("doubler", "Star Doubler", "doubler", 20),
     ("extra_life", "Extra Life", "extra_life", 15),
     ("boost", "Boost", "boost", 15),
+    # Game-scoped power-ups (scope is enforced client-side; see ITEM_GAME).
+    ("double_jump", "Double Jump Pass", "double_jump", 60),   # Lavender: permanent mid-air jump
+    ("rocket_booster", "Rocket Booster", "rocket_booster", 20),  # Don't Look Down: +100ft head start
 ]
+
+# Which game each store item belongs to ('' = available everywhere). The buy/use
+# endpoints validate only by key; this map lets each game show just its own items.
+ITEM_GAME = {
+    "double_jump": "lavender-leap",
+    "rocket_booster": "dont-look-down",
+}
 
 # (key, name, description, game ('' = any), metric, threshold)
 ACHIEVEMENTS = [

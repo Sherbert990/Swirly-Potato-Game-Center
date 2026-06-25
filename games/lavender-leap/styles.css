@@ -747,3 +747,50 @@ button:active {
     width: auto;
   }
 }
+
+/* ===== Segmented toggles (store sections + leaderboard tabs) ===== */
+.seg {
+  display: flex;
+  gap: 6px;
+  max-width: 360px;
+  margin: 10px auto;
+  padding: 4px;
+  background: rgba(139, 92, 246, 0.1);
+  border: 2px solid var(--line);
+  border-radius: 999px;
+}
+.seg-btn {
+  flex: 1;
+  min-width: 0;
+  height: auto;
+  margin: 0;
+  padding: 8px 10px;
+  border: none;
+  border-radius: 999px;
+  background: transparent;
+  color: var(--muted);
+  font-weight: 800;
+  font-size: 0.85rem;
+}
+.seg-btn:hover { filter: none; color: var(--purple); }
+.seg-btn.active {
+  background: var(--purple);
+  color: #fff;
+}
+.store-list.hidden { display: none; }
+
+/* ===== Leaderboard screen ===== */
+.lb-list { max-width: 340px; }
+.lb-list li { list-style: none; }
+.lb-optin {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  margin: 10px auto 4px;
+  color: var(--muted);
+  font-weight: 700;
+  font-size: 0.85rem;
+  cursor: pointer;
+}
+.lb-optin input { width: 16px; height: 16px; accent-color: var(--purple); cursor: pointer; }

@@ -7,7 +7,7 @@
     <link rel="manifest" href="/manifest.webmanifest">
     <meta name="theme-color" content="#7d2ae8">
     <link rel="apple-touch-icon" href="/assets/icons/icon-192.png">
-    <link rel="stylesheet" href="styles.css?v=18">
+    <link rel="stylesheet" href="styles.css?v=19">
   </head>
   <body>
     <div id="welcome" class="startup">
@@ -63,6 +63,7 @@
           <span>Revives <strong id="ppLives">0</strong></span>
           <span>Time boosts <strong id="ppBoosts">0</strong></span>
         </div>
+        <label class="lb-optin"><input type="checkbox" id="showName"> Show my name on the leaderboards</label>
         <button id="profileResume" type="button" style="display:none">Back to game</button>
         <button id="play" type="button">Play</button>
       </div>
@@ -84,8 +85,9 @@
           <strong>Hard Mode</strong>
           <span>Fall once and you're back to level 1. No skipping.</span>
         </button>
+        <button id="modesLeaderboard" class="ghost-btn" type="button">Leaderboards</button>
         <button id="visitStoreModes" class="ghost-btn" type="button">Visit Store</button>
-        <button class="link-btn" data-back type="button">Back</button>
+        <button id="modesBack" class="link-btn" type="button" style="display:none">Back to game</button>
       </div>
     </div>
 
@@ -100,7 +102,27 @@
         <p class="field-label">Recent runs</p>
         <ul id="runHistory" class="score-list"></ul>
         <button id="resultsAgain" type="button">Play again</button>
+        <button id="resultsLeaderboard" class="ghost-btn" type="button">Leaderboards</button>
         <button id="resultsModes" class="ghost-btn" type="button">Back to modes</button>
+      </div>
+    </div>
+
+    <div id="leaderboard" class="startup hidden">
+      <div class="startup-card login-card lb-card">
+        <p class="eyebrow">Leaderboards</p>
+        <h2>Lavender Leap</h2>
+        <div class="seg" id="lbBoard">
+          <button class="seg-btn active" type="button" data-board="time">Time Trial</button>
+          <button class="seg-btn" type="button" data-board="hard">Hard Mode</button>
+        </div>
+        <div class="seg" id="lbScope">
+          <button class="seg-btn active" type="button" data-scope="global">Global</button>
+          <button class="seg-btn" type="button" data-scope="personal">My runs</button>
+        </div>
+        <p id="lbMsg" class="store-msg" aria-live="polite"></p>
+        <ol id="lbList" class="score-list lb-list"></ol>
+        <button id="lbResume" type="button" style="display:none">Back to game</button>
+        <button id="lbBack" class="ghost-btn" type="button">Back to modes</button>
       </div>
     </div>
 
@@ -110,10 +132,12 @@
         <h2>Visit Store</h2>
         <p class="store-balance">You have <strong id="storeCoins">0</strong> coins</p>
         <p id="storeMsg" class="store-msg" aria-live="polite"></p>
-        <p class="field-label">Power-ups</p>
         <div id="storePowerups" class="store-list"></div>
-        <p class="field-label">Skins</p>
-        <div id="storeSkins" class="store-list"></div>
+        <div id="storeSkins" class="store-list hidden"></div>
+        <div class="seg" id="storeSection">
+          <button class="seg-btn active" type="button" data-section="powerups">Power-ups</button>
+          <button class="seg-btn" type="button" data-section="skins">Skins</button>
+        </div>
         <button id="storeResume" type="button">Go back to current game</button>
         <button id="storeBack" class="ghost-btn" type="button">Back to modes</button>
       </div>
@@ -161,6 +185,7 @@
       <section class="controls" aria-label="Game controls">
         <button id="start" type="button">Start</button>
         <button id="modesBtn" type="button" title="Choose a game mode">Modes</button>
+        <button id="saveLevel" type="button" title="Save your level to the Hard Mode leaderboard" style="display:none">Save level</button>
         <span class="warp">
           <label for="levelInput">Level</label>
           <input id="levelInput" type="number" min="1" max="100" value="1" inputmode="numeric">
@@ -171,6 +196,6 @@
     </main>
 
     <script src="/shared/gamecenter.js"></script>
-    <script src="game.js?v=29"></script>
+    <script src="game.js?v=33"></script>
   </body>
 </html>

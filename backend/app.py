@@ -78,6 +78,16 @@ def hub():
     return FileResponse(REPO / "index.html")
 
 
+@app.get("/version.json")
+def version():
+    # App version badge source. no-cache so the latest version always shows.
+    return FileResponse(
+        REPO / "version.json",
+        media_type="application/json",
+        headers={"Cache-Control": "no-cache"},
+    )
+
+
 @app.get("/sw.js")
 def service_worker():
     # Served from root so its scope covers the whole origin.

@@ -13,6 +13,14 @@ from .. import auth, config
 from ._common import public_user, get_game_or_404
 
 
+def _game_matches(achievement_game: str, slug: str) -> bool:
+    """An achievement applies when it's global ('') or its game is the submitted
+    slug or a sub-mode of it (e.g. 'lavender-leap' covers 'lavender-leap-time')."""
+    if not achievement_game:
+        return True
+    return slug == achievement_game or slug.startswith(achievement_game + "-")
+
+
 def evaluate_achievements(db: OrmSession, user: User, game_slug: str, score: int) -> list[dict]:
     """Auto-unlock any newly earned achievements. Server-side, so every game gets
     achievements for free just by submitting scores."""
@@ -21,7 +29,7 @@ def evaluate_achievements(db: OrmSession, user: User, game_slug: str, score: int
     for a in db.query(Achievement).all():
         if a.key in have:
             continue
-        if a.game and a.game != game_slug:
+        if not _game_matches(a.game, game_slug):
             continue
         met = (a.metric == "score" and score >= a.threshold) or \
               (a.metric == "coins" and user.coins >= a.threshold)

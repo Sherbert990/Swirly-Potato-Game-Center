@@ -52,6 +52,18 @@ const reviveScreen = document.querySelector("#revive");
 const reviveCountEl = document.querySelector("#reviveCount");
 const reviveUseBtn = document.querySelector("#reviveUse");
 const reviveDeclineBtn = document.querySelector("#reviveDecline");
+const saveLevelBtn = document.querySelector("#saveLevel");
+const showNameToggle = document.querySelector("#showName");
+const leaderboardScreen = document.querySelector("#leaderboard");
+const lbBoard = document.querySelector("#lbBoard");
+const lbScope = document.querySelector("#lbScope");
+const lbList = document.querySelector("#lbList");
+const lbMsg = document.querySelector("#lbMsg");
+const lbBackBtn = document.querySelector("#lbBack");
+const lbResumeBtn = document.querySelector("#lbResume");
+const modesLeaderboardBtn = document.querySelector("#modesLeaderboard");
+const resultsLeaderboardBtn = document.querySelector("#resultsLeaderboard");
+const storeSectionSeg = document.querySelector("#storeSection");
 
 const MODE_LABELS = {
   freeplay: "Freeplay",
@@ -66,6 +78,7 @@ const FREE_SKINS = [0, 1, 2, 3];
 const SKIN_PRICES = { 4: 20, 5: 25, 6: 30, 7: 35, 8: 40 };
 const LIFE_PRICE = 15;
 const BOOST_PRICE = 15;
+const DOUBLE_JUMP_PRICE = 60;  // matches store_items seed
 
 let playerName = "Hero";
 let selectedAvatar = 0;
@@ -93,6 +106,7 @@ const world = {
   frameMs: 1000 / 40,
   mode: "freeplay",
   levelsPassed: 0,
+  hardBest: 1,   // highest level reached this Hard Mode session (for the hard board)
   timeLeft: TIME_TRIAL_SECONDS,
   touchDir: 0,   // -1/0/1 from the on-screen joystick (added to keyboard input)
 };
@@ -108,6 +122,7 @@ const player = {
   grounded: false,
   coyote: 0,
   ride: null,   // platform currently standing on (to ride its vertical movement)
+  canDoubleJump: false,  // one mid-air jump per airtime, only with the Double Jump Pass
 };
 
 let platforms = [];
@@ -336,6 +351,7 @@ function reset() {
     world.levelsPassed = 0;
     world.timeLeft = TIME_TRIAL_SECONDS;
   }
+  if (world.mode === "hard") world.hardBest = 1;
   startLevel(0);
 }
 
@@ -346,6 +362,7 @@ function formatTime(seconds) {
 
 function startLevel(index, restarting = false) {
   world.level = index;
+  if (world.mode === "hard") world.hardBest = Math.max(world.hardBest, index + 1);
   if (!restarting) world.levelStartScore = world.score;
   world.levelWidth = levels[index].width;
   world.meters = 0;
@@ -401,6 +418,11 @@ function jump() {
     player.grounded = false;
     player.coyote = 0;
     burst(player.x + player.w / 2, player.y + player.h, "#ffffff", 5);
+  } else if (player.canDoubleJump) {
+    // Double Jump Pass: one extra jump while airborne.
+    player.vy = -560;
+    player.canDoubleJump = false;
+    burst(player.x + player.w / 2, player.y + player.h, "#5ef2ff", 7);
   }
 }
 
@@ -490,6 +512,7 @@ function resolveVertical() {
       player.coyote = 0.1;
       player.ride = platform;        // remember it so we ride its vertical movement next frame
       player.x += platform.dx || 0;  // carry horizontal delta so the player sticks
+      player.canDoubleJump = ownsDoubleJump();  // refresh the air-jump on every landing
     } else if (player.vy < 0) {
       player.y = platform.y + platform.h;
       player.vy = 0;
@@ -536,7 +559,7 @@ function declineRevive() {
 }
 
 function restartFromLevelOne() {
-  commitRun();  // run is ending — flush collected coins to the wallet
+  commitRun(true);  // run is ending — flush coins + record the Hard Mode best reached
   world.score = 0;
   world.level = 0;
   world.levelStartScore = 0;
@@ -1133,13 +1156,31 @@ function applyUser(u) {
   updateCoinHud();
 }
 
-async function commitRun() {
-  if (!gc || runCoins <= 0) return;
+// Each mode reports to its own leaderboard with its own score:
+//   timetrial -> levels cleared, hard -> highest level reached, freeplay -> world score.
+function runSlugAndScore() {
+  if (world.mode === "timetrial") return { slug: "lavender-leap-time", score: world.levelsPassed };
+  if (world.mode === "hard") return { slug: "lavender-leap-hard", score: world.hardBest };
+  return { slug: LL_GAME, score: world.score | 0 };
+}
+
+// Flush this run to the server: credits collected coins AND records the score on the
+// mode's leaderboard. One submit per boundary (the server rate-limits rapid posts).
+// Pass force=true to record a score even when no coins were collected.
+async function commitRun(force = false) {
+  if (!gc) return;
+  if (runCoins <= 0 && !force) return;
+  const { slug, score } = runSlugAndScore();
   const coins = runCoins; runCoins = 0;
-  const r = await GameCenter.submitScore(LL_GAME, world.score | 0, coins);
+  const r = await GameCenter.submitScore(slug, score | 0, coins);
   if (r.ok && r.data && r.data.wallet) applyUser(r.data.wallet);
   else runCoins += coins;  // submit failed — keep the coins for the next boundary
   updateCoinHud();
+  return r;
+}
+
+function ownsDoubleJump() {
+  return !!(gc && gc.items && gc.items.double_jump > 0);
 }
 
 // Legacy local-profile helpers are no longer used (login is the shared account).
@@ -1209,7 +1250,7 @@ function flashBanner(message) {
   toastTimer = setTimeout(() => toastEl.classList.add("hidden"), 2200);
 }
 
-function makeStoreItem({ title, desc, price, thumb, state, onAction, actionLabel }) {
+function makeStoreItem({ title, desc, price, thumb, state, onAction, actionLabel, doneLabel }) {
   const card = document.createElement("div");
   card.className = "store-item";
   if (thumb) {
@@ -1229,7 +1270,7 @@ function makeStoreItem({ title, desc, price, thumb, state, onAction, actionLabel
   btn.type = "button";
   btn.className = "store-buy";
   if (state === "equipped") {
-    btn.textContent = "Equipped";
+    btn.textContent = doneLabel || "Equipped";
     btn.disabled = true;
   } else if (state === "owned") {
     btn.textContent = actionLabel || "Equip";
@@ -1251,6 +1292,17 @@ async function buyConsumable(kind, price, label) {
     storeMsg.textContent = `Bought ${label}!`;
     renderStore();
     renderProfilePowerups();
+  } else {
+    storeMsg.textContent = r.error || "Not enough coins for that yet.";
+  }
+}
+
+async function buyDoubleJump() {
+  const r = await GameCenter.buy("item", "double_jump");
+  if (r.ok) {
+    applyUser(r.data);
+    storeMsg.textContent = "Double Jump Pass unlocked! Tap JUMP again in mid-air.";
+    renderStore();
   } else {
     storeMsg.textContent = r.error || "Not enough coins for that yet.";
   }
@@ -1298,6 +1350,15 @@ function renderStore() {
     price: BOOST_PRICE,
     onAction: () => buyConsumable("boosts", BOOST_PRICE, "a time boost"),
   }));
+  const ownsDJ = ownsDoubleJump();
+  storePowerups.appendChild(makeStoreItem({
+    title: "Double Jump Pass",
+    desc: ownsDJ ? "Tap JUMP again in mid-air for a second leap." : "Unlock a mid-air second jump. One-time, permanent.",
+    price: DOUBLE_JUMP_PRICE,
+    state: ownsDJ ? "equipped" : "buy",
+    doneLabel: "Owned",
+    onAction: ownsDJ ? null : () => buyDoubleJump(),
+  }));
 
   storeSkins.innerHTML = "";
   Object.keys(SKIN_PRICES).forEach((key) => {
@@ -1316,6 +1377,12 @@ function renderStore() {
   });
 }
 
+function setStoreSection(section) {
+  storePowerups.classList.toggle("hidden", section !== "powerups");
+  storeSkins.classList.toggle("hidden", section !== "skins");
+  storeSectionSeg.querySelectorAll(".seg-btn").forEach((b) => b.classList.toggle("active", b.dataset.section === section));
+}
+
 function openStore() {
   // Only offer "resume" when the store was opened from inside a live game.
   const cameFromGame = world.running;
@@ -1323,6 +1390,7 @@ function openStore() {
   storeMsg.textContent = "";
   storeResumeBtn.style.display = cameFromGame ? "" : "none";
   renderStore();
+  setStoreSection("powerups");
   showScreen(storeScreen);
 }
 
@@ -1340,6 +1408,54 @@ function syncAvatarSelection() {
   });
 }
 
+// ===== Leaderboards (server-backed: Time Trial + Hard Mode, personal + global) =====
+const lbState = { board: "time", scope: "global", fromGame: false };
+
+function openLeaderboard(board) {
+  lbState.fromGame = world.running;  // capture before stopLoop clears it
+  stopLoop();
+  if (board) lbState.board = board;
+  lbResumeBtn.style.display = lbState.fromGame ? "" : "none";
+  syncLbSegs();
+  showScreen(leaderboardScreen);
+  renderLeaderboard();
+}
+
+function syncLbSegs() {
+  lbBoard.querySelectorAll(".seg-btn").forEach((b) => b.classList.toggle("active", b.dataset.board === lbState.board));
+  lbScope.querySelectorAll(".seg-btn").forEach((b) => b.classList.toggle("active", b.dataset.scope === lbState.scope));
+}
+
+function fmtLevel(val) {
+  return lbState.board === "hard" ? `level ${val}` : `${val} level${val === 1 ? "" : "s"}`;
+}
+
+async function renderLeaderboard() {
+  const slug = lbState.board === "hard" ? "lavender-leap-hard" : "lavender-leap-time";
+  lbMsg.textContent = "Loading…";
+  lbList.innerHTML = "";
+  const r = await GameCenter.leaderboard(slug, lbState.scope);
+  if (!r.ok) { lbMsg.textContent = r.error || "Could not load the leaderboard."; return; }
+  const rows = r.data || [];
+  if (!rows.length) {
+    lbMsg.textContent = lbState.scope === "personal"
+      ? "No runs yet — play to set a score!"
+      : "No scores yet. Be the first!";
+    return;
+  }
+  lbMsg.textContent = "";
+  rows.forEach((row, i) => {
+    const li = document.createElement("li");
+    if (lbState.scope === "global") {
+      li.textContent = `#${i + 1} · ${row.username || "Player"} — ${fmtLevel(row.score)}`;
+    } else {
+      const when = row.date ? new Date(row.date).toLocaleDateString() : "";
+      li.textContent = `${fmtLevel(row.score)}${when ? ` · ${when}` : ""}`;
+    }
+    lbList.appendChild(li);
+  });
+}
+
 function stopLoop() {
   world.running = false;
   if (world.loopId) {
@@ -1349,21 +1465,34 @@ function stopLoop() {
 }
 
 function showScreen(target) {
-  [welcomeScreen, signinScreen, createScreen, startupOverlay, modesScreen, resultsScreen, storeScreen, reviveScreen].forEach((screen) => {
+  [welcomeScreen, signinScreen, createScreen, startupOverlay, modesScreen, resultsScreen, storeScreen, reviveScreen, leaderboardScreen].forEach((screen) => {
     screen.classList.add("hidden");
   });
   if (target) target.classList.remove("hidden");
 }
 
 function showModes() {
+  const cameFromGame = world.running;  // capture before stopLoop clears it
   stopLoop();
   commitRun();  // flush coins collected this run to the wallet
   modesGreeting.textContent = `Hi ${currentUser || "hero"}! Pick a mode`;
+  // Offer "Back to game" only when a live run was paused to reach this screen.
+  document.querySelector("#modesBack").style.display = cameFromGame ? "" : "none";
   showScreen(modesScreen);
 }
 
 function configureControls() {
   warpEl.style.display = world.mode === "freeplay" ? "" : "none";
+  saveLevelBtn.style.display = world.mode === "hard" ? "" : "none";
+}
+
+async function saveHardLevel() {
+  if (world.mode !== "hard") return;
+  const lvl = world.hardBest;
+  const r = await commitRun(true);  // records hardBest on the Hard Mode board + flushes coins
+  if (r && r.ok) flashBanner(`Saved level ${lvl} to the Hard Mode board!`);
+  else if (r && r.status === 429) flashBanner("Saving too fast — try again in a moment.");
+  else flashBanner((r && r.error) || "Could not save right now.");
 }
 
 function startMode(mode) {
@@ -1422,7 +1551,7 @@ function renderResults(latest, runs) {
 
 function endTimeTrial() {
   stopLoop();
-  commitRun();  // flush coins collected this run to the wallet
+  commitRun(true);  // flush coins + record levels cleared on the Time Trial board
   startBtn.textContent = "Start";
   const all = loadTrialRuns();
   const list = all[currentUser] || [];
@@ -1480,7 +1609,7 @@ function handleCreate() {
 
 async function startGameFromMenu() {
   const name = (nameInput.value || "").trim().slice(0, 32) || currentUser;
-  const r = await GameCenter.setProfile({ username: name, avatar: LL_KEYS[selectedAvatar] });
+  const r = await GameCenter.setProfile({ username: name, avatar: LL_KEYS[selectedAvatar], showName: showNameToggle.checked });
   if (!r.ok) { flashBanner(r.error || "Could not save profile"); return; }
   applyUser(r.data);
   currentUser = r.data.username;
@@ -1498,6 +1627,7 @@ function editProfile() {
   editingProfile = true;
   editingOldName = currentUser;
   nameInput.value = currentUser;
+  showNameToggle.checked = gc ? gc.showName !== false : true;
   document.querySelector("#profileResume").style.display = profileCameFromGame ? "" : "none";
   buildAvatarPicker();
   renderProfilePowerups();
@@ -1507,7 +1637,7 @@ function editProfile() {
 async function profileBackToGame() {
   // Apply any name/avatar change, then resume the run that was in progress.
   const name = (nameInput.value || "").trim().slice(0, 32) || currentUser;
-  const r = await GameCenter.setProfile({ username: name, avatar: LL_KEYS[selectedAvatar] });
+  const r = await GameCenter.setProfile({ username: name, avatar: LL_KEYS[selectedAvatar], showName: showNameToggle.checked });
   if (r.ok) { applyUser(r.data); currentUser = r.data.username; playerName = currentUser; }
   editingProfile = false; editingOldName = "";
   resumeGame();
@@ -1561,6 +1691,19 @@ storeBackBtn.addEventListener("click", showModes);
 storeResumeBtn.addEventListener("click", resumeGame);
 reviveUseBtn.addEventListener("click", useRevive);
 reviveDeclineBtn.addEventListener("click", declineRevive);
+saveLevelBtn.addEventListener("click", saveHardLevel);
+modesLeaderboardBtn.addEventListener("click", () => openLeaderboard());
+document.querySelector("#modesBack").addEventListener("click", resumeGame);
+resultsLeaderboardBtn.addEventListener("click", () => openLeaderboard("time"));
+lbBackBtn.addEventListener("click", showModes);
+lbResumeBtn.addEventListener("click", resumeGame);
+lbBoard.querySelectorAll(".seg-btn").forEach((b) => b.addEventListener("click", () => {
+  lbState.board = b.dataset.board; syncLbSegs(); renderLeaderboard();
+}));
+lbScope.querySelectorAll(".seg-btn").forEach((b) => b.addEventListener("click", () => {
+  lbState.scope = b.dataset.scope; syncLbSegs(); renderLeaderboard();
+}));
+storeSectionSeg.querySelectorAll(".seg-btn").forEach((b) => b.addEventListener("click", () => setStoreSection(b.dataset.section)));
 
 startBtn.addEventListener("click", reset);
 goBtn.addEventListener("click", warpToLevel);
@@ -1588,9 +1731,14 @@ const joyBase = document.querySelector("#joyBase");
 const joyKnob = document.querySelector("#joyKnob");
 const jumpBtn = document.querySelector("#jumpBtn");
 
-if (matchMedia("(pointer: coarse)").matches || "ontouchstart" in window) {
-  touchUI.classList.remove("hidden");
+function applyTouchSetting() {
+  const on = (window.GameCenter && GameCenter.settings)
+    ? GameCenter.settings.touchControls()
+    : (matchMedia("(pointer: coarse)").matches || "ontouchstart" in window);
+  touchUI.classList.toggle("hidden", !on);
 }
+applyTouchSetting();
+window.addEventListener("gc:settings", applyTouchSetting);
 
 const JOY_RADIUS = 46;   // how far the knob can travel from its center
 const JOY_DEAD = 10;     // ignore tiny wobbles so standing still is easy
@@ -1660,9 +1808,10 @@ draw();
 window.addEventListener("pagehide", () => {
   if (gc && runCoins > 0) {
     try {
+      const { slug, score } = runSlugAndScore();
       navigator.sendBeacon(
         "/api/score",
-        new Blob([JSON.stringify({ game: LL_GAME, score: world.score | 0, coins: runCoins })],
+        new Blob([JSON.stringify({ game: slug, score: score | 0, coins: runCoins })],
                  { type: "application/json" })
       );
     } catch (e) {}

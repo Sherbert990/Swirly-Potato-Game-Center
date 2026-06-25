@@ -128,6 +128,7 @@ canvas { display: block; width: 100%; height: 100%; background: #1a0b2e; }
     <div class="balance" id="startBalance">★ 0 stars</div>
     <p style="font-size:15px;color:#7d2ae8">Arrow keys / WASD to move &amp; jump</p>
     <label class="toggleRow" id="hsRow"><input type="checkbox" id="useHeadStart"><span>Use Head Start (+50m) — <b id="hsCount">0</b> owned</span></label>
+    <label class="toggleRow" id="rkRow"><input type="checkbox" id="useRocket"><span>Use Rocket Booster (+100m) — <b id="rkCount">0</b> owned</span></label>
     <label class="toggleRow" id="dbRow"><input type="checkbox" id="useDoubler"><span>Use Star Doubler (2× stars) — <b id="dbCount">0</b> owned</span></label>
     <button class="gBtn" id="startBtn">Play</button>
     <div class="topBtns">
@@ -140,11 +141,19 @@ canvas { display: block; width: 100%; height: 100%; background: #1a0b2e; }
   <div id="storeScreen" style="display:none">
     <h1>Store</h1>
     <div class="balance" id="storeBalance">★ 0 stars</div>
-    <div class="storeSection">Power-ups</div>
-    <div id="storeItems"></div>
-    <div class="storeSection">Premium climbers</div>
-    <div id="storeAvatars"></div>
+    <div id="storePowerSection">
+      <div class="storeSection">Power-ups</div>
+      <div id="storeItems"></div>
+    </div>
+    <div id="storeSkinSection" style="display:none">
+      <div class="storeSection">Premium climbers</div>
+      <div id="storeAvatars"></div>
+    </div>
     <div class="authErr" id="storeErr"></div>
+    <div class="lbTabs" id="storeSeg">
+      <button class="lbTab sel" type="button" data-section="power">Power-ups</button>
+      <button class="lbTab" type="button" data-section="skins">Skins</button>
+    </div>
     <button class="gBtn secondary" id="storeBack">Back</button>
   </div>
   <div id="leaderboardScreen" style="display:none">
@@ -179,7 +188,11 @@ canvas { display: block; width: 100%; height: 100%; background: #1a0b2e; }
 <script>
 const canvas = document.getElementById('gameCanvas');
 const ctx = canvas.getContext('2d');
-let W = window.innerWidth, H = window.innerHeight;
+// W/H = play-area size (W is capped so platforms stay reachable). CANVAS_W = full
+// window width so the color background spans the whole screen; OX centers the play
+// column inside it.
+let W = window.innerWidth, H = window.innerHeight, CANVAS_W = W, OX = 0;
+const MAX_PLAY_W = 700;
 const GRAVITY = 0.45, JUMP = -10.5, SPEED = 4;
 const GAP = 78, ZONE_PX = 1000; // change vibe every 100 m (10 px = 1 m)
 const CRUMBLE_FRAMES = 42; // frames a crumbling platform lasts after first touch
@@ -335,9 +348,13 @@ function resize() {
   // Fall back through every size source so W/H are never 0 — some hosts
   // (embedded views, pre-layout loads) report a 0-size viewport, which would
   // spawn the player off-screen at the far-left edge and break platform layout.
-  W = window.innerWidth || document.documentElement.clientWidth || canvas.clientWidth || 680;
+  CANVAS_W = window.innerWidth || document.documentElement.clientWidth || canvas.clientWidth || 680;
   H = window.innerHeight || document.documentElement.clientHeight || canvas.clientHeight || 420;
-  canvas.width = W;
+  // Canvas fills the whole screen (so the color background spans edge-to-edge),
+  // but the play column is capped and centered so platforms stay reachable.
+  W = Math.min(CANVAS_W, MAX_PLAY_W);
+  OX = Math.round((CANVAS_W - W) / 2);
+  canvas.width = CANVAS_W;
   canvas.height = H;
   // If a run hasn't started moving yet, re-center the idle player on the
   // starting platform so a late-arriving real viewport size still plays right.
@@ -374,7 +391,7 @@ function ensurePlatforms() {
 }
 
 function initGame(opts = {}) {
-  const heightBonus = opts.headStart ? 50 : 0;
+  const heightBonus = (opts.headStart ? 50 : 0) + (opts.rocket ? 100 : 0);
   game = {
     player: { x: W/2-14, y: H-96, w: 28, h: 36, vx: 0, vy: 0, onGround: false, jumpsLeft: 2 },
     platforms: [], coins: [], cameraY: 0, maxHeight: heightBonus, score: heightBonus, coinCount: 0, alive: true,
@@ -512,18 +529,23 @@ function zoneBg() {
 }
 
 function draw() {
-  ctx.clearRect(0, 0, W, H);
+  // Background + stars fill the whole canvas (full screen width).
+  ctx.clearRect(0, 0, CANVAS_W, H);
   const bg = zoneBg();
   const grad = ctx.createLinearGradient(0, 0, 0, H);
   grad.addColorStop(0, bg.top); grad.addColorStop(1, bg.bottom);
-  ctx.fillStyle = grad; ctx.fillRect(0, 0, W, H);
+  ctx.fillStyle = grad; ctx.fillRect(0, 0, CANVAS_W, H);
 
-  for (let i = 0; i < 80; i++) {
-    const sx = (i * 137 + 23) % W;
+  for (let i = 0; i < 110; i++) {
+    const sx = (i * 137 + 23) % CANVAS_W;
     const sy = ((i * 97 + 11 + Math.floor(game.cameraY * 0.05)) % H + H) % H;
     ctx.fillStyle = `rgba(255,255,255,${0.15 + (i%4)*0.12})`;
     ctx.fillRect(sx, sy, i%5===0?2:1, i%5===0?2:1);
   }
+
+  // Gameplay (platforms, coins, player) is drawn inside the centered play column.
+  ctx.save();
+  ctx.translate(OX, 0);
 
   for (const pl of game.platforms) {
     const py = pl.y - game.cameraY;
@@ -582,6 +604,8 @@ function draw() {
     ctx.fillStyle = '#2de2e6';
     ctx.fillText(name, lx, ly + 1);
   }
+
+  ctx.restore();
 }
 
 function loop() {
@@ -644,6 +668,7 @@ function userFromServer(u) {
     stars: u.coins || 0,
     revives: items.revive || 0,
     headStarts: items.headstart || 0,
+    rockets: items.rocket_booster || 0,
     doublers: items.doubler || 0,
     showName: u.showName !== false,
   };
@@ -708,14 +733,17 @@ function enterStartScreen() {
 function refreshStartScreen() {
   const u = currentUser || {};
   document.getElementById('startBalance').textContent = `★ ${u.stars || 0} stars`;
-  const hs = u.headStarts || 0, db = u.doublers || 0;
+  const hs = u.headStarts || 0, db = u.doublers || 0, rk = u.rockets || 0;
   document.getElementById('hsCount').textContent = hs;
   document.getElementById('dbCount').textContent = db;
-  const hsBox = document.getElementById('useHeadStart'), dbBox = document.getElementById('useDoubler');
+  document.getElementById('rkCount').textContent = rk;
+  const hsBox = document.getElementById('useHeadStart'), dbBox = document.getElementById('useDoubler'), rkBox = document.getElementById('useRocket');
   hsBox.disabled = hs === 0; if (hs === 0) hsBox.checked = false;
   dbBox.disabled = db === 0; if (db === 0) dbBox.checked = false;
+  rkBox.disabled = rk === 0; if (rk === 0) rkBox.checked = false;
   document.getElementById('hsRow').classList.toggle('off', hs === 0);
   document.getElementById('dbRow').classList.toggle('off', db === 0);
+  document.getElementById('rkRow').classList.toggle('off', rk === 0);
 }
 
 // ---- Auth screen ----
@@ -802,10 +830,12 @@ document.getElementById('lbBack').onclick = () => enterStartScreen();
 document.getElementById('startBtn').onclick = async () => {
   const u = currentUser || {};
   const useHs = document.getElementById('useHeadStart').checked && (u.headStarts || 0) > 0;
+  const useRk = document.getElementById('useRocket').checked && (u.rockets || 0) > 0;
   const useDb = document.getElementById('useDoubler').checked && (u.doublers || 0) > 0;
   if (useHs) { const r = await api('/api/use', { item: 'headstart' }); if (r.ok) currentUser = r.data; }
+  if (useRk) { const r = await api('/api/use', { item: 'rocket_booster' }); if (r.ok) currentUser = r.data; }
   if (useDb) { const r = await api('/api/use', { item: 'doubler' }); if (r.ok) currentUser = r.data; }
-  initGame({ headStart: useHs, doubler: useDb });
+  initGame({ headStart: useHs, rocket: useRk, doubler: useDb });
   showScreen('');
 };
 document.getElementById('restartBtn').onclick = () => enterStartScreen();
@@ -822,6 +852,7 @@ document.getElementById('reviveBtn').onclick = async () => {
 const STORE_ITEMS = [
   { item: 'revive', name: 'Revive', price: 25, desc: 'Get back up after a fall', key: 'revives' },
   { item: 'headstart', name: 'Head Start', price: 15, desc: 'Begin a run +50m up', key: 'headStarts' },
+  { item: 'rocket_booster', name: 'Rocket Booster', price: 20, desc: 'Begin a run +100m up', key: 'rockets' },
   { item: 'doubler', name: 'Star Doubler', price: 20, desc: '2× stars for one run', key: 'doublers' },
 ];
 const PREMIUM_PRICES = { 10: 60, 11: 80, 12: 100, 13: 120 };
@@ -829,9 +860,17 @@ const PREMIUM_PRICES = { 10: 60, 11: 80, 12: 100, 13: 120 };
 document.getElementById('storeBtn').onclick = () => { openStore(); };
 document.getElementById('storeBack').onclick = () => enterStartScreen();
 
+function setStoreSection(section) {
+  document.getElementById('storePowerSection').style.display = section === 'power' ? '' : 'none';
+  document.getElementById('storeSkinSection').style.display = section === 'skins' ? '' : 'none';
+  document.querySelectorAll('#storeSeg .lbTab').forEach(b => b.classList.toggle('sel', b.dataset.section === section));
+}
+document.querySelectorAll('#storeSeg .lbTab').forEach(b => b.onclick = () => setStoreSection(b.dataset.section));
+
 function openStore() {
   document.getElementById('storeErr').textContent = '';
   renderStore();
+  setStoreSection('power');
   showScreen('storeScreen');
 }
 
@@ -918,7 +957,14 @@ const joyBase = document.getElementById('joyBase');
 const joyKnob = document.getElementById('joyKnob');
 const jumpPad = document.getElementById('jumpPad');
 
-if (matchMedia('(pointer: coarse)').matches || 'ontouchstart' in window) touchUI.style.display = 'block';
+function applyTouchSetting() {
+  const on = (window.GameCenter && GameCenter.settings)
+    ? GameCenter.settings.touchControls()
+    : (matchMedia('(pointer: coarse)').matches || 'ontouchstart' in window);
+  touchUI.style.display = on ? 'block' : 'none';
+}
+applyTouchSetting();
+window.addEventListener('gc:settings', applyTouchSetting);
 
 const JOY_R = 46, JOY_DEAD = 10;  // travel radius and standstill deadzone
 let joyId = null, joyOX = 0, joyOY = 0;
