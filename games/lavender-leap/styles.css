@@ -109,6 +109,11 @@ h1 {
 .stage {
   position: relative;
   touch-action: none;
+  /* Cap by viewport height too (48/31 ≈ 1.548), so on short/landscape screens
+     like an iPad the canvas shrinks to fit instead of overflowing. */
+  width: 100%;
+  max-width: calc((100vh - 210px) * 1.548);
+  margin: 0 auto;
 }
 
 canvas {

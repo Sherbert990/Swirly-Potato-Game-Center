@@ -1,6 +1,6 @@
 /* The Stickmen Hub service worker — installable + offline app shell.
  * Bump CACHE on any shell change so old caches purge. */
-const CACHE = 'stickmen-v13';
+const CACHE = 'stickmen-v14';
 const SHELL = [
   '/', '/manifest.webmanifest',
   '/shared/gamecenter.js',

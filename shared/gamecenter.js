@@ -178,6 +178,105 @@
       'box-shadow:0 2px 8px rgba(0,0,0,.25)';
     document.body.appendChild(a);
   }
+  // ===== Avatar art for store skin previews =====
+  // Self-contained renderers (ported from the games) so real skin art shows in the
+  // store on every page — including the hub, which doesn't load the game code.
+  const AV_DARK = '#1a1030';
+  function pathRoundRect(c, x, y, w, h, r) {
+    c.beginPath(); c.moveTo(x + r, y);
+    c.arcTo(x + w, y, x + w, y + h, r); c.arcTo(x + w, y + h, x, y + h, r);
+    c.arcTo(x, y + h, x, y, r); c.arcTo(x, y, x + w, y, r); c.closePath();
+  }
+  function dldHat(ctx, cx, cy, a) {
+    const c = a.hatColor || a.legs;
+    if (a.hat === 'cap') { ctx.fillStyle = c; ctx.beginPath(); ctx.arc(cx, cy - 4, 9, Math.PI, 0); ctx.fill(); ctx.fillRect(cx - 11, cy - 5, 22, 2.4); }
+    else if (a.hat === 'antenna') { ctx.strokeStyle = c; ctx.lineWidth = 2; ctx.lineCap = 'round'; ctx.beginPath(); ctx.moveTo(cx, cy - 10); ctx.lineTo(cx, cy - 16); ctx.stroke(); ctx.fillStyle = a.body; ctx.beginPath(); ctx.arc(cx, cy - 17, 2.6, 0, Math.PI * 2); ctx.fill(); }
+    else if (a.hat === 'bow') { ctx.fillStyle = c; ctx.beginPath(); ctx.moveTo(cx, cy - 10); ctx.lineTo(cx - 7, cy - 14); ctx.lineTo(cx - 7, cy - 6); ctx.closePath(); ctx.fill(); ctx.beginPath(); ctx.moveTo(cx, cy - 10); ctx.lineTo(cx + 7, cy - 14); ctx.lineTo(cx + 7, cy - 6); ctx.closePath(); ctx.fill(); ctx.beginPath(); ctx.arc(cx, cy - 10, 2.2, 0, Math.PI * 2); ctx.fill(); }
+    else if (a.hat === 'crown') { ctx.fillStyle = c; const cb = cy - 8, ct = cy - 16; ctx.beginPath(); ctx.moveTo(cx - 9, cb); ctx.lineTo(cx - 9, ct + 3); ctx.lineTo(cx - 4.5, cb - 2); ctx.lineTo(cx, ct); ctx.lineTo(cx + 4.5, cb - 2); ctx.lineTo(cx + 9, ct + 3); ctx.lineTo(cx + 9, cb); ctx.closePath(); ctx.fill(); }
+    else if (a.hat === 'headphones') { ctx.strokeStyle = c; ctx.lineWidth = 2.5; ctx.beginPath(); ctx.arc(cx, cy - 1, 11, Math.PI * 1.15, Math.PI * 1.85); ctx.stroke(); ctx.fillStyle = c; ctx.beginPath(); ctx.roundRect(cx - 13, cy - 3, 5, 8, 2); ctx.fill(); ctx.beginPath(); ctx.roundRect(cx + 8, cy - 3, 5, 8, 2); ctx.fill(); }
+  }
+  function dldAvatar(ctx, x, y, w, h, a) {
+    const cx = x + w / 2, cy = y + 10;
+    if (a.glow) { const g = ctx.createRadialGradient(cx, cy + 8, 2, cx, cy + 8, 26); g.addColorStop(0, a.glow); g.addColorStop(1, 'rgba(0,0,0,0)'); ctx.save(); ctx.globalAlpha = 0.55; ctx.fillStyle = g; ctx.beginPath(); ctx.arc(cx, cy + 8, 26, 0, Math.PI * 2); ctx.fill(); ctx.restore(); }
+    ctx.fillStyle = a.legs; ctx.fillRect(x + 3, y + 30, 10, 8); ctx.fillRect(x + w - 13, y + 30, 10, 8);
+    ctx.fillStyle = a.body; ctx.beginPath(); ctx.roundRect(x + 3, y + 18, w - 6, 14, 3); ctx.fill();
+    ctx.fillStyle = a.head; ctx.beginPath();
+    if (a.shape === 'square') ctx.roundRect(cx - 10, cy - 10, 20, 20, 5); else ctx.arc(cx, cy, 10, 0, Math.PI * 2);
+    ctx.fill();
+    dldHat(ctx, cx, cy, a);
+    const eyes = (oy) => { ctx.fillStyle = AV_DARK; ctx.beginPath(); ctx.arc(cx - 3.5, cy + oy, 1.8, 0, Math.PI * 2); ctx.fill(); ctx.beginPath(); ctx.arc(cx + 3.5, cy + oy, 1.8, 0, Math.PI * 2); ctx.fill(); };
+    const smile = (oy) => { ctx.strokeStyle = AV_DARK; ctx.lineWidth = 1.6; ctx.lineCap = 'round'; ctx.beginPath(); ctx.arc(cx, cy + oy, 3.6, 0.18 * Math.PI, 0.82 * Math.PI); ctx.stroke(); };
+    if (a.face === 'smile') { eyes(-1); smile(2); }
+    else if (a.face === 'eyes') { eyes(0); }
+    else if (a.face === 'visor') { ctx.fillStyle = 'rgba(20,12,40,0.85)'; ctx.beginPath(); ctx.roundRect(cx - 8, cy - 3, 16, 6, 3); ctx.fill(); ctx.fillStyle = 'rgba(255,255,255,0.55)'; ctx.fillRect(cx - 6, cy - 2, 4, 2); }
+  }
+  const SKIN_ART = {
+    'dld-nova': { type: 'dld', data: { head: '#fff7ad', body: '#ff8c00', legs: '#ff4d00', shape: 'round', face: 'smile', hat: 'crown', hatColor: '#fff700', glow: '#ffb700' } },
+    'dld-phantom': { type: 'dld', data: { head: '#1a1030', body: '#2b0a4a', legs: '#10001f', shape: 'square', face: 'eyes', hat: 'antenna', glow: '#b14dff' } },
+    'dld-aurora': { type: 'dld', data: { head: '#caffbf', body: '#2de2e6', legs: '#7d2ae8', shape: 'round', face: 'smile', hat: 'bow', hatColor: '#ff2e97', glow: '#2de2e6' } },
+    'dld-cosmo': { type: 'dld', data: { head: '#e0c3fc', body: '#8e2de2', legs: '#4a00e0', shape: 'square', face: 'visor', hat: 'headphones', hatColor: '#00f5d4', glow: '#f72585' } },
+    'll-star-cadet': { type: 'll', draw(c) {
+      c.fillStyle = '#7c3aed'; pathRoundRect(c, -17, -6, 8, 20, 3); c.fill();
+      const g = c.createLinearGradient(0, -4, 0, 22); g.addColorStop(0, '#f3ecff'); g.addColorStop(1, '#cdbcf2');
+      c.fillStyle = g; pathRoundRect(c, -13, -6, 28, 28, 10); c.fill();
+      c.strokeStyle = '#8b5cf6'; c.lineWidth = 2; pathRoundRect(c, -13, -6, 28, 28, 10); c.stroke();
+      c.fillStyle = '#241a40'; pathRoundRect(c, -7, 2, 16, 9, 3); c.fill();
+      c.fillStyle = '#48d6a3'; c.beginPath(); c.arc(-2, 6.5, 1.8, 0, 7); c.fill();
+      c.fillStyle = '#ffd166'; c.beginPath(); c.arc(4, 6.5, 1.8, 0, 7); c.fill();
+      c.fillStyle = '#b9a7e6'; c.beginPath(); c.arc(0, -14, 13, 0, 7); c.fill();
+      c.fillStyle = '#241a40'; c.beginPath(); c.arc(0, -14, 10, 0, 7); c.fill();
+      c.fillStyle = 'rgba(255,255,255,0.55)'; c.beginPath(); c.ellipse(-3, -17, 5, 7, -0.5, 0, 7); c.fill();
+      c.strokeStyle = '#8b5cf6'; c.lineWidth = 2.5; c.beginPath(); c.arc(0, -14, 13, 0, 7); c.stroke();
+    } },
+    'll-phantom-knight': { type: 'll', draw(c) {
+      c.fillStyle = '#5b21b6'; c.beginPath(); c.moveTo(-12, -14); c.lineTo(-26, 18); c.lineTo(-8, 14); c.fill();
+      const g = c.createLinearGradient(0, -22, 0, 22); g.addColorStop(0, '#4b3b73'); g.addColorStop(1, '#2a2046');
+      c.fillStyle = g; pathRoundRect(c, -16, -22, 32, 44, 10); c.fill();
+      c.fillStyle = '#9f88d6'; c.beginPath(); c.arc(-10, -16, 7, 0, 7); c.fill();
+      c.fillStyle = '#1a1430'; pathRoundRect(c, -12, -16, 24, 12, 4); c.fill();
+      c.save(); c.shadowColor = '#ff4d6d'; c.shadowBlur = 10; c.fillStyle = '#ff4d6d'; pathRoundRect(c, -2, -12, 12, 4, 2); c.fill(); c.restore();
+      c.fillStyle = '#ffd166'; c.beginPath(); c.moveTo(0, 2); c.lineTo(5, 8); c.lineTo(0, 14); c.lineTo(-5, 8); c.fill();
+    } },
+    'll-lava-golem': { type: 'll', draw(c) {
+      const g = c.createLinearGradient(0, -22, 0, 22); g.addColorStop(0, '#5a4a6e'); g.addColorStop(1, '#332a45');
+      c.fillStyle = g; c.beginPath(); c.moveTo(-17, -16); c.lineTo(-8, -22); c.lineTo(9, -20); c.lineTo(17, -10); c.lineTo(15, 16); c.lineTo(6, 22); c.lineTo(-9, 21); c.lineTo(-17, 12); c.closePath(); c.fill();
+      c.save(); c.shadowColor = '#ff7a18'; c.shadowBlur = 8; c.strokeStyle = '#ff7a18'; c.lineWidth = 2.2;
+      c.beginPath(); c.moveTo(-10, -10); c.lineTo(-3, 0); c.lineTo(-8, 8); c.stroke();
+      c.beginPath(); c.moveTo(6, -6); c.lineTo(2, 4); c.lineTo(9, 12); c.stroke(); c.restore();
+      c.save(); c.shadowColor = '#ffd166'; c.shadowBlur = 6; c.fillStyle = '#ffd166'; c.beginPath(); c.arc(2, -10, 2.4, 0, 7); c.arc(11, -10, 2.4, 0, 7); c.fill(); c.restore();
+    } },
+    'll-frost-sprite': { type: 'll', draw(c) {
+      c.save(); c.shadowColor = '#7fe6ff'; c.shadowBlur = 14;
+      const g = c.createLinearGradient(0, -22, 0, 22); g.addColorStop(0, '#dff7ff'); g.addColorStop(1, '#7fd4ff');
+      c.fillStyle = g; c.beginPath(); c.moveTo(0, -24); c.lineTo(15, -4); c.lineTo(8, 22); c.lineTo(-8, 22); c.lineTo(-15, -4); c.closePath(); c.fill(); c.restore();
+      c.strokeStyle = 'rgba(255,255,255,0.7)'; c.lineWidth = 1.4; c.beginPath(); c.moveTo(0, -24); c.lineTo(0, 22); c.moveTo(-15, -4); c.lineTo(15, -4); c.stroke();
+      c.fillStyle = '#2a4a66'; c.beginPath(); c.arc(2, -2, 2, 0, 7); c.arc(9, -2, 2, 0, 7); c.fill();
+      c.fillStyle = 'rgba(255,255,255,0.85)'; c.beginPath(); c.arc(-5, -8, 2.2, 0, 7); c.fill();
+    } },
+    'll-neon-bee': { type: 'll', draw(c) {
+      c.save(); c.shadowColor = '#7fe6ff'; c.shadowBlur = 8; c.fillStyle = 'rgba(180,240,255,0.75)';
+      c.beginPath(); c.ellipse(-6, -14, 9, 6, -0.5, 0, 7); c.fill(); c.beginPath(); c.ellipse(-14, -9, 7, 5, -0.3, 0, 7); c.fill(); c.restore();
+      c.strokeStyle = '#241a40'; c.lineWidth = 1.6; c.beginPath(); c.moveTo(8, -16); c.quadraticCurveTo(14, -26, 18, -24); c.stroke();
+      c.fillStyle = '#241a40'; c.beginPath(); c.arc(18, -24, 2, 0, 7); c.fill();
+      c.save(); pathRoundRect(c, -14, -16, 30, 38, 13); c.clip();
+      const g = c.createLinearGradient(0, -16, 0, 22); g.addColorStop(0, '#ffe06a'); g.addColorStop(1, '#ffc02e');
+      c.fillStyle = g; c.fillRect(-14, -16, 30, 38); c.fillStyle = '#241a40'; c.fillRect(-7, -16, 6, 38); c.fillRect(7, -16, 6, 38); c.restore();
+      c.save(); c.shadowColor = '#5ef2ff'; c.shadowBlur = 8; c.fillStyle = '#5ef2ff'; c.beginPath(); c.moveTo(-14, 16); c.lineTo(-22, 20); c.lineTo(-14, 22); c.fill(); c.restore();
+      c.fillStyle = '#241a40'; c.beginPath(); c.arc(10, -6, 2.4, 0, 7); c.fill();
+      c.fillStyle = '#fff'; c.beginPath(); c.arc(11, -7, 0.9, 0, 7); c.fill();
+    } },
+  };
+  function renderSkin(key, cv) {
+    const c = cv.getContext('2d');
+    c.clearRect(0, 0, cv.width, cv.height);
+    const art = SKIN_ART[key];
+    if (!art) return;
+    c.save();
+    if (art.type === 'll') { c.translate(cv.width / 2, cv.height / 2 + 1); c.scale(0.78, 0.78); art.draw(c); }
+    else { c.translate(cv.width / 2 - 14, 4); dldAvatar(c, 0, 0, 28, 36, art.data); }
+    c.restore();
+  }
+
   // ===== Shared store: one store, a tab per game (wallet is shared) =====
   // Opened from the hub or any game via GameCenter.openStore(gameSlug?). Buying
   // and equipping go through the same API every game already uses.
@@ -222,19 +321,22 @@
     if (storeEl) return storeEl;
     const wrap = document.createElement('div');
     wrap.id = 'gc-store';
-    wrap.style.cssText = 'position:fixed;inset:0;z-index:100000;display:none;align-items:center;' +
-      'justify-content:center;background:rgba(10,6,24,.6);font:600 14px/1.4 Nunito,system-ui,sans-serif';
+    // Full-screen overlay (great on iPad/phone); content is a centered column so it
+    // stays readable on wide desktop screens too.
+    wrap.style.cssText = 'position:fixed;inset:0;z-index:100000;display:none;' +
+      'background:#fff;font:600 14px/1.4 Nunito,system-ui,sans-serif;overflow:auto';
     wrap.innerHTML =
-      '<div role="dialog" aria-label="Store" style="background:#fff;color:#2a2440;width:360px;max-width:94vw;' +
-      'max-height:88vh;overflow:auto;border-radius:16px;padding:18px;box-shadow:0 14px 44px rgba(0,0,0,.4)">' +
+      '<div role="dialog" aria-label="Store" style="color:#2a2440;width:100%;min-height:100%;' +
+      'max-width:620px;margin:0 auto;padding:20px 18px calc(28px + env(safe-area-inset-bottom));' +
+      'display:flex;flex-direction:column;box-sizing:border-box">' +
         '<div style="display:flex;align-items:center;justify-content:space-between">' +
-          '<div style="font-size:18px;font-weight:800">Store</div>' +
-          '<div style="display:flex;align-items:center;gap:12px">' +
-            '<span data-coins style="font-weight:800;color:#a36b00">★ 0</span>' +
-            '<button data-close aria-label="Close" style="border:none;background:none;font-size:20px;cursor:pointer;color:#9a93ad">✕</button>' +
+          '<div style="font-size:24px;font-weight:800">Store</div>' +
+          '<div style="display:flex;align-items:center;gap:14px">' +
+            '<span data-coins style="font-weight:800;font-size:16px;color:#a36b00">★ 0</span>' +
+            '<button data-close aria-label="Close" style="border:none;background:#f1ecfb;border-radius:10px;width:38px;height:38px;font-size:20px;cursor:pointer;color:#6a5d86">✕</button>' +
           '</div>' +
         '</div>' +
-        '<div data-tabs style="display:flex;gap:8px;margin:12px 0"></div>' +
+        '<div data-tabs style="display:flex;gap:8px;margin:16px 0"></div>' +
         '<div data-msg style="min-height:16px;color:#7d2ae8;font-weight:700;font-size:12px;margin-bottom:6px"></div>' +
         '<div data-body></div>' +
       '</div>';
@@ -247,9 +349,9 @@
   function storeMsg(t) { const m = storeEl && storeEl.querySelector('[data-msg]'); if (m) m.textContent = t || ''; }
 
   function rowHtml(opts) {
-    // opts: swatch?, title, sub, btnLabel, btnAttr, disabled, done
-    const sw = opts.swatch
-      ? '<span style="flex:none;width:30px;height:30px;border-radius:8px;background:' + opts.swatch + ';border:2px solid rgba(0,0,0,.12)"></span>'
+    // opts: skinKey?, title, sub, btnLabel, btnAttr, disabled, done
+    const sw = opts.skinKey
+      ? '<canvas data-skin="' + opts.skinKey + '" width="44" height="48" style="flex:none;width:44px;height:48px;border-radius:9px;background:#f1ecfb;border:2px solid rgba(0,0,0,.08)"></canvas>'
       : '';
     const btn = opts.done
       ? '<span style="flex:none;color:#1d9e75;font-weight:800;font-size:13px">' + escapeHtml(opts.btnLabel) + '</span>'
@@ -296,7 +398,7 @@
       const isOwned = owned.indexOf(sk.key) >= 0;
       const equipped = storeUser.avatarKey === sk.key;
       html += rowHtml({
-        swatch: sk.color,
+        skinKey: sk.key,
         title: sk.name,
         sub: equipped ? 'Currently worn' : isOwned ? 'Unlocked' : 'Premium skin',
         btnLabel: equipped ? 'Equipped' : isOwned ? 'Equip' : '★ ' + sk.price,
@@ -306,6 +408,7 @@
       });
     });
     body.innerHTML = html;
+    body.querySelectorAll('canvas[data-skin]').forEach((cv) => renderSkin(cv.getAttribute('data-skin'), cv));
   }
 
   function finishTxn(r, okMsg) {
