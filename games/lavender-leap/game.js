@@ -361,6 +361,7 @@ function formatTime(seconds) {
 }
 
 function startLevel(index, restarting = false) {
+  document.querySelector("#gameShell").style.visibility = "visible";  // reveal the game (hidden until first play to avoid a boot flash)
   world.level = index;
   if (world.mode === "hard") world.hardBest = Math.max(world.hardBest, index + 1);
   if (!restarting) world.levelStartScore = world.score;

@@ -282,7 +282,7 @@ $('settingsBtn').onclick = () => GameCenter.openSettings();
 $('storeBtn').onclick = () => GameCenter.openStore();   // defaults to last-opened game tab
 // Keep the hub coin count in sync when the player buys something in the store.
 window.addEventListener('gc:wallet', (e) => { if (e.detail) $('coins').textContent = e.detail.coins ?? 0; });
-$('lbBtn').onclick = () => toast('Each game has its own leaderboards — jump in!');
+$('lbBtn').onclick = () => GameCenter.openLeaderboards();
 
 // ---- version badge ----
 fetch('/version.json', {cache:'no-store'})

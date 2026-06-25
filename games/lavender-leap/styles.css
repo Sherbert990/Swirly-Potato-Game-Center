@@ -799,3 +799,39 @@ button:active {
   cursor: pointer;
 }
 .lb-optin input { width: 16px; height: 16px; accent-color: var(--purple); cursor: pointer; }
+
+/* ===== Dark mode: darken the purple surroundings (chrome only; the level art
+   inside the canvas is unchanged). Driven by the shared Settings theme, which
+   sets data-theme on <body>. ===== */
+body[data-theme="dark"] {
+  --ink: #ece6ff;
+  --muted: #b7a9dc;
+  --panel: rgba(38, 26, 62, 0.86);
+  --line: rgba(150, 120, 215, 0.32);
+}
+body[data-theme="dark"] {
+  background:
+    radial-gradient(circle at 15% 12%, rgba(120, 70, 170, 0.45), transparent 30%),
+    radial-gradient(circle at 84% 20%, rgba(95, 60, 165, 0.45), transparent 32%),
+    radial-gradient(circle at 50% 90%, rgba(40, 120, 95, 0.28), transparent 26%),
+    linear-gradient(135deg, #160f29 0%, #211641 46%, #2a1640 100%);
+}
+body[data-theme="dark"] canvas {
+  background: #1b1233;
+  box-shadow: 0 14px 42px rgba(0, 0, 0, 0.45);
+}
+
+/* ===== Profile / "Pick your hero" card: wider + shorter so it never runs off
+   screen (esp. on iPad). Scoped to #startup so other screens keep their size. ===== */
+#startup .startup-card {
+  width: min(720px, 100%);
+  min-height: 0;
+  max-height: calc(100vh - 20px);
+  overflow-y: auto;
+  justify-content: flex-start;
+  padding: 22px 24px 24px;
+}
+#startup .avatar-picker { gap: 8px; margin-bottom: 14px; }
+#startup .avatar-tile { padding: 6px 6px 8px; }
+#startup .avatar-tile canvas { height: 92px; }
+#startup h2 { margin: 0 0 12px; }

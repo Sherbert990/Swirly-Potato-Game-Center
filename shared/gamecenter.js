@@ -449,6 +449,80 @@
   global.GameCenter.openStore = openStore;
   global.GameCenter.closeStore = closeStore;
 
+  // ===== Shared leaderboards: full-screen, every game + mode in one place =====
+  const LB_BOARDS = [
+    { game: 'lavender-leap-time', label: 'Lavender · Time Trial', unit: (s) => s + ' level' + (s === 1 ? '' : 's') },
+    { game: 'lavender-leap-hard', label: 'Lavender · Hard Mode', unit: (s) => 'level ' + s },
+    { game: 'lavender-leap', label: 'Lavender · Freeplay', unit: (s) => s + ' pts' },
+    { game: 'dont-look-down', label: "Don't Look Down", unit: (s) => s + ' m' },
+  ];
+  let lbEl = null, lbIdx = 0, lbScope = 'global';
+
+  function buildLb() {
+    if (lbEl) return lbEl;
+    const wrap = document.createElement('div');
+    wrap.id = 'gc-lb';
+    wrap.style.cssText = 'position:fixed;inset:0;z-index:100000;display:none;' +
+      'background:#fff;font:600 14px/1.4 Nunito,system-ui,sans-serif;overflow:auto';
+    wrap.innerHTML =
+      '<div role="dialog" aria-label="Leaderboards" style="color:#2a2440;width:100%;min-height:100%;' +
+      'max-width:640px;margin:0 auto;padding:20px 18px calc(28px + env(safe-area-inset-bottom));' +
+      'display:flex;flex-direction:column;box-sizing:border-box">' +
+        '<div style="display:flex;align-items:center;justify-content:space-between">' +
+          '<div style="font-size:24px;font-weight:800">Leaderboards</div>' +
+          '<button data-close aria-label="Close" style="border:none;background:#f1ecfb;border-radius:10px;width:38px;height:38px;font-size:20px;cursor:pointer;color:#6a5d86">✕</button>' +
+        '</div>' +
+        '<div data-boards style="display:flex;flex-wrap:wrap;gap:8px;margin:16px 0 10px"></div>' +
+        '<div data-scope style="display:flex;gap:8px;margin-bottom:12px"></div>' +
+        '<div data-msg style="min-height:16px;color:#7d2ae8;font-weight:700;font-size:12px;margin-bottom:6px"></div>' +
+        '<ol data-list style="list-style:none;margin:0;padding:0"></ol>' +
+      '</div>';
+    wrap.addEventListener('click', onLbClick);
+    document.body.appendChild(wrap);
+    lbEl = wrap;
+    return wrap;
+  }
+  function lbSeg(label, attr, active) {
+    return '<button ' + attr + ' style="padding:8px 12px;border-radius:10px;border:2px solid ' +
+      (active ? '#7d2ae8' : '#d7d0ea') + ';background:' + (active ? '#7d2ae8' : '#f4f2fa') + ';color:' +
+      (active ? '#fff' : '#4a4361') + ';font:inherit;font-weight:800;font-size:13px;cursor:pointer">' + escapeHtml(label) + '</button>';
+  }
+  function renderLb() {
+    lbEl.querySelector('[data-boards]').innerHTML =
+      LB_BOARDS.map((b, i) => lbSeg(b.label, 'data-board="' + i + '"', i === lbIdx)).join('');
+    lbEl.querySelector('[data-scope]').innerHTML =
+      lbSeg('Global', 'data-scope="global"', lbScope === 'global') +
+      lbSeg('My runs', 'data-scope="personal"', lbScope === 'personal');
+  }
+  function lbMsg(t) { const m = lbEl && lbEl.querySelector('[data-msg]'); if (m) m.textContent = t || ''; }
+  async function loadLbList() {
+    const board = LB_BOARDS[lbIdx];
+    const list = lbEl.querySelector('[data-list]');
+    list.innerHTML = ''; lbMsg('Loading…');
+    const r = await GameCenter.leaderboard(board.game, lbScope);
+    if (!r.ok) { lbMsg(lbScope === 'personal' ? 'Sign in to see your runs.' : (r.error || 'Could not load.')); return; }
+    const rows = r.data || [];
+    if (!rows.length) { lbMsg(lbScope === 'personal' ? 'No runs yet — go play!' : 'No scores yet. Be the first!'); return; }
+    lbMsg('');
+    list.innerHTML = rows.map((row, i) => {
+      const main = lbScope === 'global'
+        ? '<span style="font-weight:800;color:#9a93ad;width:28px">#' + (i + 1) + '</span><span style="flex:1;font-weight:800">' + escapeHtml(row.username || 'Player') + '</span>'
+        : '<span style="flex:1;color:#8a83a0">' + (row.date ? escapeHtml(new Date(row.date).toLocaleDateString()) : '') + '</span>';
+      return '<li style="display:flex;align-items:center;gap:10px;padding:11px 4px;border-bottom:1px solid #efecf6">' +
+        main + '<span style="font-weight:800;color:#7d2ae8">' + escapeHtml(board.unit(row.score)) + '</span></li>';
+    }).join('');
+  }
+  function onLbClick(e) {
+    const t = e.target;
+    if (t === lbEl || (t.getAttribute && t.hasAttribute('data-close'))) { lbEl.style.display = 'none'; return; }
+    const bi = t.getAttribute && t.getAttribute('data-board');
+    if (bi !== null && bi !== undefined && bi !== '') { lbIdx = +bi; renderLb(); loadLbList(); return; }
+    const sc = t.getAttribute && t.getAttribute('data-scope');
+    if (sc) { lbScope = sc; renderLb(); loadLbList(); return; }
+  }
+  function openLeaderboards() { buildLb(); renderLb(); lbEl.style.display = 'block'; loadLbList(); }
+  global.GameCenter.openLeaderboards = openLeaderboards;
+
   function initChrome() {
     applyTheme();            // honor saved theme on every page (hub + games)
     injectHomeButton();
