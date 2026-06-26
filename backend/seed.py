@@ -52,7 +52,7 @@ STORE_ITEMS = [
     ("extra_life", "Extra Life", "extra_life", 15),
     ("boost", "Boost", "boost", 15),
     # Game-scoped power-ups (scope is enforced client-side; see ITEM_GAME).
-    ("double_jump", "Double Jump Pass", "double_jump", 60),   # Lavender: permanent mid-air jump
+    ("double_jump", "Double Jump Pack", "double_jump", 60),   # Lavender: 10 mid-air jumps (any mode)
     ("rocket_booster", "Rocket Booster", "rocket_booster", 20),  # Don't Look Down: +100ft head start
 ]
 

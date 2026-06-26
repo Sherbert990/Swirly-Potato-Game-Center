@@ -1,3 +1,7 @@
+// Wrapped in an IIFE so the game's internals (addCoins, startLevel, world, …) are
+// NOT global — this closes the browser-console cheats. The only global it relies on
+// is window.GameCenter (the shared SDK), and the server stays the source of truth.
+(() => {
 const canvas = document.querySelector("#game");
 const ctx = canvas.getContext("2d");
 const timerEl = document.querySelector("#timer");
@@ -281,15 +285,22 @@ function makeGeneratedLevel(index) {
     platforms.push(platform);
     if (step % 3 === 0 && index >= 5) crystals.push({ x: x + w / 2, y: y - 52, r: 13, got: false });
 
-    const hazardKind = ["spikes", "block", "saw", "beam"][(step + index) % 4];
-    if (hazardKind === "block") hazards.push({ x: x + w + 60, y: 442, w: 80, h: 56, kind: "block" });
-    else if (hazardKind === "beam") hazards.push({ x: x + w + 80, y: 322, w: 42, h: 140, kind: "beam" });
-    else if (hazardKind === "saw") hazards.push({ x: x + w + 38, y: 470, w: 105, h: 28, kind: "saw" });
-    else hazards.push({ x: x + w + 32, y: 470, w: 118, h: 28, kind: "spikes" });
+    let hazardKind = ["spikes", "block", "saw", "beam"][(step + index) % 4];
+    const reach = platform.moveX || 0;  // how far a side-to-side platform swings
+    // A moving platform can swing into a tall hazard (beam/block) and shove its rider
+    // into it — the "platform crashes into an obstacle" seen on high levels (#8). Keep
+    // tall hazards off movers, and push every hazard clear of the platform's swing.
+    if ((platform.moveX || platform.moveY) && (hazardKind === "beam" || hazardKind === "block")) {
+      hazardKind = (step % 2) ? "saw" : "spikes";
+    }
+    if (hazardKind === "block") hazards.push({ x: x + w + 60 + reach, y: 442, w: 80, h: 56, kind: "block" });
+    else if (hazardKind === "beam") hazards.push({ x: x + w + 80 + reach, y: 322, w: 42, h: 140, kind: "beam" });
+    else if (hazardKind === "saw") hazards.push({ x: x + w + 38 + reach, y: 470, w: 105, h: 28, kind: "saw" });
+    else hazards.push({ x: x + w + 32 + reach, y: 470, w: 118, h: 28, kind: "spikes" });
 
     // Second floor hazard punishes a missed long jump.
     if (doubleHazard && (step + index) % 2 === 0) {
-      hazards.push({ x: x + w + 150, y: 470, w: 112, h: 28, kind: step % 2 ? "saw" : "spikes" });
+      hazards.push({ x: x + w + 150 + reach, y: 470, w: 112, h: 28, kind: step % 2 ? "saw" : "spikes" });
     }
 
     // Gap grows with difficulty, but shrinks when the next platform sits higher
@@ -363,7 +374,9 @@ function formatTime(seconds) {
 function startLevel(index, restarting = false) {
   document.querySelector("#gameShell").style.visibility = "visible";  // reveal the game (hidden until first play to avoid a boot flash)
   world.level = index;
-  if (world.mode === "hard") world.hardBest = Math.max(world.hardBest, index + 1);
+  // Cap at the real number of levels so a console startLevel(999) can't post a
+  // bogus Hard Mode score above 100 (#5).
+  if (world.mode === "hard") world.hardBest = Math.max(world.hardBest, Math.min(index + 1, levels.length));
   if (!restarting) world.levelStartScore = world.score;
   world.levelWidth = levels[index].width;
   world.meters = 0;
@@ -374,12 +387,16 @@ function startLevel(index, restarting = false) {
   world.shake = 0;
 
   player.x = 90;
-  player.y = 410;
+  player.y = 400;   // spawn just ABOVE the ground (top=448), not overlapping it — an
+                    // overlap + held direction made horizontal collision shove the
+                    // player off the ledge and fall through the floor (#10).
   player.vx = 0;
   player.vy = 0;
   player.facing = 1;
   player.grounded = false;
   player.coyote = 0;
+  player.ride = null;
+  player.canDoubleJump = false;
   // Drop any keys still held from the previous level so the player doesn't
   // auto-run off the spawn ledge the instant a new level loads.
   world.keys.clear();
@@ -419,10 +436,11 @@ function jump() {
     player.grounded = false;
     player.coyote = 0;
     burst(player.x + player.w / 2, player.y + player.h, "#ffffff", 5);
-  } else if (player.canDoubleJump) {
-    // Double Jump Pass: one extra jump while airborne.
+  } else if (player.canDoubleJump && doubleJumpCharges() > 0) {
+    // Double Jump Pack: spend one of your charges for a mid-air jump (any mode).
     player.vy = -560;
     player.canDoubleJump = false;
+    consumeDoubleJump();
     burst(player.x + player.w / 2, player.y + player.h, "#5ef2ff", 7);
   }
 }
@@ -482,6 +500,8 @@ function updatePlayer(dt) {
 
   player.x += player.vx * dt;
   resolveHorizontal();
+  player.prevY = player.y;   // remember pre-move Y so resolveVertical can tell a real
+                             // head-bonk (ceiling) from jumping up off a platform (#9)
   player.y += player.vy * dt;
   resolveVertical();
 
@@ -514,7 +534,10 @@ function resolveVertical() {
       player.ride = platform;        // remember it so we ride its vertical movement next frame
       player.x += platform.dx || 0;  // carry horizontal delta so the player sticks
       player.canDoubleJump = ownsDoubleJump();  // refresh the air-jump on every landing
-    } else if (player.vy < 0) {
+    } else if (player.vy < 0 && player.prevY >= platform.y + platform.h - 8) {
+      // Only a genuine head-bonk: the player's head was below the platform's
+      // underside last frame. Without this guard, jumping up off a platform that's
+      // also moving up counts as a ceiling hit and slams the player back down (#9).
       player.y = platform.y + platform.h;
       player.vy = 0;
     }
@@ -560,10 +583,11 @@ function declineRevive() {
 }
 
 function restartFromLevelOne() {
-  commitRun(true);  // run is ending — flush coins + record the Hard Mode best reached
+  commitRun(true);  // run is ending — auto-save: flush coins + record the Hard Mode best reached
   world.score = 0;
   world.level = 0;
   world.levelStartScore = 0;
+  world.hardBest = 1;  // fresh attempt — reset the best-reached tracker
   startLevel(0, true);
 }
 
@@ -1180,8 +1204,16 @@ async function commitRun(force = false) {
   return r;
 }
 
+function doubleJumpCharges() {
+  return (gc && gc.items && gc.items.double_jump) || 0;
+}
 function ownsDoubleJump() {
-  return !!(gc && gc.items && gc.items.double_jump > 0);
+  return doubleJumpCharges() > 0;
+}
+function consumeDoubleJump() {
+  if (!gc || !gc.items) return;
+  gc.items.double_jump = Math.max(0, doubleJumpCharges() - 1);  // spend locally for instant feedback
+  GameCenter.use("double_jump");  // persist to the server (fire-and-forget; not awaited)
 }
 
 // Legacy local-profile helpers are no longer used (login is the shared account).
@@ -1692,9 +1724,15 @@ visitStoreModesBtn.addEventListener("click", () => GameCenter.openStore("lavende
 // Shared store integration: pause a live run while shopping, refresh wallet/skin
 // when it closes, and keep coins live as purchases happen.
 let storeWasRunning = false;
-window.addEventListener("gc:storeopen", () => {
+window.addEventListener("gc:storeopen", async () => {
   storeWasRunning = world.running;
   if (world.running) stopLoop();
+  // Flush coins collected this run into the wallet so they show up — and are
+  // spendable — in the store, then nudge the store to refresh its balance.
+  if (runCoins > 0) {
+    await commitRun();
+    window.dispatchEvent(new CustomEvent("gc:wallet", { detail: gc }));
+  }
 });
 window.addEventListener("gc:storeclose", async () => {
   const r = await GameCenter.me();
@@ -1732,7 +1770,9 @@ window.addEventListener("keydown", (event) => {
   world.keys.add(key);
   if (event.key === " " || key === "w" || event.key === "ArrowUp") {
     event.preventDefault();
-    jump();
+    // Only on a fresh press — event.repeat is the OS key-repeat while held, which
+    // would otherwise auto-fire the double jump the instant you leave the ground (#2).
+    if (!event.repeat) jump();
   }
 });
 window.addEventListener("keyup", (event) => {
@@ -1843,3 +1883,4 @@ window.addEventListener("pagehide", () => {
   buildAvatarPicker();
   showModes();
 })();
+})();  // end IIFE (keeps game internals out of the global scope)

@@ -42,6 +42,10 @@ def evaluate_achievements(db: OrmSession, user: User, game_slug: str, score: int
 
 router = APIRouter(prefix="/api")
 
+# Items that grant more than one charge per purchase (e.g. the Double Jump Pack
+# gives 10 mid-air jumps). Used as a charge counter consumed via /api/use.
+ITEM_GRANT = {"double_jump": 10}
+
 # Per-process rate limiter for score posts (Phase 1). A multi-instance deploy
 # would move this to the DB/Redis; fine for one server + friends.
 _last_score_at: dict[int, datetime.datetime] = {}
@@ -141,11 +145,12 @@ def store_buy(body: BuyBody, user: User = Depends(auth.current_user), db: OrmSes
         if user.coins < it.price:
             raise HTTPException(status_code=402, detail="Not enough coins")
         user.coins -= it.price
+        grant = ITEM_GRANT.get(it.key, 1)  # one purchase can grant a pack of charges
         row = db.query(UserItem).filter_by(user_id=user.id, item_key=it.key).first()
         if row:
-            row.quantity += 1
+            row.quantity += grant
         else:
-            db.add(UserItem(user_id=user.id, item_key=it.key, quantity=1))
+            db.add(UserItem(user_id=user.id, item_key=it.key, quantity=grant))
     else:
         raise HTTPException(status_code=422, detail="kind must be 'avatar' or 'item'")
     db.commit()

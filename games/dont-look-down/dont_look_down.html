@@ -402,7 +402,9 @@ function addPlatform() {
     }
   }
   game.platforms.push(pl);
-  if (i >= 3 && i % 2 === 1 && !pl.vx && !pl.vy && !pl.crumble && Math.random() < 0.3) {
+  // Coins get more common the higher you climb (~22% low down, up to ~72% near the top).
+  const coinChance = 0.22 + Math.min(1, (i - 3) / 130) * 0.5;
+  if (i >= 3 && !pl.vx && !pl.vy && !pl.crumble && Math.random() < coinChance) {
     game.coins.push({ x: pl.x + pl.w/2 - 8, y: pl.y - 28, collected: false });
   }
   game.count = i + 1;

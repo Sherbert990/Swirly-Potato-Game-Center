@@ -286,7 +286,7 @@
       items: [
         { key: 'extra_life', name: 'Extra Life', desc: 'Survive a fall in Hard Mode', price: 15 },
         { key: 'boost', name: '+30s Time Boost', desc: 'Adds 30s to your next Time Trial', price: 15 },
-        { key: 'double_jump', name: 'Double Jump Pass', desc: 'A mid-air second jump — permanent', price: 60, permanent: true },
+        { key: 'double_jump', name: 'Double Jump Pack', desc: '10 mid-air jumps · works in any mode', price: 60 },
       ],
       skins: [
         { key: 'll-star-cadet', name: 'Star Cadet', price: 20, color: '#cdbcf2' },
@@ -448,6 +448,12 @@
   }
   global.GameCenter.openStore = openStore;
   global.GameCenter.closeStore = closeStore;
+
+  // If the wallet changes while the store is open (e.g. a game flushes coins it
+  // collected mid-run as the store opens), refresh the displayed balance.
+  window.addEventListener('gc:wallet', (e) => {
+    if (e.detail && storeEl && storeEl.style.display !== 'none') { storeUser = e.detail; renderStore(); }
+  });
 
   // ===== Shared leaderboards: full-screen, every game + mode in one place =====
   const LB_BOARDS = [
