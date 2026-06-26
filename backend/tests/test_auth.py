@@ -31,6 +31,22 @@ def test_login_wrong_password(client):
     assert "username or password" in bad.json()["detail"].lower()
 
 
+def test_login_success(client):
+    reg(client, "Leo", "rightpass")
+    client.post("/api/logout")
+    ok = client.post("/api/login", json={"username": "Leo", "password": "rightpass"})
+    assert ok.status_code == 200, ok.text
+    assert ok.json()["username"] == "Leo"
+    assert client.get("/api/me").status_code == 200  # session is live after login
+
+
+def test_logout_ends_session(client):
+    reg(client, "Mara")
+    assert client.get("/api/me").status_code == 200
+    client.post("/api/logout")
+    assert client.get("/api/me").status_code == 401  # no longer authenticated
+
+
 def test_me_requires_auth(client):
     assert client.get("/api/me").status_code == 401
 
