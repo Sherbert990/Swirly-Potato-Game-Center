@@ -509,6 +509,8 @@
     beginLevel();
   }
   function beginLevel(){
+    resize();   // make sure the canvas matches the viewport before laying out the level
+                // (otherwise a stale/zero size renders only the top-left sliver)
     newLevel();
     running = true; lastT = performance.now();
     requestAnimationFrame(loop);
@@ -589,11 +591,14 @@
 
   // ---------- resize ----------
   function resize(){
-    W = window.innerWidth; H = window.innerHeight;
+    W = window.innerWidth || document.documentElement.clientWidth || canvas.clientWidth || 680;
+    H = window.innerHeight || document.documentElement.clientHeight || canvas.clientHeight || 480;
     canvas.width = W; canvas.height = H;
   }
   addEventListener('resize', resize);
+  addEventListener('pageshow', resize);   // restore from bfcache (back/forward) with correct size
   resize();
+  requestAnimationFrame(resize);          // re-measure once layout has settled
 })();
 </script>
 </body>
