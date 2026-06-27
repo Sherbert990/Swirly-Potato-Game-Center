@@ -1,14 +1,19 @@
 :root {
   color-scheme: light;
-  --ink: #302348;
-  --muted: #735f8f;
-  --panel: rgba(255, 250, 255, 0.78);
-  --line: rgba(105, 70, 160, 0.2);
+  /* Chrome tokens mirror the hub (the north star) so menus, auth, store,
+     leaderboards, HUD and dialogs match across every page. The in-canvas level
+     art keeps its own pastel palette and is untouched. */
+  --ink: #243a5e;
+  --muted: #5a6b86;
+  --panel: rgba(255, 255, 255, 0.94);
+  --line: rgba(190, 205, 230, 0.9);
   --lavender: #c9a7ff;
-  --purple: #8b5cf6;
-  --mint: #48d6a3;
+  --purple: #7d2ae8;   /* hub accent */
+  --mint: #1d9e75;     /* hub accent-2 */
   --peach: #ff8ab3;
-  --gold: #ffd166;
+  --gold: #c8920c;     /* hub coin */
+  --ff-title: Fredoka, "Trebuchet MS", system-ui, sans-serif;
+  --ff-body: Nunito, ui-sans-serif, system-ui, -apple-system, sans-serif;
 }
 
 * {
@@ -31,7 +36,22 @@ body {
     radial-gradient(circle at 50% 90%, rgba(122, 255, 204, 0.36), transparent 26%),
     linear-gradient(135deg, #f8efff 0%, #eadcff 46%, #f9dff1 100%);
   color: var(--ink);
-  font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+  font-family: var(--ff-body);
+}
+
+/* Fredoka for titles, buttons, scores & numbers; Nunito (body) elsewhere. */
+h1,
+h2,
+.eyebrow,
+button,
+.seg-btn,
+.mode-btn strong,
+.stats strong,
+.results-score strong,
+.results-best strong,
+.store-balance strong,
+.profile-powerups strong {
+  font-family: var(--ff-title);
 }
 
 .shell {
@@ -48,9 +68,9 @@ body {
   gap: 16px;
   padding: 14px 16px;
   border: 1px solid var(--line);
-  border-radius: 8px;
+  border-radius: 16px;
   background: var(--panel);
-  box-shadow: 0 12px 34px rgba(83, 45, 125, 0.14);
+  box-shadow: 0 6px 22px rgba(40, 60, 110, 0.18);
 }
 
 .eyebrow {
@@ -97,7 +117,7 @@ h1 {
   min-width: 86px;
   padding: 8px 10px;
   border: 1px solid var(--line);
-  border-radius: 6px;
+  border-radius: 11px;
   text-align: center;
   background: rgba(255, 255, 255, 0.05);
 }
@@ -121,7 +141,7 @@ canvas {
   aspect-ratio: 48 / 31;
   display: block;
   border: 1px solid var(--line);
-  border-radius: 8px;
+  border-radius: 16px;
   background: #f3e9ff;
   box-shadow: 0 14px 42px rgba(83, 45, 125, 0.16);
   touch-action: none;
@@ -195,12 +215,26 @@ button {
   min-width: 88px;
   height: 42px;
   border: 0;
-  border-radius: 6px;
+  border-radius: 11px;
   background: var(--purple);
   color: #ffffff;
   cursor: pointer;
-  font: inherit;
-  font-weight: 900;
+  font-family: var(--ff-title);
+  font-size: 1rem;
+  font-weight: 600;
+}
+
+/* The shared SDK injects its own fully-styled chrome (store, leaderboards,
+   settings, and the floating Home/Settings buttons). Keep this game's global
+   <button> sizing (incl. the mobile width:100% rule below) from leaking into it
+   and breaking those layouts. */
+#gc-store button,
+#gc-lb button,
+#gc-settings button,
+#gc-settings-btn {
+  min-width: 0;
+  width: auto;
+  height: auto;
 }
 
 button:hover {
@@ -216,7 +250,7 @@ button:active {
   align-items: center;
   height: 42px;
   border: 1px solid var(--line);
-  border-radius: 10px;
+  border-radius: 11px;
   background: #ffffff;
   overflow: hidden;
 }
@@ -257,6 +291,135 @@ button:active {
   backdrop-filter: blur(6px);
 }
 
+/* ===== Art-forward intro shell — full-bleed cover art is the hero.
+   Identical structure to the hub + Don't Look Down; only the image differs.
+   Home + Settings (top-left) are the SDK's injected floating buttons. ===== */
+.intro {
+  padding: 0;
+  background: var(--ink);
+  backdrop-filter: none;
+  place-items: stretch;
+}
+.intro-art {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+.intro-scrim {
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(to bottom, rgba(10, 8, 24, 0.04) 38%, rgba(10, 8, 24, 0.84) 100%);
+}
+.intro-chrome {
+  position: absolute;
+  top: 12px;
+  right: 12px;
+  z-index: 2;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+.intro-coin {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 8px 14px;
+  border-radius: 20px;
+  background: rgba(255, 255, 255, 0.18);
+  backdrop-filter: blur(6px);
+  border: 1px solid rgba(255, 255, 255, 0.28);
+  color: #fff;
+  font-family: var(--ff-title);
+  font-weight: 600;
+}
+.intro-coin i { color: #ffd479; }
+.intro-trophy {
+  min-width: 0;
+  width: 42px;
+  height: 42px;
+  padding: 0;
+  border-radius: 20px;
+  background: rgba(255, 255, 255, 0.18);
+  backdrop-filter: blur(6px);
+  border: 1px solid rgba(255, 255, 255, 0.28);
+  color: #fff;
+  font-size: 18px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+.intro-trophy:hover { background: rgba(255, 255, 255, 0.3); filter: none; }
+.intro-copy {
+  position: absolute;
+  left: 50%;
+  bottom: 0;
+  transform: translateX(-50%);
+  width: 100%;
+  max-width: 640px;
+  z-index: 2;
+  padding: 28px 24px max(28px, env(safe-area-inset-bottom));
+  text-align: left;
+  color: #fff;
+}
+.intro-eyebrow {
+  margin: 0 0 4px;
+  color: #ead9ff;
+  font-family: var(--ff-title);
+  font-weight: 600;
+  font-size: 0.8rem;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+}
+.intro-title {
+  margin: 0 0 8px;
+  font-size: clamp(2rem, 7vw, 3rem);
+  color: #fff;
+  text-shadow: 0 2px 18px rgba(0, 0, 0, 0.45);
+}
+.intro-tagline {
+  margin: 0 0 18px;
+  color: rgba(255, 255, 255, 0.88);
+  font-weight: 700;
+  font-size: 1rem;
+}
+.intro-actions {
+  display: flex;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+.intro-play {
+  flex: 1 1 auto;
+  max-width: 220px;
+  height: 52px;
+  background: var(--purple);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  font-size: 1.1rem;
+}
+.intro-store {
+  height: 52px;
+  background: rgba(255, 255, 255, 0.18);
+  backdrop-filter: blur(6px);
+  border: 1px solid rgba(255, 255, 255, 0.28);
+  color: #fff;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+}
+.intro-store:hover { background: rgba(255, 255, 255, 0.3); filter: none; }
+.intro-best {
+  margin: 14px 0 0;
+  color: rgba(255, 255, 255, 0.8);
+  font-weight: 700;
+  font-size: 0.9rem;
+}
+.intro-best:empty { display: none; }
+
 .startup.hidden {
   display: none;
 }
@@ -266,9 +429,10 @@ button:active {
   min-height: min(680px, 92vh);
   padding: 40px 28px 36px;
   border: 1px solid var(--line);
-  border-radius: 16px;
+  border-radius: 22px;
   background: var(--panel);
-  box-shadow: 0 24px 60px rgba(40, 18, 80, 0.4);
+  backdrop-filter: blur(4px);
+  box-shadow: 0 10px 40px rgba(40, 60, 110, 0.25);
   text-align: center;
   display: flex;
   flex-direction: column;
@@ -300,7 +464,7 @@ button:active {
   height: 46px;
   padding: 0 14px;
   border: 1px solid var(--line);
-  border-radius: 10px;
+  border-radius: 11px;
   background: #ffffff;
   font: inherit;
   font-weight: 700;
@@ -804,10 +968,13 @@ button:active {
    inside the canvas is unchanged). Driven by the shared Settings theme, which
    sets data-theme on <body>. ===== */
 body[data-theme="dark"] {
-  --ink: #ece6ff;
-  --muted: #b7a9dc;
-  --panel: rgba(38, 26, 62, 0.86);
-  --line: rgba(150, 120, 215, 0.32);
+  --ink: #e7edfb;
+  --muted: #9aa8c6;
+  --panel: rgba(22, 28, 48, 0.94);
+  --line: rgba(80, 60, 135, 0.9);
+  --purple: #9b6bff;   /* hub accent (dark) */
+  --mint: #2bbf95;     /* hub accent-2 (dark) */
+  --gold: #ffd479;     /* hub coin (dark) */
 }
 body[data-theme="dark"] {
   background:

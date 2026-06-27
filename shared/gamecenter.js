@@ -15,6 +15,27 @@
  * It never reimplements auth, the wallet, the store, or leaderboards.
  */
 (function (global) {
+  // ===== Shared design tokens — make all SDK chrome theme-aware =====
+  // The hub is the north star; these mirror its light/dark palette so the Store,
+  // Leaderboards & Settings follow the theme on every page (hub + games).
+  const GC_TOKENS = `
+  :root{
+    --gc-plate-bg:#eef4fb; --gc-plate:url('/design/hub/background.png');
+    --gc-panel:rgba(255,255,255,.94); --gc-ink:#243a5e; --gc-muted:#5a6b86;
+    --gc-line:rgba(190,205,230,.9); --gc-accent:#7d2ae8; --gc-accent2:#1d9e75;
+    --gc-coin:#c8920c; --gc-chip:#f4f7fc; --gc-chip-line:#dbe4f3;
+    --gc-field:#f1ecfb; --gc-field-ink:#6a5d86; --gc-row-line:#eef1f6;
+    --gc-scrim:rgba(40,60,110,.30); --gc-shadow:0 10px 40px rgba(40,60,110,.25);
+  }
+  body[data-theme="dark"]{
+    --gc-plate-bg:#0e1226; --gc-plate:none;
+    --gc-panel:rgba(22,28,48,.94); --gc-ink:#e7edfb; --gc-muted:#9aa8c6;
+    --gc-line:rgba(80,60,135,.9); --gc-accent:#9b6bff; --gc-accent2:#2bbf95;
+    --gc-coin:#ffd479; --gc-chip:#231d44; --gc-chip-line:#34285c;
+    --gc-field:#2a2150; --gc-field-ink:#a596d0; --gc-row-line:#2a2150;
+    --gc-scrim:rgba(6,8,20,.66); --gc-shadow:0 10px 40px rgba(0,0,0,.55);
+  }`;
+
   async function request(path, method, body) {
     const opts = { method: method || 'GET', credentials: 'same-origin' };
     if (body !== undefined) {
@@ -101,9 +122,10 @@
   // --- settings modal (built once, identical on every page) ---
   let settingsEl = null;
   function segStyle(btn, active) {
-    btn.style.cssText = 'flex:1;padding:9px 8px;border-radius:10px;border:2px solid ' +
-      (active ? '#7d2ae8' : '#d7d0ea') + ';background:' + (active ? '#7d2ae8' : '#f4f2fa') +
-      ';color:' + (active ? '#fff' : '#4a4361') + ';font:inherit;font-weight:800;cursor:pointer';
+    btn.style.cssText = 'flex:1;padding:9px 8px;border-radius:11px;display:inline-flex;align-items:center;' +
+      'justify-content:center;gap:6px;border:1px solid ' +
+      (active ? 'var(--gc-accent)' : 'var(--gc-line)') + ';background:' + (active ? 'var(--gc-accent)' : 'var(--gc-chip)') +
+      ';color:' + (active ? '#fff' : 'var(--gc-muted)') + ';font-family:Fredoka,sans-serif;font-weight:600;font-size:13px;cursor:pointer';
   }
   function refreshSettings() {
     if (!settingsEl) return;
@@ -116,21 +138,21 @@
     const wrap = document.createElement('div');
     wrap.id = 'gc-settings';
     wrap.style.cssText = 'position:fixed;inset:0;z-index:100000;display:none;align-items:center;' +
-      'justify-content:center;background:rgba(10,6,24,.55);font:600 14px/1.4 Nunito,system-ui,sans-serif';
+      'justify-content:center;background:var(--gc-scrim);backdrop-filter:blur(2px);font:600 14px/1.4 Nunito,system-ui,sans-serif';
     wrap.innerHTML =
-      '<div role="dialog" aria-label="Settings" style="background:#fff;color:#2a2440;width:300px;max-width:90vw;' +
-      'border-radius:16px;padding:20px;box-shadow:0 14px 44px rgba(0,0,0,.4)">' +
-        '<div style="display:flex;align-items:center;justify-content:space-between;font-size:18px;font-weight:800;margin-bottom:16px">' +
-          'Settings <button data-close aria-label="Close" style="border:none;background:none;font-size:20px;cursor:pointer;color:#9a93ad">✕</button></div>' +
-        '<div style="font-weight:800;margin-bottom:8px">Appearance</div>' +
+      '<div role="dialog" aria-label="Settings" style="background:var(--gc-panel);color:var(--gc-ink);width:320px;max-width:90vw;' +
+      'border:1px solid var(--gc-line);border-radius:18px;padding:20px;backdrop-filter:blur(8px);box-shadow:var(--gc-shadow)">' +
+        '<div style="display:flex;align-items:center;justify-content:space-between;font-family:Fredoka,sans-serif;font-size:20px;font-weight:700;margin-bottom:16px">' +
+          'Settings <button data-close aria-label="Close" style="border:none;background:var(--gc-field);color:var(--gc-field-ink);width:34px;height:34px;border-radius:11px;font-size:17px;cursor:pointer;display:flex;align-items:center;justify-content:center"><i class="ti ti-x"></i></button></div>' +
+        '<div style="font-family:Fredoka,sans-serif;font-weight:600;font-size:12px;letter-spacing:.04em;text-transform:uppercase;color:var(--gc-muted);margin-bottom:8px">Appearance</div>' +
         '<div style="display:flex;gap:8px;margin-bottom:18px">' +
-          '<button data-theme="light" type="button">☀ Light</button>' +
-          '<button data-theme="dark" type="button">☾ Dark</button></div>' +
-        '<div style="font-weight:800;margin-bottom:8px">iPad / touch controls</div>' +
+          '<button data-theme="light" type="button"><i class="ti ti-sun"></i> Light</button>' +
+          '<button data-theme="dark" type="button"><i class="ti ti-moon"></i> Dark</button></div>' +
+        '<div style="font-family:Fredoka,sans-serif;font-weight:600;font-size:12px;letter-spacing:.04em;text-transform:uppercase;color:var(--gc-muted);margin-bottom:8px">iPad / touch controls</div>' +
         '<div style="display:flex;gap:8px">' +
           '<button data-touch="on" type="button">On</button>' +
           '<button data-touch="off" type="button">Off</button></div>' +
-        '<p style="color:#8a83a0;font-weight:600;font-size:12px;margin:10px 0 0">On shows an on-screen joystick and jump button in games. Off plays with keyboard only.</p>' +
+        '<p style="color:var(--gc-muted);font-weight:600;font-size:12px;margin:10px 0 0">On shows an on-screen joystick and jump button in games. Off plays with keyboard only.</p>' +
       '</div>';
     wrap.addEventListener('click', (e) => {
       if (e.target === wrap || e.target.hasAttribute('data-close')) { wrap.style.display = 'none'; return; }
@@ -152,12 +174,12 @@
     const b = document.createElement('button');
     b.id = 'gc-settings-btn';
     b.type = 'button';
-    b.textContent = '⚙';
+    b.innerHTML = '<i class="ti ti-settings"></i>';
     b.setAttribute('aria-label', 'Settings');
     b.style.cssText =
       'position:fixed;top:54px;left:10px;z-index:99999;border:none;cursor:pointer;' +
-      'font-size:18px;line-height:1;color:#fff;background:rgba(125,42,232,.92);' +
-      'width:40px;height:36px;border-radius:20px;box-shadow:0 2px 8px rgba(0,0,0,.25)';
+      'font-size:18px;line-height:1;color:#fff;background:var(--gc-accent);display:flex;align-items:center;justify-content:center;' +
+      'width:40px;height:36px;border-radius:20px;box-shadow:0 2px 8px rgba(40,60,110,.3)';
     b.addEventListener('click', openSettings);
     document.body.appendChild(b);
   }
@@ -169,13 +191,13 @@
     const a = document.createElement('a');
     a.id = 'gc-home';
     a.href = '/';
-    a.textContent = '← Home';
+    a.innerHTML = '<i class="ti ti-home"></i> Home';
     a.setAttribute('aria-label', 'Back to The Stickmen Hub');
     a.style.cssText =
-      'position:fixed;top:10px;left:10px;z-index:99999;text-decoration:none;' +
+      'position:fixed;top:10px;left:10px;z-index:99999;text-decoration:none;display:inline-flex;align-items:center;gap:6px;' +
       'font:600 13px/1 Nunito,system-ui,sans-serif;color:#fff;' +
-      'background:rgba(125,42,232,.92);padding:8px 12px;border-radius:20px;' +
-      'box-shadow:0 2px 8px rgba(0,0,0,.25)';
+      'background:var(--gc-accent);padding:8px 12px;border-radius:20px;' +
+      'box-shadow:0 2px 8px rgba(40,60,110,.3)';
     document.body.appendChild(a);
   }
   // ===== Avatar art for store skin previews =====
@@ -316,6 +338,10 @@
   let storeEl = null, storeUser = null, storeTab = STORE_TABS[0];
 
   function escapeHtml(s) { return String(s).replace(/[&<>"]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c])); }
+  // Render a price label with the gold coin glyph; pass words ("Owned") through as text.
+  function coinLabel(label) {
+    return /^★\s/.test(label) ? '<i class="ti ti-coin"></i> ' + escapeHtml(label.replace(/^★\s*/, '')) : escapeHtml(label);
+  }
 
   function buildStore() {
     if (storeEl) return storeEl;
@@ -324,21 +350,23 @@
     // Full-screen overlay (great on iPad/phone); content is a centered column so it
     // stays readable on wide desktop screens too.
     wrap.style.cssText = 'position:fixed;inset:0;z-index:100000;display:none;' +
-      'background:#fff;font:600 14px/1.4 Nunito,system-ui,sans-serif;overflow:auto';
+      'background:var(--gc-plate-bg) var(--gc-plate, none) center/cover no-repeat;font:600 14px/1.4 Nunito,system-ui,sans-serif;overflow:auto';
     wrap.innerHTML =
-      '<div role="dialog" aria-label="Store" style="color:#2a2440;width:100%;min-height:100%;' +
-      'max-width:620px;margin:0 auto;padding:20px 18px calc(28px + env(safe-area-inset-bottom));' +
-      'display:flex;flex-direction:column;box-sizing:border-box">' +
+      '<div role="dialog" aria-label="Store" style="color:var(--gc-ink);width:100%;max-width:600px;' +
+      'margin:0 auto;padding:max(20px,env(safe-area-inset-top)) 14px calc(28px + env(safe-area-inset-bottom));' +
+      'box-sizing:border-box;min-height:100%">' +
+      '<div style="background:var(--gc-panel);border:1px solid var(--gc-line);border-radius:20px;backdrop-filter:blur(8px);box-shadow:var(--gc-shadow);padding:20px 18px;margin:14px 0">' +
         '<div style="display:flex;align-items:center;justify-content:space-between">' +
-          '<div style="font-size:24px;font-weight:800">Store</div>' +
-          '<div style="display:flex;align-items:center;gap:14px">' +
-            '<span data-coins style="font-weight:800;font-size:16px;color:#a36b00">★ 0</span>' +
-            '<button data-close aria-label="Close" style="border:none;background:#f1ecfb;border-radius:10px;width:38px;height:38px;font-size:20px;cursor:pointer;color:#6a5d86">✕</button>' +
+          '<div style="font-family:Fredoka,sans-serif;font-size:24px;font-weight:700">Store</div>' +
+          '<div style="display:flex;align-items:center;gap:10px">' +
+            '<span data-coins style="display:inline-flex;align-items:center;gap:6px;background:var(--gc-chip);border:1px solid var(--gc-chip-line);color:var(--gc-coin);font-family:Fredoka,sans-serif;font-weight:600;font-size:16px;border-radius:20px;padding:5px 13px"><i class="ti ti-coin"></i> 0</span>' +
+            '<button data-close aria-label="Close" style="border:none;background:var(--gc-field);color:var(--gc-field-ink);border-radius:11px;width:38px;height:38px;font-size:19px;cursor:pointer;display:flex;align-items:center;justify-content:center"><i class="ti ti-x"></i></button>' +
           '</div>' +
         '</div>' +
         '<div data-tabs style="display:flex;gap:8px;margin:16px 0"></div>' +
-        '<div data-msg style="min-height:16px;color:#7d2ae8;font-weight:700;font-size:12px;margin-bottom:6px"></div>' +
+        '<div data-msg style="min-height:16px;color:var(--gc-accent);font-weight:700;font-size:12px;margin-bottom:6px"></div>' +
         '<div data-body></div>' +
+      '</div>' +
       '</div>';
     wrap.addEventListener('click', onStoreClick);
     document.body.appendChild(wrap);
@@ -351,28 +379,28 @@
   function rowHtml(opts) {
     // opts: skinKey?, title, sub, btnLabel, btnAttr, disabled, done
     const sw = opts.skinKey
-      ? '<canvas data-skin="' + opts.skinKey + '" width="44" height="48" style="flex:none;width:44px;height:48px;border-radius:9px;background:#f1ecfb;border:2px solid rgba(0,0,0,.08)"></canvas>'
+      ? '<canvas data-skin="' + opts.skinKey + '" width="44" height="48" style="flex:none;width:44px;height:48px;border-radius:11px;background:var(--gc-field);border:1px solid var(--gc-line)"></canvas>'
       : '';
     const btn = opts.done
-      ? '<span style="flex:none;color:#1d9e75;font-weight:800;font-size:13px">' + escapeHtml(opts.btnLabel) + '</span>'
+      ? '<span style="flex:none;color:var(--gc-accent2);font-weight:800;font-size:13px;display:inline-flex;align-items:center;gap:5px"><i class="ti ti-check"></i> ' + escapeHtml(opts.btnLabel) + '</span>'
       : '<button ' + opts.btnAttr + (opts.disabled ? ' disabled' : '') +
-        ' style="flex:none;border:none;border-radius:9px;padding:8px 12px;font:inherit;font-weight:800;cursor:' +
-        (opts.disabled ? 'not-allowed' : 'pointer') + ';background:' + (opts.disabled ? '#e7e3f2' : '#7d2ae8') +
-        ';color:' + (opts.disabled ? '#a99fc4' : '#fff') + '">' + escapeHtml(opts.btnLabel) + '</button>';
-    return '<div style="display:flex;align-items:center;gap:10px;padding:9px 2px;border-bottom:1px solid #efecf6">' +
-      sw + '<div style="flex:1;min-width:0"><div style="font-weight:800">' + escapeHtml(opts.title) + '</div>' +
-      '<div style="color:#8a83a0;font-size:12px">' + escapeHtml(opts.sub || '') + '</div></div>' + btn + '</div>';
+        ' style="flex:none;border:none;border-radius:11px;padding:8px 13px;font-family:Fredoka,sans-serif;font-weight:600;font-size:13px;display:inline-flex;align-items:center;gap:5px;cursor:' +
+        (opts.disabled ? 'not-allowed' : 'pointer') + ';background:' + (opts.disabled ? 'var(--gc-field)' : 'var(--gc-accent)') +
+        ';color:' + (opts.disabled ? 'var(--gc-muted)' : '#fff') + '">' + coinLabel(opts.btnLabel) + '</button>';
+    return '<div style="display:flex;align-items:center;gap:11px;padding:10px 2px;border-bottom:1px solid var(--gc-row-line)">' +
+      sw + '<div style="flex:1;min-width:0"><div style="font-weight:800;color:var(--gc-ink)">' + escapeHtml(opts.title) + '</div>' +
+      '<div style="color:var(--gc-muted);font-size:12px;font-weight:600">' + escapeHtml(opts.sub || '') + '</div></div>' + btn + '</div>';
   }
 
   function renderStore() {
     if (!storeEl) return;
-    storeEl.querySelector('[data-coins]').textContent = '★ ' + ((storeUser && storeUser.coins) || 0);
+    storeEl.querySelector('[data-coins]').innerHTML = '<i class="ti ti-coin"></i> ' + ((storeUser && storeUser.coins) || 0);
     const tabsEl = storeEl.querySelector('[data-tabs]');
     tabsEl.innerHTML = STORE_TABS.map((g) => {
       const on = g === storeTab;
-      return '<button data-tab="' + g + '" style="flex:1;padding:9px 8px;border-radius:10px;border:2px solid ' +
-        (on ? '#7d2ae8' : '#d7d0ea') + ';background:' + (on ? '#7d2ae8' : '#f4f2fa') + ';color:' +
-        (on ? '#fff' : '#4a4361') + ';font:inherit;font-weight:800;cursor:pointer">' + escapeHtml(STORE_CATALOG[g].name) + '</button>';
+      return '<button data-tab="' + g + '" style="flex:1;padding:9px 8px;border-radius:12px;border:1px solid ' +
+        (on ? 'var(--gc-accent)' : 'var(--gc-line)') + ';background:' + (on ? 'var(--gc-accent)' : 'var(--gc-chip)') + ';color:' +
+        (on ? '#fff' : 'var(--gc-muted)') + ';font-family:Fredoka,sans-serif;font-weight:600;font-size:13px;cursor:pointer">' + escapeHtml(STORE_CATALOG[g].name) + '</button>';
     }).join('');
     const body = storeEl.querySelector('[data-body]');
     if (!storeUser) { body.innerHTML = ''; return; }
@@ -380,7 +408,7 @@
     const coins = storeUser.coins || 0;
     const items = storeUser.items || {};
     const owned = storeUser.ownedAvatars || [];
-    let html = '<div style="font-weight:800;margin:6px 0 2px">Power-ups</div>';
+    let html = '<div style="font-family:Fredoka,sans-serif;font-weight:600;font-size:12px;text-transform:uppercase;letter-spacing:.04em;color:var(--gc-muted);margin:6px 0 4px">Power-ups</div>';
     cat.items.forEach((it) => {
       const have = items[it.key] || 0;
       const ownedPerm = it.permanent && have > 0;
@@ -393,7 +421,7 @@
         done: ownedPerm,
       });
     });
-    html += '<div style="font-weight:800;margin:14px 0 2px">Skins</div>';
+    html += '<div style="font-family:Fredoka,sans-serif;font-weight:600;font-size:12px;text-transform:uppercase;letter-spacing:.04em;color:var(--gc-muted);margin:14px 0 4px">Skins</div>';
     cat.skins.forEach((sk) => {
       const isOwned = owned.indexOf(sk.key) >= 0;
       const equipped = storeUser.avatarKey === sk.key;
@@ -435,7 +463,7 @@
     if (game && STORE_CATALOG[game]) storeTab = game;
     else { let last = null; try { last = localStorage.getItem('lastStoreTab'); } catch (x) {} storeTab = STORE_CATALOG[last] ? last : STORE_TABS[0]; }
     try { localStorage.setItem('lastStoreTab', storeTab); } catch (x) {}
-    storeEl.style.display = 'flex';
+    storeEl.style.display = 'block';
     storeMsg('Loading…');
     try { window.dispatchEvent(new CustomEvent('gc:storeopen')); } catch (e) {}
     const r = await GameCenter.me();
@@ -462,26 +490,28 @@
     { game: 'lavender-leap', label: 'Lavender · Freeplay', unit: (s) => s + ' pts' },
     { game: 'dont-look-down', label: "Don't Look Down", unit: (s) => s + ' m' },
   ];
-  let lbEl = null, lbIdx = 0, lbScope = 'global';
+  let lbEl = null, lbIdx = 0, lbScope = 'global', lbMyName = null;
 
   function buildLb() {
     if (lbEl) return lbEl;
     const wrap = document.createElement('div');
     wrap.id = 'gc-lb';
     wrap.style.cssText = 'position:fixed;inset:0;z-index:100000;display:none;' +
-      'background:#fff;font:600 14px/1.4 Nunito,system-ui,sans-serif;overflow:auto';
+      'background:var(--gc-plate-bg) var(--gc-plate, none) center/cover no-repeat;font:600 14px/1.4 Nunito,system-ui,sans-serif;overflow:auto';
     wrap.innerHTML =
-      '<div role="dialog" aria-label="Leaderboards" style="color:#2a2440;width:100%;min-height:100%;' +
-      'max-width:640px;margin:0 auto;padding:20px 18px calc(28px + env(safe-area-inset-bottom));' +
-      'display:flex;flex-direction:column;box-sizing:border-box">' +
+      '<div role="dialog" aria-label="Leaderboards" style="color:var(--gc-ink);width:100%;max-width:620px;' +
+      'margin:0 auto;padding:max(20px,env(safe-area-inset-top)) 14px calc(28px + env(safe-area-inset-bottom));' +
+      'box-sizing:border-box;min-height:100%">' +
+      '<div style="background:var(--gc-panel);border:1px solid var(--gc-line);border-radius:20px;backdrop-filter:blur(8px);box-shadow:var(--gc-shadow);padding:20px 18px;margin:14px 0">' +
         '<div style="display:flex;align-items:center;justify-content:space-between">' +
-          '<div style="font-size:24px;font-weight:800">Leaderboards</div>' +
-          '<button data-close aria-label="Close" style="border:none;background:#f1ecfb;border-radius:10px;width:38px;height:38px;font-size:20px;cursor:pointer;color:#6a5d86">✕</button>' +
+          '<div style="font-family:Fredoka,sans-serif;font-size:24px;font-weight:700">Leaderboards</div>' +
+          '<button data-close aria-label="Close" style="border:none;background:var(--gc-field);color:var(--gc-field-ink);border-radius:11px;width:38px;height:38px;font-size:19px;cursor:pointer;display:flex;align-items:center;justify-content:center"><i class="ti ti-x"></i></button>' +
         '</div>' +
         '<div data-boards style="display:flex;flex-wrap:wrap;gap:8px;margin:16px 0 10px"></div>' +
         '<div data-scope style="display:flex;gap:8px;margin-bottom:12px"></div>' +
-        '<div data-msg style="min-height:16px;color:#7d2ae8;font-weight:700;font-size:12px;margin-bottom:6px"></div>' +
+        '<div data-msg style="min-height:16px;color:var(--gc-accent);font-weight:700;font-size:12px;margin-bottom:6px"></div>' +
         '<ol data-list style="list-style:none;margin:0;padding:0"></ol>' +
+      '</div>' +
       '</div>';
     wrap.addEventListener('click', onLbClick);
     document.body.appendChild(wrap);
@@ -489,9 +519,9 @@
     return wrap;
   }
   function lbSeg(label, attr, active) {
-    return '<button ' + attr + ' style="padding:8px 12px;border-radius:10px;border:2px solid ' +
-      (active ? '#7d2ae8' : '#d7d0ea') + ';background:' + (active ? '#7d2ae8' : '#f4f2fa') + ';color:' +
-      (active ? '#fff' : '#4a4361') + ';font:inherit;font-weight:800;font-size:13px;cursor:pointer">' + escapeHtml(label) + '</button>';
+    return '<button ' + attr + ' style="padding:8px 13px;border-radius:11px;border:1px solid ' +
+      (active ? 'var(--gc-accent)' : 'var(--gc-line)') + ';background:' + (active ? 'var(--gc-accent)' : 'var(--gc-chip)') + ';color:' +
+      (active ? '#fff' : 'var(--gc-muted)') + ';font-family:Fredoka,sans-serif;font-weight:600;font-size:13px;cursor:pointer">' + escapeHtml(label) + '</button>';
   }
   function renderLb() {
     lbEl.querySelector('[data-boards]').innerHTML =
@@ -511,11 +541,23 @@
     if (!rows.length) { lbMsg(lbScope === 'personal' ? 'No runs yet — go play!' : 'No scores yet. Be the first!'); return; }
     lbMsg('');
     list.innerHTML = rows.map((row, i) => {
+      const rank = i + 1;
+      const isMe = row.isMe || (lbMyName && row.username && row.username.toLowerCase() === lbMyName.toLowerCase());
+      const numCol = '<span style="font-family:Fredoka,sans-serif;font-weight:700;width:26px;font-size:16px;color:' +
+        (rank === 1 ? '#e0a82e' : 'var(--gc-muted)') + '">' + rank + '</span>';
+      const crown = rank === 1
+        ? '<span style="flex:none;width:30px;height:30px;border-radius:50%;background:var(--gc-accent);display:flex;align-items:center;justify-content:center;color:#fff;font-size:15px"><i class="ti ti-crown"></i></span>'
+        : '';
+      const youTag = isMe ? ' <span style="color:var(--gc-accent2);font-weight:700;font-size:12px">· that\'s you</span>' : '';
       const main = lbScope === 'global'
-        ? '<span style="font-weight:800;color:#9a93ad;width:28px">#' + (i + 1) + '</span><span style="flex:1;font-weight:800">' + escapeHtml(row.username || 'Player') + '</span>'
-        : '<span style="flex:1;color:#8a83a0">' + (row.date ? escapeHtml(new Date(row.date).toLocaleDateString()) : '') + '</span>';
-      return '<li style="display:flex;align-items:center;gap:10px;padding:11px 4px;border-bottom:1px solid #efecf6">' +
-        main + '<span style="font-weight:800;color:#7d2ae8">' + escapeHtml(board.unit(row.score)) + '</span></li>';
+        ? numCol + crown + '<span style="flex:1;font-weight:800;color:var(--gc-ink)">' + escapeHtml(row.username || 'Player') + youTag + '</span>'
+        : '<span style="font-family:Fredoka,sans-serif;font-weight:700;width:26px;font-size:15px;color:var(--gc-muted)">' + rank + '</span><span style="flex:1;color:var(--gc-muted)">' + (row.date ? escapeHtml(new Date(row.date).toLocaleDateString()) : '') + '</span>';
+      const rowBg = isMe
+        ? 'background:rgba(45,200,150,.13);border:1px solid var(--gc-accent2);border-radius:12px;margin-bottom:3px'
+        : (rank === 1 ? 'background:linear-gradient(90deg,rgba(125,42,232,.12),transparent);border-radius:12px;margin-bottom:3px' : 'border-bottom:1px solid var(--gc-row-line)');
+      return '<li style="display:flex;align-items:center;gap:11px;padding:11px;' + rowBg + '">' +
+        main + '<span style="font-family:Fredoka,sans-serif;font-weight:700;font-size:15px;color:' +
+        (isMe ? 'var(--gc-accent2)' : 'var(--gc-accent)') + '">' + escapeHtml(board.unit(row.score)) + '</span></li>';
     }).join('');
   }
   function onLbClick(e) {
@@ -526,10 +568,23 @@
     const sc = t.getAttribute && t.getAttribute('data-scope');
     if (sc) { lbScope = sc; renderLb(); loadLbList(); return; }
   }
-  function openLeaderboards() { buildLb(); renderLb(); lbEl.style.display = 'block'; loadLbList(); }
+  function openLeaderboards() {
+    buildLb(); renderLb(); lbEl.style.display = 'block';
+    GameCenter.me().then((r) => { lbMyName = (r.ok && r.data && r.data.username) || null; loadLbList(); });
+  }
   global.GameCenter.openLeaderboards = openLeaderboards;
 
+  // Ensure fonts, the icon set, and the theme tokens exist on any page that loads
+  // the SDK (the hub already ships them; standalone game pages may not).
+  function injectAssets() {
+    if (document.getElementById('gc-css')) return;
+    function link(href, test) { if (!document.querySelector(test)) { var l = document.createElement('link'); l.rel = 'stylesheet'; l.href = href; document.head.appendChild(l); } }
+    link('https://fonts.googleapis.com/css2?family=Fredoka:wght@500;600;700&family=Nunito:wght@400;600;700&display=swap', 'link[href*="fonts.googleapis.com/css2"]');
+    link('https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@2.47.0/tabler-icons.min.css', 'link[href*="tabler-icons"]');
+    var st = document.createElement('style'); st.id = 'gc-css'; st.textContent = GC_TOKENS; document.head.appendChild(st);
+  }
   function initChrome() {
+    injectAssets();
     applyTheme();            // honor saved theme on every page (hub + games)
     injectHomeButton();
     injectSettingsButton();

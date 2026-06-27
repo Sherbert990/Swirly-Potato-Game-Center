@@ -19,82 +19,104 @@
 <style>
 * { box-sizing: border-box; margin: 0; padding: 0; }
 html, body { height: 100%; overflow: hidden; }
-body { background: #160d29; font-family: sans-serif; }
+body { background: #160d29; font-family: Nunito, ui-sans-serif, system-ui, sans-serif; }
 #wrapper { position: relative; width: 100vw; height: 100vh; }
 canvas { display: block; width: 100%; height: 100%; background: #1a0b2e; }
+
+/* ===== In-game HUD (chrome — theme-aware via the SDK's --gc-* tokens) ===== */
 #ui { position: absolute; top: 0; left: 0; width: 100%; pointer-events: none; }
-#scoreDisplay { position: absolute; top: 14px; left: 50%; transform: translateX(-50%); background: rgba(13,2,33,0.6); color: #2de2e6; padding: 6px 22px; border-radius: 20px; font-size: 18px; font-weight: 600; letter-spacing: 0.5px; }
+#scoreDisplay { position: absolute; top: 14px; left: 50%; transform: translateX(-50%); background: var(--gc-panel); color: var(--gc-ink); border: 1px solid var(--gc-line); padding: 6px 18px; border-radius: 20px; font-family: Fredoka, sans-serif; font-size: 17px; font-weight: 600; display: inline-flex; align-items: center; gap: 8px; backdrop-filter: blur(6px); box-shadow: var(--gc-shadow); }
+#scoreDisplay .ti-coin { color: var(--gc-coin); }
 #gameButtons { position: absolute; top: 12px; right: 12px; display: none; gap: 8px; pointer-events: auto; }
-.gameBtn { background: rgba(13,2,33,0.6); color: #c9a9ff; border: 1px solid rgba(155,93,229,0.5); border-radius: 14px; padding: 7px 14px; font-size: 14px; font-weight: 600; cursor: pointer; }
-.gameBtn:hover { background: rgba(125,42,232,0.5); color: #fff; }
-#startScreen, #gameOverScreen { position: absolute; top: 0; left: 0; width: 100%; height: 100%; display: flex; flex-direction: column; align-items: center; justify-content: center; background: rgba(13,2,33,0.9); color: #fff; z-index: 10; }
-#startScreen h1, #gameOverScreen h1 { font-size: 44px; font-weight: 700; margin-bottom: 12px; color: #ff2e97; text-shadow: 0 0 18px rgba(255,46,151,0.6); }
-#startScreen p, #gameOverScreen p { font-size: 18px; color: #c9a9ff; margin-bottom: 10px; }
-.gBtn { background: #ff2e97; color: #fff; border: none; border-radius: 10px; padding: 14px 40px; font-size: 19px; cursor: pointer; margin-top: 18px; box-shadow: 0 0 20px rgba(255,46,151,0.5); }
-.gBtn:hover { background: #c724b1; }
+.gameBtn { background: var(--gc-panel); color: var(--gc-ink); border: 1px solid var(--gc-line); border-radius: 14px; padding: 7px 14px; font-family: Fredoka, sans-serif; font-size: 14px; font-weight: 600; cursor: pointer; backdrop-filter: blur(6px); }
+.gameBtn:hover { background: var(--gc-accent); color: #fff; border-color: var(--gc-accent); }
+
+/* ===== Shared full-screen views over the blue-sky plate (theme-aware) ===== */
+#profileScreen, #leaderboardScreen, #gameOverScreen { position: absolute; top: 0; left: 0; width: 100%; height: 100%; display: flex; flex-direction: column; align-items: center; justify-content: center; background: var(--gc-plate-bg) var(--gc-plate, none) center/cover no-repeat; color: var(--gc-ink); z-index: 12; overflow-y: auto; padding: 24px 16px; }
+.panelCard { background: var(--gc-panel); border: 1px solid var(--gc-line); border-radius: 20px; box-shadow: var(--gc-shadow); backdrop-filter: blur(8px); padding: 24px 22px; width: 440px; max-width: 92vw; display: flex; flex-direction: column; align-items: center; }
+#profileScreen h1, #leaderboardScreen h1, #gameOverScreen h1 { font-family: Fredoka, sans-serif; font-size: 30px; font-weight: 700; margin-bottom: 6px; color: var(--gc-ink); }
+#profileScreen p, #gameOverScreen p { font-size: 15px; color: var(--gc-muted); font-weight: 700; margin-bottom: 12px; }
+
+/* ===== Buttons ===== */
+.gBtn { background: var(--gc-accent); color: #fff; border: none; border-radius: 13px; padding: 13px 36px; font-family: Fredoka, sans-serif; font-size: 17px; font-weight: 600; cursor: pointer; margin-top: 16px; display: inline-flex; align-items: center; justify-content: center; gap: 8px; }
+.gBtn:hover { filter: brightness(1.06); }
+.gBtn.secondary { background: var(--gc-chip); color: var(--gc-ink); border: 1px solid var(--gc-chip-line); padding: 11px 24px; font-size: 15px; }
+.gBtn.secondary:hover { filter: none; background: var(--gc-field); }
+.linkBtn { background: none; border: none; color: var(--gc-muted); cursor: pointer; font-family: Nunito, sans-serif; font-weight: 700; font-size: 14px; margin-top: 14px; }
+.linkBtn:hover { color: var(--gc-accent); }
+
+/* ===== Touch controls (gameplay overlay) ===== */
 #touchUI { position: absolute; inset: 0; pointer-events: none; z-index: 5; display: none; }
 #joyBase { position: absolute; left: 30px; bottom: 30px; width: 104px; height: 104px; border-radius: 50%; border: 2px solid rgba(45,226,230,0.6); background: rgba(125,42,232,0.22); opacity: 0.45; }
 #joyBase.active { opacity: 0.92; transform: translate(-50%,-50%); }
 #joyKnob { position: absolute; left: 50%; top: 50%; width: 48px; height: 48px; margin: -24px 0 0 -24px; border-radius: 50%; background: rgba(45,226,230,0.88); border: 2px solid #0d0221; }
-#jumpPad { position: absolute; right: 28px; bottom: 28px; width: 96px; height: 96px; border-radius: 50%; pointer-events: auto; border: 2px solid rgba(45,226,230,0.5); background: rgba(255,46,151,0.55); color: #fff; font-size: 16px; font-weight: 600; line-height: 1.15; cursor: pointer; user-select: none; }
-#jumpPad:active { background: rgba(255,46,151,0.82); }
-.histTitle { font-size: 16px; color: #c9a9ff; margin: 18px 0 6px; font-weight: 600; letter-spacing: 0.5px; }
-#scoreHistory, #lbList { width: 340px; max-width: 86vw; max-height: 34vh; overflow-y: auto; }
-.histRow { display: flex; align-items: center; gap: 10px; padding: 7px 14px; margin: 5px 0; border-radius: 8px; background: rgba(125,42,232,0.18); color: #e8d9ff; font-size: 15px; }
-.histRow.current { background: rgba(255,46,151,0.28); color: #fff; box-shadow: 0 0 12px rgba(255,46,151,0.45); }
-.histRow .rank { color: #9b5de5; font-weight: 700; width: 30px; }
-.histRow .ht { font-weight: 600; flex: 1; }
-.histRow .st { color: #ffe14d; }
-.histRow .date { color: #8a7aa8; font-size: 12px; width: 44px; text-align: right; }
-.histEmpty { color: #8a7aa8; font-size: 14px; }
-.pickTitle { font-size: 16px; color: #c9a9ff; margin: 14px 0 4px; font-weight: 600; letter-spacing: 0.5px; }
-#avatarPicker { display: flex; flex-wrap: wrap; gap: 8px; justify-content: center; max-width: 92vw; margin-bottom: 4px; }
-.avBtn { background: rgba(125,42,232,0.18); border: 2px solid transparent; border-radius: 12px; padding: 3px; cursor: pointer; line-height: 0; }
-.avBtn:hover { background: rgba(125,42,232,0.32); }
-.avBtn.sel { border-color: #ff2e97; background: rgba(255,46,151,0.15); box-shadow: 0 0 12px rgba(255,46,151,0.5); }
+#jumpPad { position: absolute; right: 28px; bottom: 28px; width: 96px; height: 96px; border-radius: 50%; pointer-events: auto; border: 2px solid rgba(255,255,255,0.5); background: var(--gc-accent); color: #fff; font-family: Fredoka, sans-serif; font-size: 14px; font-weight: 600; line-height: 1.15; cursor: pointer; user-select: none; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 2px; }
+#jumpPad i { font-size: 22px; }
+#jumpPad:active { filter: brightness(1.12); }
+
+/* ===== Score / leaderboard lists ===== */
+.histTitle { font-family: Fredoka, sans-serif; font-size: 15px; color: var(--gc-muted); margin: 16px 0 6px; font-weight: 600; }
+#scoreHistory, #lbList { width: 100%; max-height: 34vh; overflow-y: auto; }
+.histRow { display: flex; align-items: center; gap: 10px; padding: 9px 12px; margin: 4px 0; border-radius: 11px; background: var(--gc-chip); color: var(--gc-ink); font-size: 15px; font-weight: 700; }
+.histRow.current { background: rgba(45,200,150,0.14); border: 1px solid var(--gc-accent2); }
+.histRow .rank { font-family: Fredoka, sans-serif; color: var(--gc-muted); font-weight: 700; width: 28px; }
+.histRow.current .rank { color: var(--gc-accent2); }
+.histRow .ht { font-weight: 800; flex: 1; }
+.histRow .st { color: var(--gc-coin); font-weight: 700; display: inline-flex; align-items: center; gap: 4px; }
+.histRow .date { color: var(--gc-muted); font-size: 12px; width: 44px; text-align: right; font-weight: 600; }
+.histEmpty { color: var(--gc-muted); font-size: 14px; font-weight: 700; }
+.histRow .nm { flex: 1; font-weight: 800; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.histRow .nm.anon { color: var(--gc-muted); font-style: italic; font-weight: 700; }
+.histRow .gh { font-family: Fredoka, sans-serif; color: var(--gc-accent); font-weight: 700; width: 56px; text-align: right; }
+.histRow.current .gh { color: var(--gc-accent2); }
+
+/* ===== Avatar pickers ===== */
+.pickTitle { font-family: Fredoka, sans-serif; font-size: 14px; color: var(--gc-muted); margin: 14px 0 6px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.04em; }
+#profilePicker, #signupPicker { display: flex; flex-wrap: wrap; gap: 8px; justify-content: center; max-width: 92vw; margin-bottom: 4px; }
+.avBtn { background: var(--gc-chip); border: 2px solid var(--gc-chip-line); border-radius: 12px; padding: 3px; cursor: pointer; line-height: 0; }
+.avBtn:hover { border-color: var(--gc-accent); }
+.avBtn.sel { border-color: var(--gc-accent); background: rgba(125,42,232,0.14); }
 .avBtn canvas { display: block; }
-#authScreen, #profileScreen, #leaderboardScreen { position: absolute; top: 0; left: 0; width: 100%; height: 100%; display: flex; flex-direction: column; align-items: center; justify-content: center; background: rgba(13,2,33,0.95); color: #fff; z-index: 12; overflow-y: auto; }
-#authScreen h1, #profileScreen h1, #leaderboardScreen h1 { font-size: 38px; font-weight: 700; margin-bottom: 6px; color: #ff2e97; text-shadow: 0 0 18px rgba(255,46,151,0.6); }
-#authScreen p, #profileScreen p { font-size: 16px; color: #c9a9ff; margin-bottom: 14px; }
-.field { width: 280px; max-width: 86vw; margin: 6px 0; }
-.field input { width: 100%; padding: 12px 14px; font-size: 16px; border-radius: 10px; border: 1px solid rgba(155,93,229,0.5); background: rgba(125,42,232,0.15); color: #fff; outline: none; }
-.field input:focus { border-color: #2de2e6; }
-.authErr { color: #ff6b6b; font-size: 14px; min-height: 18px; margin: 4px 0; text-align: center; }
-.linkBtn { background: none; border: none; color: #2de2e6; cursor: pointer; font-size: 14px; margin-top: 14px; text-decoration: underline; }
-.gBtn.secondary { background: rgba(125,42,232,0.35); box-shadow: none; padding: 11px 26px; font-size: 16px; }
-.gBtn.secondary:hover { background: rgba(125,42,232,0.55); }
-#startUser { font-size: 20px; color: #2de2e6; font-weight: 600; margin-bottom: 4px; }
+
+/* ===== Fields & tabs ===== */
+.field { width: 300px; max-width: 86vw; margin: 6px 0; }
+.field input { width: 100%; padding: 12px 14px; font: inherit; font-size: 16px; font-weight: 700; border-radius: 11px; border: 1px solid var(--gc-line); background: var(--gc-field); color: var(--gc-ink); outline: none; }
+.field input:focus { border-color: var(--gc-accent); }
+.authErr { color: #e2466a; font-size: 14px; font-weight: 700; min-height: 18px; margin: 4px 0; text-align: center; }
 .topBtns { display: flex; gap: 10px; margin-top: 10px; flex-wrap: wrap; justify-content: center; }
 .lbTabs { display: flex; gap: 8px; margin: 14px 0 8px; }
-.lbTab { background: rgba(125,42,232,0.18); color: #c9a9ff; border: 1px solid rgba(155,93,229,0.4); border-radius: 16px; padding: 7px 18px; font-size: 14px; font-weight: 600; cursor: pointer; }
-.lbTab.sel { background: #ff2e97; color: #fff; border-color: #ff2e97; }
-.histRow .nm { flex: 1; font-weight: 600; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-.histRow .nm.anon { color: #8a7aa8; font-style: italic; }
-.histRow .gh { color: #2de2e6; font-weight: 700; width: 56px; text-align: right; }
-.toggleRow { display: flex; align-items: center; gap: 10px; margin: 14px 0 2px; color: #c9a9ff; font-size: 14px; max-width: 280px; cursor: pointer; }
-.toggleRow input { width: 18px; height: 18px; accent-color: #ff2e97; cursor: pointer; flex-shrink: 0; }
-.toggleRow.off { opacity: 0.4; cursor: not-allowed; }
+.lbTab { background: var(--gc-chip); color: var(--gc-muted); border: 1px solid var(--gc-chip-line); border-radius: 11px; padding: 8px 18px; font-family: Fredoka, sans-serif; font-size: 14px; font-weight: 600; cursor: pointer; }
+.lbTab.sel { background: var(--gc-accent); color: #fff; border-color: var(--gc-accent); }
+.toggleRow { display: flex; align-items: center; gap: 10px; margin: 8px 0; color: var(--gc-ink); font-weight: 700; font-size: 14px; max-width: 320px; cursor: pointer; }
+.toggleRow input { width: 18px; height: 18px; accent-color: var(--gc-accent); cursor: pointer; flex-shrink: 0; }
+.toggleRow.off { opacity: 0.45; cursor: not-allowed; }
 .toggleRow.off input { cursor: not-allowed; }
-#storeScreen { position: absolute; top: 0; left: 0; width: 100%; height: 100%; display: flex; flex-direction: column; align-items: center; justify-content: center; background: rgba(13,2,33,0.96); color: #fff; z-index: 12; overflow-y: auto; padding: 20px 0; }
-#storeScreen h1 { font-size: 38px; font-weight: 700; margin-bottom: 4px; color: #ffe14d; text-shadow: 0 0 18px rgba(255,225,77,0.5); }
-.balance { font-size: 20px; color: #ffe14d; font-weight: 700; margin: 4px 0 8px; }
-.storeSection { font-size: 15px; color: #c9a9ff; font-weight: 600; letter-spacing: 0.5px; margin: 12px 0 4px; }
-#storeItems, #storeAvatars { width: 360px; max-width: 90vw; }
-.storeRow { display: flex; align-items: center; gap: 12px; padding: 10px 14px; margin: 6px 0; border-radius: 10px; background: rgba(125,42,232,0.18); }
-.storeRow .info { flex: 1; min-width: 0; }
-.storeRow .nm2 { font-weight: 700; color: #fff; font-size: 15px; }
-.storeRow .ds { color: #c9a9ff; font-size: 12px; }
-.storeRow .own { color: #2de2e6; font-size: 12px; font-weight: 600; }
-.buyBtn { background: #ff2e97; color: #fff; border: none; border-radius: 8px; padding: 8px 14px; font-size: 14px; font-weight: 600; cursor: pointer; white-space: nowrap; box-shadow: 0 0 12px rgba(255,46,151,0.4); }
-.buyBtn:hover { background: #c724b1; }
-.buyBtn:disabled { background: rgba(125,42,232,0.3); color: #8a7aa8; cursor: not-allowed; box-shadow: none; }
-.buyBtn.owned { background: rgba(45,226,230,0.25); color: #2de2e6; cursor: default; box-shadow: none; }
-#storeAvatars { display: flex; flex-wrap: wrap; gap: 10px; justify-content: center; }
-.avCard { display: flex; flex-direction: column; align-items: center; gap: 4px; padding: 8px; border-radius: 12px; background: rgba(125,42,232,0.18); width: 104px; }
-.avCard .nm2 { font-size: 13px; font-weight: 700; }
-.avCard canvas { display: block; }
-#reviveBtn { background: #2de2e6; color: #0d0221; box-shadow: 0 0 20px rgba(45,226,230,0.6); }
-#reviveBtn:hover { background: #25c3c6; }
+#reviveBtn { background: var(--gc-accent2); color: #fff; }
+#reviveBtn:hover { filter: brightness(1.06); }
+
+/* ===== Art-forward intro shell — cover art is the hero (only the image differs
+   per game). Home + Settings (top-left) come from the SDK's floating buttons. ===== */
+#startScreen { position: absolute; inset: 0; z-index: 10; display: none; background: var(--gc-ink); }
+.introArt { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; }
+.introScrim { position: absolute; inset: 0; background: linear-gradient(to bottom, rgba(10,8,24,0.04) 34%, rgba(10,8,24,0.86) 100%); }
+.introChrome { position: absolute; top: 12px; right: 12px; z-index: 2; display: flex; align-items: center; gap: 10px; }
+.introCoin { display: inline-flex; align-items: center; gap: 6px; padding: 8px 14px; border-radius: 20px; background: rgba(255,255,255,0.18); backdrop-filter: blur(6px); border: 1px solid rgba(255,255,255,0.28); color: #fff; font-family: Fredoka, sans-serif; font-weight: 600; }
+.introCoin i { color: #ffd479; }
+.introTrophy { width: 42px; height: 42px; border-radius: 20px; background: rgba(255,255,255,0.18); backdrop-filter: blur(6px); border: 1px solid rgba(255,255,255,0.28); color: #fff; font-size: 18px; cursor: pointer; display: inline-flex; align-items: center; justify-content: center; }
+.introTrophy:hover { background: rgba(255,255,255,0.3); }
+.introCopy { position: absolute; left: 50%; bottom: 0; transform: translateX(-50%); width: 100%; max-width: 600px; z-index: 2; padding: 26px 24px max(26px, env(safe-area-inset-bottom)); color: #fff; }
+.introEyebrow { font-family: Fredoka, sans-serif; font-weight: 600; font-size: 0.8rem; letter-spacing: 0.14em; text-transform: uppercase; color: #ead9ff; margin-bottom: 4px; }
+.introTitle { font-family: Fredoka, sans-serif; font-size: clamp(2rem, 7vw, 3rem); font-weight: 700; color: #fff; text-shadow: 0 2px 18px rgba(0,0,0,0.45); margin-bottom: 6px; }
+.introTagline { color: rgba(255,255,255,0.9); font-weight: 700; font-size: 1rem; margin-bottom: 14px; }
+.introToggles { display: flex; flex-direction: column; gap: 4px; margin-bottom: 14px; }
+.introToggles .toggleRow { color: #fff; background: rgba(255,255,255,0.14); backdrop-filter: blur(4px); border: 1px solid rgba(255,255,255,0.2); border-radius: 11px; padding: 8px 12px; margin: 0; max-width: 360px; }
+.introActions { display: flex; gap: 12px; flex-wrap: wrap; align-items: center; }
+.introActions .gBtn { margin-top: 0; }
+.introActions .gBtn.secondary { background: rgba(255,255,255,0.18); backdrop-filter: blur(6px); border: 1px solid rgba(255,255,255,0.28); color: #fff; }
+.introActions .gBtn.secondary:hover { background: rgba(255,255,255,0.3); }
+.introLinks { display: flex; gap: 16px; margin-top: 8px; }
+.introLinks .linkBtn { color: rgba(255,255,255,0.82); margin-top: 0; }
+.introLinks .linkBtn:hover { color: #fff; }
 </style>
 </head>
 <body>
@@ -105,76 +127,63 @@ canvas { display: block; width: 100%; height: 100%; background: #1a0b2e; }
     <button class="gameBtn" id="gameProfileBtn">Profile</button>
     <button class="gameBtn" id="gameLogoutBtn">Log out</button>
   </div>
-  <div id="authScreen" style="display:none">
-    <h1>Don't Look Down</h1>
-    <p id="authSubtitle">Sign in to start climbing</p>
-    <div class="field"><input id="authUser" type="text" placeholder="Username" autocomplete="username" maxlength="20"></div>
-    <div class="field"><input id="authPass" type="password" placeholder="Password" autocomplete="current-password"></div>
-    <div id="authPickerWrap" style="display:none">
-      <div class="pickTitle">Choose your climber</div>
-      <div id="signupPicker"></div>
-    </div>
-    <div class="authErr" id="authErr"></div>
-    <button class="gBtn" id="authSubmit">Sign In</button>
-    <button class="linkBtn" id="authToggle">New here? Create an account</button>
-  </div>
+  <!-- Profile editing (rename / climber / privacy) over the shared sky plate. -->
   <div id="profileScreen" style="display:none">
-    <h1>Profile</h1>
-    <p>Change your username or climber</p>
-    <div class="field"><input id="profileUser" type="text" placeholder="Username" maxlength="20"></div>
-    <div class="pickTitle">Your climber</div>
-    <div id="profilePicker"></div>
-    <label class="toggleRow"><input type="checkbox" id="profileShowName"><span>Show my username on the global leaderboard</span></label>
-    <div class="authErr" id="profileErr"></div>
-    <div class="topBtns">
-      <button class="gBtn secondary" id="profileCancel">Back</button>
-      <button class="gBtn" id="profileSave">Save</button>
+    <div class="panelCard">
+      <h1>Profile</h1>
+      <p>Change your username or climber</p>
+      <div class="field"><input id="profileUser" type="text" placeholder="Username" maxlength="20"></div>
+      <div class="pickTitle">Your climber</div>
+      <div id="profilePicker"></div>
+      <label class="toggleRow"><input type="checkbox" id="profileShowName"><span>Show my username on the global leaderboard</span></label>
+      <div class="authErr" id="profileErr"></div>
+      <div class="topBtns">
+        <button class="gBtn secondary" id="profileCancel">Back</button>
+        <button class="gBtn" id="profileSave">Save</button>
+      </div>
     </div>
   </div>
+  <!-- Art-forward intro. Login lives once at the hub (shared SDK auth); if the
+       player isn't signed in, the boot gate sends them to the hub. -->
   <div id="startScreen" style="display:none">
-    <h1>Don't Look Down</h1>
-    <div id="startUser">Climbing as —</div>
-    <div class="balance" id="startBalance">★ 0 stars</div>
-    <p style="font-size:15px;color:#7d2ae8">Arrow keys / WASD to move &amp; jump</p>
-    <label class="toggleRow" id="hsRow"><input type="checkbox" id="useHeadStart"><span>Use Head Start (+50m) — <b id="hsCount">0</b> owned</span></label>
-    <label class="toggleRow" id="rkRow"><input type="checkbox" id="useRocket"><span>Use Rocket Booster (+100m) — <b id="rkCount">0</b> owned</span></label>
-    <label class="toggleRow" id="dbRow"><input type="checkbox" id="useDoubler"><span>Use Star Doubler (2× stars) — <b id="dbCount">0</b> owned</span></label>
-    <button class="gBtn" id="startBtn">Play</button>
-    <div class="topBtns">
-      <button class="gBtn secondary" id="storeBtn">Store</button>
-      <button class="gBtn secondary" id="leaderboardBtn">Leaderboards</button>
-      <button class="gBtn secondary" id="profileBtn">Profile</button>
-      <button class="gBtn secondary" id="logoutBtn">Log out</button>
+    <img class="introArt" src="/design/hub/dontlookdown-cover.png" alt="Don't Look Down cover art">
+    <div class="introScrim"></div>
+    <div class="introChrome">
+      <span class="introCoin"><i class="ti ti-coin" aria-hidden="true"></i> <span id="startBalance">0</span></span>
+      <button class="introTrophy" id="leaderboardBtn" type="button" aria-label="Leaderboards"><i class="ti ti-trophy" aria-hidden="true"></i></button>
     </div>
-  </div>
-  <div id="storeScreen" style="display:none">
-    <h1>Store</h1>
-    <div class="balance" id="storeBalance">★ 0 stars</div>
-    <div id="storePowerSection">
-      <div class="storeSection">Power-ups</div>
-      <div id="storeItems"></div>
+    <div class="introCopy">
+      <p class="introEyebrow">Endless Climb</p>
+      <h1 class="introTitle">Don't Look Down</h1>
+      <p class="introTagline" id="startUser">Climbing as —</p>
+      <div class="introToggles">
+        <label class="toggleRow" id="hsRow"><input type="checkbox" id="useHeadStart"><span>Head Start (+50m) — <b id="hsCount">0</b> owned</span></label>
+        <label class="toggleRow" id="rkRow"><input type="checkbox" id="useRocket"><span>Rocket Booster (+100m) — <b id="rkCount">0</b> owned</span></label>
+        <label class="toggleRow" id="dbRow"><input type="checkbox" id="useDoubler"><span>Star Doubler (2× stars) — <b id="dbCount">0</b> owned</span></label>
+      </div>
+      <div class="introActions">
+        <button class="gBtn" id="startBtn"><i class="ti ti-player-play" aria-hidden="true"></i> Play</button>
+        <button class="gBtn secondary" id="storeBtn"><i class="ti ti-shopping-bag" aria-hidden="true"></i> Store</button>
+      </div>
+      <div class="introLinks">
+        <button class="linkBtn" id="profileBtn">Profile</button>
+        <button class="linkBtn" id="logoutBtn">Log out</button>
+      </div>
     </div>
-    <div id="storeSkinSection" style="display:none">
-      <div class="storeSection">Premium climbers</div>
-      <div id="storeAvatars"></div>
-    </div>
-    <div class="authErr" id="storeErr"></div>
-    <div class="lbTabs" id="storeSeg">
-      <button class="lbTab sel" type="button" data-section="power">Power-ups</button>
-      <button class="lbTab" type="button" data-section="skins">Skins</button>
-    </div>
-    <button class="gBtn secondary" id="storeBack">Back</button>
   </div>
   <div id="leaderboardScreen" style="display:none">
-    <h1>Leaderboard</h1>
-    <div class="lbTabs" id="lbTabs">
-      <button class="lbTab sel" data-tab="personal">My Climbs</button>
-      <button class="lbTab" data-tab="global">Global</button>
+    <div class="panelCard">
+      <h1>Leaderboard</h1>
+      <div class="lbTabs" id="lbTabs">
+        <button class="lbTab sel" data-tab="personal">My Climbs</button>
+        <button class="lbTab" data-tab="global">Global</button>
+      </div>
+      <div id="lbList"></div>
+      <button class="gBtn secondary" id="lbBack">Back</button>
     </div>
-    <div id="lbList"></div>
-    <button class="gBtn secondary" id="lbBack">Back</button>
   </div>
   <div id="gameOverScreen" style="display:none">
+    <div class="panelCard">
     <h1>You fell!</h1>
     <p id="finalScore">Height: 0m</p>
     <p id="finalCoins">Stars: 0</p>
@@ -187,11 +196,12 @@ canvas { display: block; width: 100%; height: 100%; background: #1a0b2e; }
       <button class="gBtn" id="reviveBtn" style="display:none">Revive</button>
       <button class="gBtn" id="restartBtn">Play again</button>
     </div>
+    </div>
   </div>
 </div>
 <div id="touchUI">
   <div id="joyBase"><div id="joyKnob"></div></div>
-  <button id="jumpPad">▲<br>Jump</button>
+  <button id="jumpPad"><i class="ti ti-arrow-up" aria-hidden="true"></i>Jump</button>
 </div>
 <script src="/shared/gamecenter.js"></script>
 <script>
@@ -320,7 +330,7 @@ function renderPersonal(el, scores, currentId) {
     const d = new Date(s.date);
     const date = (d.getMonth() + 1) + '/' + d.getDate();
     const cls = s.id === currentId ? 'histRow current' : 'histRow';
-    return `<div class="${cls}"><span class="rank">#${i+1}</span><span class="ht">${s.height}m</span><span class="st">★ ${s.stars}</span><span class="date">${date}</span></div>`;
+    return `<div class="${cls}"><span class="rank">#${i+1}</span><span class="ht">${s.height}m</span><span class="st"><i class="ti ti-coin"></i> ${s.stars}</span><span class="date">${date}</span></div>`;
   }).join('');
 }
 
@@ -329,7 +339,7 @@ function renderGlobal(el, entries) {
   el.innerHTML = entries.map((e, i) => {
     const cls = e.isMe ? 'histRow current' : 'histRow';
     const nm = e.name === 'Anonymous' ? '<span class="nm anon">Anonymous</span>' : `<span class="nm">${esc(e.name)}</span>`;
-    return `<div class="${cls}"><span class="rank">#${i+1}</span>${nm}<span class="st">★ ${e.stars}</span><span class="gh">${e.height}m</span></div>`;
+    return `<div class="${cls}"><span class="rank">#${i+1}</span>${nm}<span class="st"><i class="ti ti-coin"></i> ${e.stars}</span><span class="gh">${e.height}m</span></div>`;
   }).join('');
 }
 
@@ -492,7 +502,7 @@ function update() {
     }
   }
 
-  document.getElementById('scoreDisplay').textContent = `Height: ${game.maxHeight}m  ★ ${game.coinCount}`;
+  document.getElementById('scoreDisplay').innerHTML = `<span>Height: ${game.maxHeight}m</span><i class="ti ti-coin"></i><span>${game.coinCount}</span>`;
 
   if (p.y > H + 60) {
     game.alive = false;
@@ -767,7 +777,7 @@ async function api(path, body) {
 }
 
 // ---- Screen helpers ----
-const screens = ['authScreen', 'profileScreen', 'startScreen', 'storeScreen', 'gameOverScreen', 'leaderboardScreen'];
+const screens = ['profileScreen', 'startScreen', 'gameOverScreen', 'leaderboardScreen'];
 function showScreen(id) {
   screens.forEach(s => document.getElementById(s).style.display = (s === id ? 'flex' : 'none'));
   document.getElementById('gameButtons').style.display = id ? 'none' : 'flex';
@@ -783,7 +793,7 @@ function enterStartScreen() {
 
 function refreshStartScreen() {
   const u = currentUser || {};
-  document.getElementById('startBalance').textContent = `★ ${u.stars || 0} stars`;
+  document.getElementById('startBalance').textContent = `${u.stars || 0}`;
   const hs = u.headStarts || 0, db = u.doublers || 0, rk = u.rockets || 0;
   document.getElementById('hsCount').textContent = hs;
   document.getElementById('dbCount').textContent = db;
@@ -797,39 +807,8 @@ function refreshStartScreen() {
   document.getElementById('rkRow').classList.toggle('off', rk === 0);
 }
 
-// ---- Auth screen ----
-let authMode = 'login'; // 'login' | 'signup'
-let signupAvatar = 0;
-
-function setAuthMode(mode) {
-  authMode = mode;
-  const signup = mode === 'signup';
-  document.getElementById('authSubtitle').textContent = signup ? 'Create an account to start climbing' : 'Sign in to start climbing';
-  document.getElementById('authSubmit').textContent = signup ? 'Create Account' : 'Sign In';
-  document.getElementById('authToggle').textContent = signup ? 'Already have an account? Sign in' : 'New here? Create an account';
-  document.getElementById('authPickerWrap').style.display = signup ? 'block' : 'none';
-  document.getElementById('authPass').autocomplete = signup ? 'new-password' : 'current-password';
-  document.getElementById('authErr').textContent = '';
-  if (signup) buildPicker(document.getElementById('signupPicker'), () => signupAvatar, i => signupAvatar = i, baseIndices());
-}
-
-document.getElementById('authToggle').onclick = () => setAuthMode(authMode === 'login' ? 'signup' : 'login');
-
-document.getElementById('authSubmit').onclick = async () => {
-  const username = document.getElementById('authUser').value;
-  const password = document.getElementById('authPass').value;
-  const err = document.getElementById('authErr');
-  err.textContent = '';
-  const path = authMode === 'signup' ? '/api/register' : '/api/login';
-  const body = authMode === 'signup' ? { username, password, avatar: signupAvatar } : { username, password };
-  const { ok, data } = await api(path, body);
-  if (!ok) { err.textContent = data.error || 'Something went wrong.'; return; }
-  currentUser = data;
-  selectedAvatar = data.avatar;
-  document.getElementById('authPass').value = '';
-  enterStartScreen();
-};
-document.getElementById('authPass').addEventListener('keydown', e => { if (e.key === 'Enter') document.getElementById('authSubmit').click(); });
+// Login/signup live once at the hub (the shared SDK auth). This game has no
+// bespoke auth screen — the boot gate redirects to the hub when not signed in.
 
 // ---- Profile screen ----
 let profileAvatar = 0;
@@ -858,24 +837,17 @@ function openProfile() {
 }
 async function doLogout() {
   await api('/api/logout', {});
-  currentUser = null;
-  document.getElementById('authUser').value = '';
-  document.getElementById('authPass').value = '';
-  setAuthMode('login');
-  showScreen('authScreen');
+  location.href = '/';  // back to the hub (shared SDK auth)
 }
 
 document.getElementById('gameProfileBtn').onclick = () => { if (game) game.alive = false; openProfile(); };
 document.getElementById('gameLogoutBtn').onclick = () => { if (game) game.alive = false; doLogout(); };
 
-// Leaderboard tabs
+// The game-over recap keeps its own quick board; the menu "Leaderboards" entry
+// (trophy) opens the one shared full-screen leaderboards (every game + mode).
 wireTabs(document.getElementById('goTabs'), document.getElementById('scoreHistory'), () => lastRun);
-wireTabs(document.getElementById('lbTabs'), document.getElementById('lbList'), () => null);
 
-document.getElementById('leaderboardBtn').onclick = () => {
-  showScreen('leaderboardScreen');
-  showBoard(document.getElementById('lbTabs'), document.getElementById('lbList'), 'personal', null);
-};
+document.getElementById('leaderboardBtn').onclick = () => GameCenter.openLeaderboards();
 document.getElementById('lbBack').onclick = () => enterStartScreen();
 
 document.getElementById('startBtn').onclick = async () => {
@@ -900,103 +872,18 @@ document.getElementById('reviveBtn').onclick = async () => {
 };
 
 // ---- Store ----
-const STORE_ITEMS = [
-  { item: 'revive', name: 'Revive', price: 25, desc: 'Get back up after a fall', key: 'revives' },
-  { item: 'headstart', name: 'Head Start', price: 15, desc: 'Begin a run +50m up', key: 'headStarts' },
-  { item: 'rocket_booster', name: 'Rocket Booster', price: 20, desc: 'Begin a run +100m up', key: 'rockets' },
-  { item: 'doubler', name: 'Star Doubler', price: 20, desc: '2× stars for one run', key: 'doublers' },
-];
-const PREMIUM_PRICES = { 10: 60, 11: 80, 12: 100, 13: 120 };
-
+// Power-ups and premium skins live in the one shared store (a tab per game).
 document.getElementById('storeBtn').onclick = () => GameCenter.openStore('dont-look-down');
-document.getElementById('storeBack').onclick = () => enterStartScreen();
 // Shared store: when it closes, pull the latest wallet/skin and refresh the start screen.
 window.addEventListener('gc:storeclose', async () => {
   const r = await api('/api/me');
   if (r.ok) { currentUser = r.data; selectedAvatar = currentUser.avatar; refreshStartScreen(); }
 });
 
-function setStoreSection(section) {
-  document.getElementById('storePowerSection').style.display = section === 'power' ? '' : 'none';
-  document.getElementById('storeSkinSection').style.display = section === 'skins' ? '' : 'none';
-  document.querySelectorAll('#storeSeg .lbTab').forEach(b => b.classList.toggle('sel', b.dataset.section === section));
-}
-document.querySelectorAll('#storeSeg .lbTab').forEach(b => b.onclick = () => setStoreSection(b.dataset.section));
-
-function openStore() {
-  document.getElementById('storeErr').textContent = '';
-  renderStore();
-  setStoreSection('power');
-  showScreen('storeScreen');
-}
-
-function renderStore() {
-  const u = currentUser || {};
-  const stars = u.stars || 0;
-  const owned = u.ownedAvatars || [];
-  document.getElementById('storeBalance').textContent = `★ ${stars} stars`;
-
-  const itemsEl = document.getElementById('storeItems');
-  itemsEl.innerHTML = '';
-  STORE_ITEMS.forEach(it => {
-    const row = document.createElement('div');
-    row.className = 'storeRow';
-    const have = u[it.key] || 0;
-    row.innerHTML = `<div class="info"><div class="nm2">${it.name}</div><div class="ds">${it.desc}</div>` +
-      `<div class="own">Owned: ${have}</div></div>`;
-    const btn = document.createElement('button');
-    btn.className = 'buyBtn';
-    btn.textContent = `★ ${it.price}`;
-    btn.disabled = stars < it.price;
-    btn.onclick = () => buy({ kind: 'item', item: it.item });
-    row.appendChild(btn);
-    itemsEl.appendChild(row);
-  });
-
-  const avEl = document.getElementById('storeAvatars');
-  avEl.innerHTML = '';
-  for (let i = PREMIUM_START; i < AVATARS.length; i++) {
-    const a = AVATARS[i], price = PREMIUM_PRICES[i];
-    const card = document.createElement('div');
-    card.className = 'avCard';
-    const cv = document.createElement('canvas');
-    cv.width = 56; cv.height = 76;
-    const c = cv.getContext('2d');
-    c.save(); c.translate(8, 14); c.scale(1.6, 1.6);
-    drawAvatar(c, 0, 0, 28, 36, a);
-    c.restore();
-    card.appendChild(cv);
-    const nm = document.createElement('div');
-    nm.className = 'nm2'; nm.textContent = a.name;
-    card.appendChild(nm);
-    const btn = document.createElement('button');
-    btn.className = 'buyBtn';
-    if (owned.includes(i)) {
-      btn.classList.add('owned'); btn.textContent = 'Owned'; btn.disabled = true;
-    } else {
-      btn.textContent = `★ ${price}`;
-      btn.disabled = stars < price;
-      btn.onclick = () => buy({ kind: 'avatar', avatar: i });
-    }
-    card.appendChild(btn);
-    avEl.appendChild(card);
-  }
-}
-
-async function buy(payload) {
-  const err = document.getElementById('storeErr');
-  err.textContent = '';
-  const r = await api('/api/store/buy', payload);
-  if (!r.ok) { err.textContent = r.data.error || 'Could not buy.'; return; }
-  currentUser = r.data;
-  renderStore();
-}
-
-setAuthMode('login');
 (async () => {
   const { ok, data } = await api('/api/me');
   if (ok) { currentUser = data; selectedAvatar = data.avatar; enterStartScreen(); }
-  else showScreen('authScreen');
+  else location.href = '/';  // not logged in -> hub (shared SDK auth)
 })();
 document.addEventListener('keydown', e => { keys[e.key]=true; if(['ArrowUp','ArrowDown','ArrowLeft','ArrowRight',' '].includes(e.key)) e.preventDefault(); });
 document.addEventListener('keyup', e => { keys[e.key]=false; });

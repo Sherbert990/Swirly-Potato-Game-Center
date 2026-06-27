@@ -14,17 +14,12 @@ const nameInput = document.querySelector("#nameInput");
 const playBtn = document.querySelector("#play");
 const modesBtnControl = document.querySelector("#modesBtn");
 const avatarPicker = document.querySelector("#avatarPicker");
-const welcomeScreen = document.querySelector("#welcome");
-const signinScreen = document.querySelector("#signin");
-const createScreen = document.querySelector("#create");
-const goSigninBtn = document.querySelector("#goSignin");
-const goCreateBtn = document.querySelector("#goCreate");
-const signinInput = document.querySelector("#signinInput");
-const createInput = document.querySelector("#createInput");
-const signinBtn = document.querySelector("#signinBtn");
-const createBtn = document.querySelector("#createBtn");
-const signinError = document.querySelector("#signinError");
-const createError = document.querySelector("#createError");
+const introScreen = document.querySelector("#intro");
+const introPlayBtn = document.querySelector("#introPlay");
+const introStoreBtn = document.querySelector("#introStore");
+const introTrophyBtn = document.querySelector("#introTrophy");
+const introCoinsEl = document.querySelector("#introCoins");
+const introBestEl = document.querySelector("#introBest");
 const editProfileBtn = document.querySelector("#editProfile");
 const logoutBtn = document.querySelector("#logout");
 const modesScreen = document.querySelector("#modes");
@@ -1238,6 +1233,7 @@ function updateCoinHud() {
   const wallet = gc ? gc.coins : 0;
   if (coinsEl) coinsEl.textContent = wallet + runCoins;       // in-game: wallet + this run
   if (storeCoinsEl) storeCoinsEl.textContent = wallet;        // store: spendable wallet only
+  if (introCoinsEl) introCoinsEl.textContent = wallet;        // intro coin pill
 }
 
 function addCoins(amount) {
@@ -1498,7 +1494,7 @@ function stopLoop() {
 }
 
 function showScreen(target) {
-  [welcomeScreen, signinScreen, createScreen, startupOverlay, modesScreen, resultsScreen, storeScreen, reviveScreen, leaderboardScreen].forEach((screen) => {
+  [introScreen, startupOverlay, modesScreen, resultsScreen, storeScreen, reviveScreen, leaderboardScreen].forEach((screen) => {
     screen.classList.add("hidden");
   });
   if (target) target.classList.remove("hidden");
@@ -1595,49 +1591,18 @@ function endTimeTrial() {
   showScreen(resultsScreen);
 }
 
-function showWelcome() {
+// Art-forward landing shown right after the shared-session login resolves.
+// (Login itself lives once at the hub — see the boot gate below.)
+function showIntro() {
   stopLoop();
-  signinError.textContent = "";
-  createError.textContent = "";
-  showScreen(welcomeScreen);
-}
-
-function handleSignIn() {
-  const name = (signinInput.value || "").trim().slice(0, 12);
-  if (!name) {
-    signinError.textContent = "Enter your username.";
-    return;
-  }
-  const profiles = loadProfiles();
-  if (!Object.prototype.hasOwnProperty.call(profiles, name)) {
-    signinError.textContent = "No account found. Try Create account.";
-    return;
-  }
-  currentUser = name;
-  playerName = name;
-  selectedAvatar = profiles[name];
-  syncUserState();
-  showModes();
-}
-
-function handleCreate() {
-  const name = (createInput.value || "").trim().slice(0, 12);
-  if (!name) {
-    createError.textContent = "Pick a username.";
-    return;
-  }
-  const profiles = loadProfiles();
-  if (Object.prototype.hasOwnProperty.call(profiles, name)) {
-    createError.textContent = "That username is taken. Sign in instead.";
-    return;
-  }
-  editingProfile = false;
-  editingOldName = "";
-  currentUser = name;
-  selectedAvatar = 0;
-  nameInput.value = name;
-  syncUserState();
-  showScreen(startupOverlay);
+  updateCoinHud();  // keeps the intro coin pill in sync
+  let best = 0;
+  try {
+    const runs = loadTrialRuns()[currentUser] || [];
+    best = runs.reduce((m, r) => Math.max(m, r.levels || 0), 0);
+  } catch (e) {}
+  if (introBestEl) introBestEl.textContent = best > 0 ? `Best Time Trial: ${best} level${best === 1 ? "" : "s"}` : "";
+  showScreen(introScreen);
 }
 
 async function startGameFromMenu() {
@@ -1687,29 +1652,9 @@ modesBtnControl.addEventListener("click", showModes);
 editProfileBtn.addEventListener("click", editProfile);
 document.querySelector("#profileResume").addEventListener("click", profileBackToGame);
 logoutBtn.addEventListener("click", logout);
-goSigninBtn.addEventListener("click", () => {
-  signinError.textContent = "";
-  signinInput.value = currentUser || "";
-  showScreen(signinScreen);
-  signinInput.focus();
-});
-goCreateBtn.addEventListener("click", () => {
-  createError.textContent = "";
-  createInput.value = "";
-  showScreen(createScreen);
-  createInput.focus();
-});
-signinBtn.addEventListener("click", handleSignIn);
-createBtn.addEventListener("click", handleCreate);
-signinInput.addEventListener("keydown", (event) => {
-  if (event.key === "Enter") handleSignIn();
-});
-createInput.addEventListener("keydown", (event) => {
-  if (event.key === "Enter") handleCreate();
-});
-document.querySelectorAll("[data-back]").forEach((btn) => {
-  btn.addEventListener("click", showWelcome);
-});
+introPlayBtn.addEventListener("click", showModes);
+introStoreBtn.addEventListener("click", () => GameCenter.openStore("lavender-leap"));
+introTrophyBtn.addEventListener("click", () => GameCenter.openLeaderboards());
 nameInput.addEventListener("keydown", (event) => {
   if (event.key === "Enter") startGameFromMenu();
 });
@@ -1745,9 +1690,9 @@ storeResumeBtn.addEventListener("click", resumeGame);
 reviveUseBtn.addEventListener("click", useRevive);
 reviveDeclineBtn.addEventListener("click", declineRevive);
 saveLevelBtn.addEventListener("click", saveHardLevel);
-modesLeaderboardBtn.addEventListener("click", () => openLeaderboard());
+modesLeaderboardBtn.addEventListener("click", () => GameCenter.openLeaderboards());
 document.querySelector("#modesBack").addEventListener("click", resumeGame);
-resultsLeaderboardBtn.addEventListener("click", () => openLeaderboard("time"));
+resultsLeaderboardBtn.addEventListener("click", () => GameCenter.openLeaderboards());
 lbBackBtn.addEventListener("click", showModes);
 lbResumeBtn.addEventListener("click", resumeGame);
 lbBoard.querySelectorAll(".seg-btn").forEach((b) => b.addEventListener("click", () => {
@@ -1876,11 +1821,11 @@ window.addEventListener("pagehide", () => {
 (async () => {
   showScreen(null);  // hide the welcome screen immediately — no sign-in flash before the gate resolves
   const r = await GameCenter.me();
-  if (!r.ok) { location.href = "/"; return; }  // not logged in -> hub
+  if (!r.ok) { location.href = "/"; return; }  // not logged in -> hub (shared SDK auth)
   applyUser(r.data);
   currentUser = r.data.username;
   playerName = r.data.username;
   buildAvatarPicker();
-  showModes();
+  showIntro();
 })();
 })();  // end IIFE (keeps game internals out of the global scope)
