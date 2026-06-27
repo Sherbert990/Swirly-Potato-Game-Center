@@ -159,6 +159,7 @@
   let running = false;
   let lastT = 0;
   let muted = false;
+  let rafId = 0;                 // the single animation-frame handle (so we never stack loops)
 
   const keys = {};
   let manualTimer = 0, autoTimer = 0;
@@ -495,7 +496,7 @@
     const dt = Math.min(0.05, (t-lastT)/1000 || 0); lastT = t;
     update(dt);
     if(running) render();
-    requestAnimationFrame(loop);
+    rafId = requestAnimationFrame(loop);
   }
 
   // ---------- flow ----------
@@ -513,7 +514,8 @@
                 // (otherwise a stale/zero size renders only the top-left sliver)
     newLevel();
     running = true; lastT = performance.now();
-    requestAnimationFrame(loop);
+    cancelAnimationFrame(rafId);          // never leave a second loop running (lag on re-entry)
+    rafId = requestAnimationFrame(loop);
   }
   function winLevel(){
     running = false; sfx.win();
@@ -596,7 +598,10 @@
     canvas.width = W; canvas.height = H;
   }
   addEventListener('resize', resize);
-  addEventListener('pageshow', resize);   // restore from bfcache (back/forward) with correct size
+  // If the page comes back from the browser's back/forward cache, the old script
+  // state + animation loop are restored stale — re-entering then stacks a second
+  // loop (lag) over a zero-size canvas (top-left sliver). Force a clean reload.
+  addEventListener('pageshow', (e) => { if (e.persisted) location.reload(); else resize(); });
   resize();
   requestAnimationFrame(resize);          // re-measure once layout has settled
 })();
