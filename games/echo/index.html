@@ -497,13 +497,25 @@
   let runToken = 0;
   function startLoop(){
     const myTok = ++runToken;
-    (function frame(t){
-      if(!running || myTok !== runToken) return;   // a newer loop has taken over — stop
-      const dt = Math.min(0.05, (t-lastT)/1000 || 0); lastT = t;
+    let lastTick = 0;
+    function tick(){
+      if(!running || myTok !== runToken) return;
+      const now = performance.now();
+      const dt = Math.min(0.05, (now - lastT)/1000 || 0); lastT = now; lastTick = now;
       update(dt);
       if(running) render();
-      requestAnimationFrame(frame);
-    })(performance.now());
+    }
+    // Primary driver: requestAnimationFrame (smooth when the browser feeds frames).
+    (function raf(){ if(!running || myTok !== runToken) return; tick(); requestAnimationFrame(raf); })();
+    // Fallback driver: a timer that keeps the game alive when rAF is starved. Right
+    // after a navigation the browser can stall rAF for up to ~1.5s (even on a
+    // visible, focused page), which otherwise freezes the game on entry ("stuck,
+    // only the corner shows"). The timer only steps when rAF hasn't ticked recently,
+    // so a healthy 60fps loop is never double-stepped.
+    const iv = setInterval(() => {
+      if(!running || myTok !== runToken){ clearInterval(iv); return; }
+      if(performance.now() - lastTick > 40) tick();
+    }, 1000/30);
   }
 
   // ---------- flow ----------
