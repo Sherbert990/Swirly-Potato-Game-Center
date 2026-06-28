@@ -55,6 +55,15 @@ STORE_ITEMS = [
     # Game-scoped power-ups (scope is enforced client-side; see ITEM_GAME).
     ("double_jump", "Double Jump Pack", "double_jump", 60),   # Lavender: 10 mid-air jumps (any mode)
     ("rocket_booster", "Rocket Booster", "rocket_booster", 20),  # Don't Look Down: +100ft head start
+    # Echo (see-with-sound) — light colors (avatars) + a pulse power-up.
+    ("echo-purple", "Purple Light", "echo_color", 20),
+    ("echo-blue", "Blue Light", "echo_color", 20),
+    ("echo-green", "Green Light", "echo_color", 20),
+    ("echo-yellow", "Yellow Light", "echo_color", 25),
+    ("echo-orange", "Orange Light", "echo_color", 25),
+    ("echo-red", "Red Light", "echo_color", 30),
+    ("echo-pink", "Pink Light", "echo_color", 30),
+    ("echo_big_waves", "Bigger Waves", "echo_powerup", 40),  # pulses travel farther
 ]
 
 # Which game each store item belongs to ('' = available everywhere). The buy/use
@@ -62,6 +71,9 @@ STORE_ITEMS = [
 ITEM_GAME = {
     "double_jump": "lavender-leap",
     "rocket_booster": "dont-look-down",
+    "echo-purple": "echo", "echo-blue": "echo", "echo-green": "echo",
+    "echo-yellow": "echo", "echo-orange": "echo", "echo-red": "echo",
+    "echo-pink": "echo", "echo_big_waves": "echo",
 }
 
 # (key, name, description, game ('' = any), metric, threshold)
