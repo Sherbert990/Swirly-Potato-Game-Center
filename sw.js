@@ -1,10 +1,10 @@
 /* The Stickmen Hub service worker — installable + offline app shell.
  * Bump CACHE on any shell change so old caches purge. */
-const CACHE = 'stickmen-v21';
+const CACHE = 'stickmen-v22';
 const SHELL = [
   '/', '/manifest.webmanifest',
   '/shared/gamecenter.js',
-  '/games/lavender-leap/index.html', '/games/lavender-leap/game.js?v=38', '/games/lavender-leap/styles.css',
+  '/games/lavender-leap/index.html', '/games/lavender-leap/game.js?v=39', '/games/lavender-leap/styles.css',
   '/games/dont-look-down/dont_look_down.html',
   '/games/echo/index.html',
   '/design/hub/background.png', '/design/hub/lavender-cover.png',

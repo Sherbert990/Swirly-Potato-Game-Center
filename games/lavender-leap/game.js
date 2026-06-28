@@ -400,6 +400,7 @@ function startLevel(index, restarting = false) {
   startBtn.textContent = "Restart";
   updateHud();
   if (!world.loopId) world.loopId = requestAnimationFrame(loop);
+  music.play();   // background music follows the run (no-op if muted)
 }
 
 function buildLevel(index = world.level) {
@@ -1429,6 +1430,7 @@ function resumeGame() {
   world.running = true;
   world.last = performance.now();
   if (!world.loopId) world.loopId = requestAnimationFrame(loop);
+  music.play();
 }
 
 function syncAvatarSelection() {
@@ -1491,6 +1493,7 @@ function stopLoop() {
     cancelAnimationFrame(world.loopId);
     world.loopId = 0;
   }
+  music.pause();   // hush the music whenever a run pauses (menus, store, results)
 }
 
 function showScreen(target) {
@@ -1590,6 +1593,111 @@ function endTimeTrial() {
   renderResults(world.levelsPassed, all[currentUser]);
   showScreen(resultsScreen);
 }
+
+// ===== Background music: "Bouncing through the meadow" =====
+// A 4-bar marimba-and-pad loop generated live with the Web Audio API — no audio
+// files, same approach the other games use for sound. Tied to active gameplay
+// (plays while a run is live, pauses on menus/store), with a ♪ toggle that the
+// browser remembers. Wrapped so a missing AudioContext degrades to silence.
+const music = (() => {
+  const AC = window.AudioContext || window.webkitAudioContext;
+  if (!AC) return { play() {}, pause() {}, toggle() { return true; }, isMuted() { return true; }, refresh() {} };
+  let actx = null, master = null, timer = null, step = 0, nextTime = 0, wantPlay = false;
+  let muted = localStorage.getItem("llod_music") === "off";
+  const BPM = 118, SPS = 60 / BPM / 4, TOTAL = 64;   // 4 bars × 16 sixteenth-notes
+  const mtof = (m) => 440 * Math.pow(2, (m - 69) / 12);
+  function pluck(t, m, dur, type, g) {
+    const o = actx.createOscillator(); o.type = type; o.frequency.value = mtof(m);
+    const gn = actx.createGain();
+    gn.gain.setValueAtTime(0.0001, t);
+    gn.gain.exponentialRampToValueAtTime(g, t + 0.008);
+    gn.gain.exponentialRampToValueAtTime(0.0001, t + dur);
+    o.connect(gn).connect(master); o.start(t); o.stop(t + dur + 0.03);
+  }
+  function pad(t, m, dur, g) {
+    const o = actx.createOscillator(), o2 = actx.createOscillator();
+    o.type = "sawtooth"; o2.type = "sawtooth"; o.frequency.value = mtof(m); o2.frequency.value = mtof(m); o2.detune.value = 11;
+    const f = actx.createBiquadFilter(); f.type = "lowpass"; f.frequency.value = 950; f.Q.value = 0.4;
+    const gn = actx.createGain();
+    gn.gain.setValueAtTime(0.0001, t);
+    gn.gain.exponentialRampToValueAtTime(g, t + 0.5);
+    gn.gain.setValueAtTime(g, t + dur - 0.4);
+    gn.gain.exponentialRampToValueAtTime(0.0001, t + dur);
+    o.connect(f); o2.connect(f); f.connect(gn).connect(master);
+    o.start(t); o2.start(t); o.stop(t + dur); o2.stop(t + dur);
+  }
+  function bassNote(t, m, dur, g) {
+    const o = actx.createOscillator(); o.type = "triangle"; o.frequency.value = mtof(m);
+    const f = actx.createBiquadFilter(); f.type = "lowpass"; f.frequency.value = 520;
+    const gn = actx.createGain();
+    gn.gain.setValueAtTime(0.0001, t);
+    gn.gain.exponentialRampToValueAtTime(g, t + 0.01);
+    gn.gain.exponentialRampToValueAtTime(0.0001, t + dur);
+    o.connect(f).connect(gn).connect(master); o.start(t); o.stop(t + dur + 0.03);
+  }
+  function noise(t, dur, hp, g) {
+    const len = Math.max(1, Math.floor(actx.sampleRate * dur));
+    const b = actx.createBuffer(1, len, actx.sampleRate); const d = b.getChannelData(0);
+    for (let i = 0; i < len; i++) d[i] = Math.random() * 2 - 1;
+    const s = actx.createBufferSource(); s.buffer = b;
+    const f = actx.createBiquadFilter(); f.type = "highpass"; f.frequency.value = hp;
+    const gn = actx.createGain(); gn.gain.setValueAtTime(g, t); gn.gain.exponentialRampToValueAtTime(0.0001, t + dur);
+    s.connect(f).connect(gn).connect(master); s.start(t); s.stop(t + dur + 0.03);
+  }
+  function kick(t, g) {
+    const o = actx.createOscillator(); o.type = "sine";
+    o.frequency.setValueAtTime(150, t); o.frequency.exponentialRampToValueAtTime(48, t + 0.11);
+    const gn = actx.createGain(); gn.gain.setValueAtTime(g, t); gn.gain.exponentialRampToValueAtTime(0.0001, t + 0.16);
+    o.connect(gn).connect(master); o.start(t); o.stop(t + 0.18);
+  }
+  const CHORDS = [
+    { pad: [60, 64, 67], bass: 36 }, { pad: [55, 59, 62], bass: 43 },
+    { pad: [57, 60, 64], bass: 45 }, { pad: [53, 57, 60], bass: 41 },
+  ];
+  const MEL = [
+    [72, 76, 79, 76, 72, 76, 79, 84], [74, 79, 74, 71, 67, 71, 74, 79],
+    [72, 76, 81, 76, 72, 69, 72, 76], [72, 77, 72, 69, 65, 69, 72, 77],
+  ];
+  function scheduleStep(i, t) {
+    const bar = Math.floor(i / 16), b = i % 16, ch = CHORDS[bar];
+    if (b === 0) ch.pad.forEach((m) => pad(t, m, SPS * 16, 0.045));
+    if (b % 2 === 0) {
+      const e = b / 2;
+      bassNote(t, e % 2 === 0 ? ch.bass : ch.bass + 12, SPS * 1.8, 0.22);
+      const mm = MEL[bar][e]; if (mm) pluck(t, mm, 0.34, "triangle", 0.2);
+      if (e % 2 === 1) noise(t, 0.03, 4500, 0.1);
+    }
+    if (b === 4 || b === 12) noise(t, 0.11, 1400, 0.12);
+    if (b === 0 || b === 8) kick(t, 0.3);
+  }
+  function tick() {
+    while (nextTime < actx.currentTime + 0.12) {
+      scheduleStep(step, nextTime); step = (step + 1) % TOTAL; nextTime += SPS;
+    }
+  }
+  function ensure() {
+    if (actx) return;
+    actx = new AC(); master = actx.createGain(); master.gain.value = 0.5;
+    const comp = actx.createDynamicsCompressor(); master.connect(comp); comp.connect(actx.destination);
+  }
+  function apply() {
+    const should = wantPlay && !muted && !document.hidden;
+    if (should && !timer) {
+      ensure(); if (actx.state === "suspended") actx.resume();
+      step = 0; nextTime = actx.currentTime + 0.08; timer = setInterval(tick, 25);
+    } else if (!should && timer) {
+      clearInterval(timer); timer = null;
+    }
+  }
+  return {
+    play() { wantPlay = true; apply(); },
+    pause() { wantPlay = false; apply(); },
+    setMuted(m) { muted = m; localStorage.setItem("llod_music", m ? "off" : "on"); apply(); },
+    toggle() { this.setMuted(!muted); return muted; },
+    isMuted() { return muted; },
+    refresh() { apply(); },
+  };
+})();
 
 // Art-forward landing shown right after the shared-session login resolves.
 // (Login itself lives once at the hub — see the boot gate below.)
@@ -1705,6 +1813,19 @@ storeSectionSeg.querySelectorAll(".seg-btn").forEach((b) => b.addEventListener("
 
 startBtn.addEventListener("click", reset);
 goBtn.addEventListener("click", warpToLevel);
+
+// ♪ Music toggle — reflects the saved preference and updates the icon on click.
+const musicToggleBtn = document.querySelector("#musicToggle");
+function syncMusicBtn() {
+  const off = music.isMuted();
+  musicToggleBtn.querySelector("i").className = off ? "ti ti-music-off" : "ti ti-music";
+  musicToggleBtn.classList.toggle("muted", off);
+  musicToggleBtn.title = off ? "Music off" : "Music on";
+}
+musicToggleBtn.addEventListener("click", () => { music.toggle(); syncMusicBtn(); });
+syncMusicBtn();
+// Pause the loop when the tab is hidden; resume when it returns (if a run is live).
+document.addEventListener("visibilitychange", () => music.refresh());
 levelInput.addEventListener("keydown", (event) => {
   if (event.key === "Enter") warpToLevel();
 });

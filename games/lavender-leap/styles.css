@@ -113,6 +113,18 @@ h1 {
   color: #5a1730;
 }
 
+#musicToggle {
+  width: 36px;
+  padding: 0;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1.05rem;
+}
+#musicToggle.muted {
+  opacity: 0.55;
+}
+
 .stats span {
   min-width: 86px;
   padding: 8px 10px;

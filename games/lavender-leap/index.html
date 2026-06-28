@@ -16,7 +16,7 @@
     <link rel="manifest" href="/manifest.webmanifest">
     <meta name="theme-color" content="#7d2ae8">
     <link rel="apple-touch-icon" href="/assets/icons/icon-192.png">
-    <link rel="stylesheet" href="styles.css?v=23">
+    <link rel="stylesheet" href="styles.css?v=24">
   </head>
   <body>
     <!-- Art-forward intro. Login lives once at the hub (shared SDK auth); if the
@@ -160,6 +160,7 @@
           <span>Level <strong id="mood">1/100</strong></span>
         </div>
         <div class="account-actions">
+          <button id="musicToggle" type="button" title="Background music" aria-label="Toggle background music"><i class="ti ti-music" aria-hidden="true"></i></button>
           <button id="visitStore" type="button" title="Spend your coins">Store</button>
           <button id="editProfile" type="button" title="Change username and avatar">Profile</button>
           <button id="logout" type="button" title="Log out of your account">Log out</button>
@@ -188,6 +189,6 @@
     </main>
 
     <script src="/shared/gamecenter.js"></script>
-    <script src="game.js?v=38"></script>
+    <script src="game.js?v=39"></script>
   </body>
 </html>
