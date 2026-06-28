@@ -85,6 +85,47 @@
   #menuBtn{pointer-events:auto;cursor:pointer;color:var(--dim);background:none;border:none;font-family:var(--mono);
     font-size:12px;letter-spacing:.14em;text-transform:uppercase;margin-right:14px}
   #menuBtn:hover{color:var(--ink)}
+
+  /* ---- art-forward intro (matches the other hub games) ---- */
+  #intro{padding:0;background:var(--bg);backdrop-filter:none}
+  .introArt{position:absolute;inset:0;width:100%;height:100%;object-fit:cover}
+  .introScrim{position:absolute;inset:0;
+    background:linear-gradient(to bottom,rgba(2,4,9,.10) 34%,rgba(2,4,9,.92) 100%)}
+  .introChrome{position:absolute;top:12px;right:12px;z-index:2;display:flex;align-items:center;gap:10px}
+  .introCoin{display:inline-flex;align-items:center;gap:6px;padding:8px 14px;border-radius:20px;
+    background:rgba(95,230,255,.12);backdrop-filter:blur(6px);border:1px solid rgba(95,230,255,.34);
+    color:#eaf7ff;font-family:var(--mono);font-weight:600;font-size:13px;letter-spacing:.06em}
+  .introCoin i{color:#ffd479}
+  .introTrophy{width:42px;height:42px;padding:0;border-radius:20px;cursor:pointer;
+    background:rgba(95,230,255,.12);backdrop-filter:blur(6px);border:1px solid rgba(95,230,255,.34);
+    color:#eaf7ff;font-size:18px;display:inline-flex;align-items:center;justify-content:center;transition:.16s}
+  .introTrophy:hover{background:rgba(95,230,255,.24)}
+  .introCopy{position:absolute;left:50%;bottom:0;transform:translateX(-50%);width:100%;max-width:640px;
+    z-index:2;padding:28px 24px max(28px,env(safe-area-inset-bottom));text-align:left;color:#eaf7ff}
+  .introEyebrow{margin:0 0 6px;color:var(--cyan);font-family:var(--mono);font-weight:600;font-size:12px;
+    letter-spacing:.28em;text-transform:uppercase}
+  .introTitle{margin:0 0 10px;font-size:clamp(2.4rem,11vw,3.4rem);font-weight:800;letter-spacing:.14em;
+    color:#eaf7ff;text-shadow:0 0 28px rgba(95,230,255,.5),0 2px 18px rgba(0,0,0,.55)}
+  .introTagline{margin:0 0 20px;color:rgba(234,247,255,.9);font-weight:600;font-size:1rem;letter-spacing:.02em}
+  .introActions{display:flex;gap:12px;flex-wrap:wrap}
+  .introPlay{flex:1 1 auto;max-width:220px;height:52px;cursor:pointer;border:none;border-radius:12px;
+    background:var(--cyan);color:#04060b;font-family:var(--mono);font-weight:700;font-size:1.05rem;
+    letter-spacing:.14em;text-transform:uppercase;display:inline-flex;align-items:center;justify-content:center;
+    gap:8px;box-shadow:0 0 24px rgba(95,230,255,.4);transition:.16s}
+  .introPlay:hover{filter:brightness(1.08)}
+  .introStore{height:52px;padding:0 22px;cursor:pointer;border-radius:12px;
+    background:rgba(95,230,255,.12);backdrop-filter:blur(6px);border:1px solid rgba(95,230,255,.34);
+    color:#eaf7ff;font-family:var(--mono);font-weight:600;font-size:.95rem;letter-spacing:.12em;
+    text-transform:uppercase;display:inline-flex;align-items:center;justify-content:center;gap:8px;transition:.16s}
+  .introStore:hover{background:rgba(95,230,255,.24)}
+
+  /* mode picker (reached via Play) */
+  .backLink{position:absolute;top:14px;left:14px;cursor:pointer;background:none;border:none;color:var(--dim);
+    font-family:var(--mono);font-size:12px;letter-spacing:.14em;text-transform:uppercase;transition:.16s}
+  .backLink:hover{color:var(--ink)}
+  .menu-head{font-size:clamp(20px,5vw,28px);font-weight:700;letter-spacing:.16em;text-transform:uppercase;
+    color:#eaf7ff;margin-bottom:8px;text-shadow:0 0 18px rgba(95,230,255,.4)}
+  .menu-sub{color:var(--dim);font-size:13px;letter-spacing:.06em;margin-bottom:28px}
   @media(max-width:520px){
     .mode{width:100%}
     #status{padding-top:12px}
@@ -104,11 +145,30 @@
   <div id="hint"></div>
 </div>
 
-<!-- MENU -->
+<!-- INTRO (art-forward landing, matches the other hub games) -->
+<div id="intro" class="overlay hidden">
+  <img class="introArt" src="/design/hub/echo-cover.png" alt="Echo cover art">
+  <div class="introScrim"></div>
+  <div class="introChrome">
+    <span class="introCoin"><i class="ti ti-coin" aria-hidden="true"></i> <span id="introCoins">0</span></span>
+    <button class="introTrophy" id="introTrophy" type="button" aria-label="Leaderboards"><i class="ti ti-trophy" aria-hidden="true"></i></button>
+  </div>
+  <div class="introCopy">
+    <p class="introEyebrow">See With Sound</p>
+    <h1 class="introTitle">Echo</h1>
+    <p class="introTagline">A pulse of light in the dark. Send out a ring, and the walls it touches flicker into view — then fade. Feel your way through the cave.</p>
+    <div class="introActions">
+      <button class="introPlay" id="introPlay" type="button"><i class="ti ti-player-play" aria-hidden="true"></i> Play</button>
+      <button class="introStore" id="introStore" type="button"><i class="ti ti-shopping-bag" aria-hidden="true"></i> Store</button>
+    </div>
+  </div>
+</div>
+
+<!-- MENU (mode picker, reached via Play) -->
 <div id="menu" class="overlay hidden">
-  <div class="title">ECHO</div>
-  <div class="tag">see with sound</div>
-  <p class="lede">You are a pulse of light in the dark. Send out a ring and the walls it touches flicker into view, then fade from memory. Feel your way through the cave.</p>
+  <button class="backLink" id="introBack" type="button">← back</button>
+  <div class="menu-head">Choose how to play</div>
+  <div class="menu-sub">two ways through the dark</div>
   <div class="modes">
     <div class="mode" id="modeCollect" tabindex="0" role="button">
       <h3>◇ Collect &amp; Escape</h3>
@@ -120,7 +180,6 @@
     </div>
   </div>
   <div class="menu-opts">
-    <button class="ebtn" id="openStore">◇ Store</button>
     <button class="ebtn" id="pulseToggle">Pulse: Auto</button>
   </div>
   <div class="controls">
@@ -679,23 +738,34 @@
   document.getElementById('toMenu').onclick = ()=>{ running=false; document.getElementById('over').classList.add('hidden'); document.getElementById('hud').classList.add('hidden'); document.getElementById('menu').classList.remove('hidden'); };
   document.getElementById('mute').onclick = ()=>{ muted=!muted; document.getElementById('mute').textContent = muted?'♪ sound off':'♪ sound on'; };
 
-  // ---------- menu / pulse setting / store ----------
+  // ---------- intro / menu / pulse setting / store ----------
   const $ = id => document.getElementById(id);
-  function goMenu(){
+  function setIntroCoins(){ const el = $('introCoins'); if(el) el.textContent = coins||0; }
+  // The art-forward intro is Echo's home screen (like the other hub games).
+  function showIntro(){
     running = false; runToken++;
-    ['over','cleared','hud'].forEach(id => $(id).classList.add('hidden'));
+    ['menu','over','cleared','hud'].forEach(id => $(id).classList.add('hidden'));
+    setIntroCoins();
+    $('intro').classList.remove('hidden');
+  }
+  function showModePicker(){
+    ['intro','over','cleared','hud'].forEach(id => $(id).classList.add('hidden'));
     $('menu').classList.remove('hidden');
     syncPulseLabel();
   }
+  const goMenu = showIntro;   // in-game ⌂ menu / game-over "Menu" return to the home screen
   function syncPulseLabel(){ $('pulseToggle').textContent = 'Pulse: ' + (pulseAuto() ? 'Auto' : 'Manual'); }
   $('pulseToggle').onclick = ()=>{ localStorage.setItem('echoPulse', pulseAuto() ? 'manual' : 'auto'); syncPulseLabel(); };
   $('menuBtn').onclick = goMenu;
-  $('toMenu').onclick = goMenu;   // game-over "Menu" returns to Echo's home screen
-  // Store: the same shared hub store the other games use (with an Echo tab).
-  $('openStore').onclick = ()=>{ if(window.GameCenter && GameCenter.openStore) GameCenter.openStore('echo'); };
+  $('toMenu').onclick = goMenu;
+  $('introPlay').onclick = showModePicker;
+  $('introBack').onclick = showIntro;
+  // Store + leaderboards: the same shared hub overlays the other games use.
+  $('introStore').onclick = ()=>{ if(window.GameCenter && GameCenter.openStore) GameCenter.openStore('echo'); };
+  $('introTrophy').onclick = ()=>{ if(window.GameCenter && GameCenter.openLeaderboards) GameCenter.openLeaderboards(); };
   // Keep coins/owned fresh after shopping so a new colour or Bigger Waves applies in-game.
-  addEventListener('gc:wallet', e=>{ if(e && e.detail){ coins = e.detail.coins||0; owned = e.detail.items||{}; } });
-  addEventListener('gc:storeclose', ()=>{ refreshWallet(); });
+  addEventListener('gc:wallet', e=>{ if(e && e.detail){ coins = e.detail.coins||0; owned = e.detail.items||{}; setIntroCoins(); } });
+  addEventListener('gc:storeclose', ()=>{ refreshWallet().then(setIntroCoins); });
 
   // ---------- boot: account-gated like the other games ----------
   syncPulseLabel();
@@ -705,7 +775,8 @@
       if(!r.ok){ location.href = '/'; return; }   // not signed in -> hub (shared SDK auth)
       coins = r.data.coins||0; owned = r.data.items||{};
     }
-    $('menu').classList.remove('hidden');
+    setIntroCoins();
+    $('intro').classList.remove('hidden');
   })();
 
   // ---------- resize ----------
