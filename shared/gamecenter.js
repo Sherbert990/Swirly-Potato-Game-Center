@@ -155,11 +155,12 @@
         '<p style="color:var(--gc-muted);font-weight:600;font-size:12px;margin:10px 0 0">On shows an on-screen joystick and jump button in games. Off plays with keyboard only.</p>' +
       '</div>';
     wrap.addEventListener('click', (e) => {
-      if (e.target === wrap || e.target.hasAttribute('data-close')) { wrap.style.display = 'none'; return; }
-      const th = e.target.getAttribute('data-theme');
-      if (th) { Settings.setTheme(th); refreshSettings(); }
-      const tc = e.target.getAttribute('data-touch');
-      if (tc) { Settings.setTouchControls(tc === 'on'); refreshSettings(); }
+      const t = e.target;
+      if (t === wrap || (t.closest && t.closest('[data-close]'))) { wrap.style.display = 'none'; return; }
+      const thEl = t.closest && t.closest('[data-theme]');
+      if (thEl) { Settings.setTheme(thEl.getAttribute('data-theme')); refreshSettings(); return; }
+      const tcEl = t.closest && t.closest('[data-touch]');
+      if (tcEl) { Settings.setTouchControls(tcEl.getAttribute('data-touch') === 'on'); refreshSettings(); return; }
     });
     document.body.appendChild(wrap);
     settingsEl = wrap;
@@ -486,19 +487,22 @@
 
   function onStoreClick(e) {
     const t = e.target;
-    if (t === storeEl || t.hasAttribute('data-close')) { closeStore(); return; }
-    const tab = t.getAttribute && t.getAttribute('data-tab');
+    // closest() so a click on an icon/label INSIDE a button still resolves to the
+    // button's data-* (otherwise the X close + buy buttons "don't always work").
+    const attr = (sel, name) => { const el = t.closest && t.closest(sel); return el ? el.getAttribute(name) : null; };
+    if (t === storeEl || (t.closest && t.closest('[data-close]'))) { closeStore(); return; }
+    const tab = attr('[data-tab]', 'data-tab');
     if (tab) { storeTab = tab; try { localStorage.setItem('lastStoreTab', tab); } catch (x) {} storeMsg(''); renderStore(); return; }
-    const item = t.getAttribute && t.getAttribute('data-item');
+    const item = attr('[data-item]', 'data-item');
     if (item) { GameCenter.buy('item', item).then((r) => finishTxn(r, 'Bought!')); return; }
-    const av = t.getAttribute && t.getAttribute('data-avatar');
+    const av = attr('[data-avatar]', 'data-avatar');
     if (av) { GameCenter.buy('avatar', av).then((r) => finishTxn(r, 'Unlocked! Tap Equip to wear it.')); return; }
-    const eq = t.getAttribute && t.getAttribute('data-equip');
+    const eq = attr('[data-equip]', 'data-equip');
     if (eq) { GameCenter.setProfile({ avatar: eq }).then((r) => finishTxn(r, 'Equipped!')); return; }
     // Echo light colours: bought as items, equipped locally (no global avatar).
-    const citem = t.getAttribute && t.getAttribute('data-citem');
+    const citem = attr('[data-citem]', 'data-citem');
     if (citem) { GameCenter.buy('item', citem).then((r) => finishTxn(r, 'Unlocked! Tap Equip to wear it.')); return; }
-    const ccolor = t.getAttribute && t.getAttribute('data-ccolor');
+    const ccolor = attr('[data-ccolor]', 'data-ccolor');
     if (ccolor) {
       try { localStorage.setItem('echoColor', ccolor); } catch (x) {}
       try { window.dispatchEvent(new CustomEvent('gc:echocolor', { detail: ccolor })); } catch (e) {}
@@ -611,11 +615,11 @@
   }
   function onLbClick(e) {
     const t = e.target;
-    if (t === lbEl || (t.getAttribute && t.hasAttribute('data-close'))) { lbEl.style.display = 'none'; return; }
-    const bi = t.getAttribute && t.getAttribute('data-board');
-    if (bi !== null && bi !== undefined && bi !== '') { lbIdx = +bi; renderLb(); loadLbList(); return; }
-    const sc = t.getAttribute && t.getAttribute('data-scope');
-    if (sc) { lbScope = sc; renderLb(); loadLbList(); return; }
+    if (t === lbEl || (t.closest && t.closest('[data-close]'))) { lbEl.style.display = 'none'; return; }
+    const boardEl = t.closest && t.closest('[data-board]');
+    if (boardEl) { lbIdx = +boardEl.getAttribute('data-board'); renderLb(); loadLbList(); return; }
+    const scopeEl = t.closest && t.closest('[data-scope]');
+    if (scopeEl) { lbScope = scopeEl.getAttribute('data-scope'); renderLb(); loadLbList(); return; }
   }
   function openLeaderboards() {
     buildLb(); renderLb(); lbEl.style.display = 'block';
