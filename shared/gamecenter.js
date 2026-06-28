@@ -333,8 +333,25 @@
         { key: 'dld-cosmo', name: 'Cosmo', price: 120, color: '#ff2e97' },
       ],
     },
+    'echo': {
+      name: 'Echo',
+      items: [
+        { key: 'echo_big_waves', name: 'Bigger Waves', desc: 'Your pulses travel much farther through the cave', price: 40, permanent: true },
+      ],
+      // Light colours: owned as items, equipped locally (the player IS the light).
+      colors: [
+        { name: 'Cyan',   pref: 'cyan',   swatch: '#5fe6ff' },                          // free default
+        { key: 'echo-purple', name: 'Purple', pref: 'purple', swatch: '#a86bff', price: 20 },
+        { key: 'echo-blue',   name: 'Blue',   pref: 'blue',   swatch: '#5a9bff', price: 20 },
+        { key: 'echo-green',  name: 'Green',  pref: 'green',  swatch: '#50e696', price: 20 },
+        { key: 'echo-yellow', name: 'Yellow', pref: 'yellow', swatch: '#ffd23f', price: 25 },
+        { key: 'echo-orange', name: 'Orange', pref: 'orange', swatch: '#ff9b3c', price: 25 },
+        { key: 'echo-red',    name: 'Red',    pref: 'red',    swatch: '#ff5a64', price: 30 },
+        { key: 'echo-pink',   name: 'Pink',   pref: 'pink',   swatch: '#ff6ec7', price: 30 },
+      ],
+    },
   };
-  const STORE_TABS = ['lavender-leap', 'dont-look-down'];
+  const STORE_TABS = ['lavender-leap', 'dont-look-down', 'echo'];
   let storeEl = null, storeUser = null, storeTab = STORE_TABS[0];
 
   function escapeHtml(s) { return String(s).replace(/[&<>"]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c])); }
@@ -380,6 +397,8 @@
     // opts: skinKey?, title, sub, btnLabel, btnAttr, disabled, done
     const sw = opts.skinKey
       ? '<canvas data-skin="' + opts.skinKey + '" width="44" height="48" style="flex:none;width:44px;height:48px;border-radius:11px;background:var(--gc-field);border:1px solid var(--gc-line)"></canvas>'
+      : opts.swatch
+      ? '<span style="flex:none;width:44px;height:48px;border-radius:11px;background:var(--gc-field);border:1px solid var(--gc-line);display:flex;align-items:center;justify-content:center"><span style="width:26px;height:26px;border-radius:50%;background:' + opts.swatch + ';box-shadow:0 0 12px ' + opts.swatch + '"></span></span>'
       : '';
     const btn = opts.done
       ? '<span style="flex:none;color:var(--gc-accent2);font-weight:800;font-size:13px;display:inline-flex;align-items:center;gap:5px"><i class="ti ti-check"></i> ' + escapeHtml(opts.btnLabel) + '</span>'
@@ -421,20 +440,40 @@
         done: ownedPerm,
       });
     });
-    html += '<div style="font-family:Fredoka,sans-serif;font-weight:600;font-size:12px;text-transform:uppercase;letter-spacing:.04em;color:var(--gc-muted);margin:14px 0 4px">Skins</div>';
-    cat.skins.forEach((sk) => {
-      const isOwned = owned.indexOf(sk.key) >= 0;
-      const equipped = storeUser.avatarKey === sk.key;
-      html += rowHtml({
-        skinKey: sk.key,
-        title: sk.name,
-        sub: equipped ? 'Currently worn' : isOwned ? 'Unlocked' : 'Premium skin',
-        btnLabel: equipped ? 'Equipped' : isOwned ? 'Equip' : '★ ' + sk.price,
-        btnAttr: isOwned ? 'data-equip="' + sk.key + '"' : 'data-avatar="' + sk.key + '"',
-        disabled: !isOwned && coins < sk.price,
-        done: equipped,
+    if (cat.skins && cat.skins.length) {
+      html += '<div style="font-family:Fredoka,sans-serif;font-weight:600;font-size:12px;text-transform:uppercase;letter-spacing:.04em;color:var(--gc-muted);margin:14px 0 4px">Skins</div>';
+      cat.skins.forEach((sk) => {
+        const isOwned = owned.indexOf(sk.key) >= 0;
+        const equipped = storeUser.avatarKey === sk.key;
+        html += rowHtml({
+          skinKey: sk.key,
+          title: sk.name,
+          sub: equipped ? 'Currently worn' : isOwned ? 'Unlocked' : 'Premium skin',
+          btnLabel: equipped ? 'Equipped' : isOwned ? 'Equip' : '★ ' + sk.price,
+          btnAttr: isOwned ? 'data-equip="' + sk.key + '"' : 'data-avatar="' + sk.key + '"',
+          disabled: !isOwned && coins < sk.price,
+          done: equipped,
+        });
       });
-    });
+    }
+    if (cat.colors && cat.colors.length) {
+      let pref = 'cyan'; try { pref = localStorage.getItem('echoColor') || 'cyan'; } catch (x) {}
+      html += '<div style="font-family:Fredoka,sans-serif;font-weight:600;font-size:12px;text-transform:uppercase;letter-spacing:.04em;color:var(--gc-muted);margin:14px 0 4px">Light colours</div>';
+      cat.colors.forEach((col) => {
+        const free = !col.key;
+        const isOwned = free || (items[col.key] || 0) > 0;
+        const equipped = isOwned && pref === col.pref;
+        html += rowHtml({
+          swatch: col.swatch,
+          title: col.name + ' light',
+          sub: equipped ? 'Currently worn' : isOwned ? (free ? 'Free' : 'Unlocked') : 'Light colour',
+          btnLabel: equipped ? 'Equipped' : isOwned ? 'Equip' : '★ ' + col.price,
+          btnAttr: isOwned ? 'data-ccolor="' + col.pref + '"' : 'data-citem="' + col.key + '"',
+          disabled: !isOwned && coins < col.price,
+          done: equipped,
+        });
+      });
+    }
     body.innerHTML = html;
     body.querySelectorAll('canvas[data-skin]').forEach((cv) => renderSkin(cv.getAttribute('data-skin'), cv));
   }
@@ -456,6 +495,15 @@
     if (av) { GameCenter.buy('avatar', av).then((r) => finishTxn(r, 'Unlocked! Tap Equip to wear it.')); return; }
     const eq = t.getAttribute && t.getAttribute('data-equip');
     if (eq) { GameCenter.setProfile({ avatar: eq }).then((r) => finishTxn(r, 'Equipped!')); return; }
+    // Echo light colours: bought as items, equipped locally (no global avatar).
+    const citem = t.getAttribute && t.getAttribute('data-citem');
+    if (citem) { GameCenter.buy('item', citem).then((r) => finishTxn(r, 'Unlocked! Tap Equip to wear it.')); return; }
+    const ccolor = t.getAttribute && t.getAttribute('data-ccolor');
+    if (ccolor) {
+      try { localStorage.setItem('echoColor', ccolor); } catch (x) {}
+      try { window.dispatchEvent(new CustomEvent('gc:echocolor', { detail: ccolor })); } catch (e) {}
+      storeMsg('Light equipped!'); renderStore(); return;
+    }
   }
 
   async function openStore(game) {
@@ -489,6 +537,7 @@
     { game: 'lavender-leap-hard', label: 'Lavender · Hard Mode', unit: (s) => 'level ' + s },
     { game: 'lavender-leap', label: 'Lavender · Freeplay', unit: (s) => s + ' pts' },
     { game: 'dont-look-down', label: "Don't Look Down", unit: (s) => s + ' m' },
+    { game: 'echo', label: 'Echo', unit: (s) => 'cave ' + s },
   ];
   let lbEl = null, lbIdx = 0, lbScope = 'global', lbMyName = null;
 

@@ -85,35 +85,9 @@
   #menuBtn{pointer-events:auto;cursor:pointer;color:var(--dim);background:none;border:none;font-family:var(--mono);
     font-size:12px;letter-spacing:.14em;text-transform:uppercase;margin-right:14px}
   #menuBtn:hover{color:var(--ink)}
-  /* store */
-  .store-title{font-size:clamp(40px,11vw,72px);font-weight:800;letter-spacing:.18em;margin-left:.18em;color:#eaf7ff;text-shadow:0 0 22px rgba(95,230,255,.5)}
-  .store-coins{color:var(--mote);letter-spacing:.16em;font-size:14px;margin:6px 0 18px}
-  .store-coins b{color:#d6ffe9}
-  .store-tabs{display:flex;gap:10px;margin-bottom:14px}
-  .store-tab{cursor:pointer;border:1px solid rgba(95,230,255,.3);background:rgba(95,230,255,.05);color:var(--dim);border-radius:18px;padding:8px 18px;font-family:var(--mono);font-size:12px;letter-spacing:.1em;text-transform:uppercase}
-  .store-tab.active{background:var(--cyan);color:#04060b;border-color:var(--cyan)}
-  .store-msg{min-height:16px;color:var(--cyan);font-size:12px;letter-spacing:.08em;margin-bottom:8px}
-  .store-body{width:360px;max-width:92vw;max-height:46vh;overflow-y:auto;margin-bottom:22px}
-  .swatch-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:12px}
-  .swatch{display:flex;flex-direction:column;align-items:center;gap:7px;cursor:pointer;border:1px solid rgba(95,230,255,.18);border-radius:12px;padding:12px 6px 9px;background:rgba(95,230,255,.03);transition:.14s}
-  .swatch:hover{border-color:rgba(95,230,255,.5)}
-  .swatch.on{border-color:var(--cyan);background:rgba(95,230,255,.12)}
-  .swatch .dot{width:34px;height:34px;border-radius:50%}
-  .swatch .nm{font-family:var(--mono);font-size:11px;color:var(--ink);letter-spacing:.03em}
-  .swatch .pr{font-family:var(--mono);font-size:11px;color:var(--dim)}
-  .swatch .pr.own{color:var(--mote)}
-  .prow{display:flex;align-items:center;gap:14px;padding:14px 4px;border-bottom:1px solid rgba(95,230,255,.12);text-align:left}
-  .prow .pinfo{flex:1}
-  .prow .pn{font-family:var(--mono);font-size:14px;color:#eaf7ff;letter-spacing:.03em}
-  .prow .pd{font-size:12px;color:var(--dim);margin-top:3px}
-  .buy{cursor:pointer;border:1px solid var(--cyan);color:var(--cyan);background:rgba(95,230,255,.06);border-radius:9px;padding:9px 16px;font-family:var(--mono);font-size:12px;letter-spacing:.1em;text-transform:uppercase;white-space:nowrap}
-  .buy:hover{background:var(--cyan);color:#04060b}
-  .buy:disabled{border-color:var(--dim);color:var(--dim);background:none;cursor:default}
-  .buy.own{border-color:var(--mote);color:var(--mote);background:none;cursor:default}
   @media(max-width:520px){
     .mode{width:100%}
     #status{padding-top:12px}
-    .swatch-grid{grid-template-columns:repeat(3,1fr)}
   }
 </style>
 </head>
@@ -131,7 +105,7 @@
 </div>
 
 <!-- MENU -->
-<div id="menu" class="overlay">
+<div id="menu" class="overlay hidden">
   <div class="title">ECHO</div>
   <div class="tag">see with sound</div>
   <p class="lede">You are a pulse of light in the dark. Send out a ring and the walls it touches flicker into view, then fade from memory. Feel your way through the cave.</p>
@@ -158,19 +132,6 @@
 <div id="cleared" class="overlay hidden">
   <div class="big win">ESCAPED</div>
   <div class="sub" id="clearedSub">into the next dark…</div>
-</div>
-
-<!-- STORE -->
-<div id="echoStore" class="overlay hidden">
-  <div class="store-title">STORE</div>
-  <div class="store-coins">◇ <b id="storeCoins">0</b> light</div>
-  <div class="store-tabs">
-    <button class="store-tab active" data-tab="colors" type="button">Light colors</button>
-    <button class="store-tab" data-tab="power" type="button">Power-ups</button>
-  </div>
-  <div id="storeMsg" class="store-msg"></div>
-  <div id="storeBody" class="store-body"></div>
-  <button class="btn ghost" id="storeBack" type="button">Back</button>
 </div>
 
 <!-- GAME OVER (dark mode) -->
@@ -606,7 +567,7 @@
   // ---------- flow ----------
   function startMode(m){
     mode = m; level = 1;
-    ['menu','over','cleared','echoStore'].forEach(id => document.getElementById(id).classList.add('hidden'));
+    ['menu','over','cleared'].forEach(id => document.getElementById(id).classList.add('hidden'));
     document.getElementById('hud').classList.remove('hidden');
     audio();
     beginLevel();
@@ -694,71 +655,32 @@
 
   // ---------- menu / pulse setting / store ----------
   const $ = id => document.getElementById(id);
-  const PRICES = { 'echo-purple':20,'echo-blue':20,'echo-green':20,'echo-yellow':25,'echo-orange':25,'echo-red':30,'echo-pink':30,'echo_big_waves':40 };
   function goMenu(){
     running = false; runToken++;
-    ['over','cleared','echoStore','hud'].forEach(id => $(id).classList.add('hidden'));
+    ['over','cleared','hud'].forEach(id => $(id).classList.add('hidden'));
     $('menu').classList.remove('hidden');
     syncPulseLabel();
   }
   function syncPulseLabel(){ $('pulseToggle').textContent = 'Pulse: ' + (pulseAuto() ? 'Auto' : 'Manual'); }
   $('pulseToggle').onclick = ()=>{ localStorage.setItem('echoPulse', pulseAuto() ? 'manual' : 'auto'); syncPulseLabel(); };
   $('menuBtn').onclick = goMenu;
-  $('toMenu').onclick = goMenu;   // game-over "Menu" also returns to Echo's home screen
+  $('toMenu').onclick = goMenu;   // game-over "Menu" returns to Echo's home screen
+  // Store: the same shared hub store the other games use (with an Echo tab).
+  $('openStore').onclick = ()=>{ if(window.GameCenter && GameCenter.openStore) GameCenter.openStore('echo'); };
+  // Keep coins/owned fresh after shopping so a new colour or Bigger Waves applies in-game.
+  addEventListener('gc:wallet', e=>{ if(e && e.detail){ coins = e.detail.coins||0; owned = e.detail.items||{}; } });
+  addEventListener('gc:storeclose', ()=>{ refreshWallet(); });
 
-  let storeTab = 'colors';
-  function storeMsg(t){ $('storeMsg').textContent = t || ''; }
-  async function openStore(){
-    $('menu').classList.add('hidden');
-    $('echoStore').classList.remove('hidden');
-    storeMsg(''); renderStore();
-    await refreshWallet();
-    renderStore();
-  }
-  function renderStore(){
-    $('storeCoins').textContent = coins;
-    document.querySelectorAll('.store-tab').forEach(b=>b.classList.toggle('active', b.dataset.tab===storeTab));
-    const body = $('storeBody');
-    if(storeTab==='colors'){
-      body.innerHTML = '<div class="swatch-grid">' + COLOR_ORDER.map(k=>{
-        const c = COLORS[k], own = ownsColor(k), sel = colorKey()===k && own;
-        const tag = sel ? 'Worn' : own ? 'Owned' : '◇ ' + (PRICES[c.item]||0);
-        return `<button class="swatch${sel?' on':''}" data-color="${k}">`+
-          `<span class="dot" style="background:${c.swatch};box-shadow:0 0 14px ${c.swatch}"></span>`+
-          `<span class="nm">${c.name}</span><span class="pr${own?' own':''}">${tag}</span></button>`;
-      }).join('') + '</div>';
-    } else {
-      const bw = ownsBigWaves();
-      body.innerHTML =
-        `<div class="prow"><div class="pinfo"><div class="pn">Bigger Waves</div>`+
-        `<div class="pd">Your pulses travel much farther through the cave.</div></div>`+
-        (bw ? `<button class="buy own" disabled>Owned</button>`
-            : `<button class="buy" data-buy="echo_big_waves" ${coins<40?'disabled':''}>◇ 40</button>`)+
-        `</div>`;
-    }
-  }
-  async function buyItem(key, onOk){
-    if(!(window.GameCenter && GameCenter.buy)){ storeMsg('Open Echo from the hub (signed in) to buy.'); return; }
-    storeMsg('…');
-    const r = await GameCenter.buy('item', key);
-    if(r && r.ok){ coins = r.data.coins ?? coins; owned = r.data.items || owned; if(onOk) onOk(); storeMsg('Purchased!'); renderStore(); }
-    else { storeMsg((r && r.error) || 'Could not buy that.'); }
-  }
-  $('storeBody').onclick = async (e)=>{
-    const cb = e.target.closest('[data-color]');
-    if(cb){ const k = cb.dataset.color;
-      if(ownsColor(k)){ localStorage.setItem('echoColor', k); storeMsg(COLORS[k].name + ' light equipped'); renderStore(); }
-      else { await buyItem(COLORS[k].item, ()=>localStorage.setItem('echoColor', k)); }
-      return;
-    }
-    const bb = e.target.closest('[data-buy]');
-    if(bb){ await buyItem(bb.dataset.buy); }
-  };
-  document.querySelectorAll('.store-tab').forEach(b => b.onclick = ()=>{ storeTab = b.dataset.tab; storeMsg(''); renderStore(); });
-  $('openStore').onclick = openStore;
-  $('storeBack').onclick = goMenu;
+  // ---------- boot: account-gated like the other games ----------
   syncPulseLabel();
-  refreshWallet();   // load coins + owned items so colours/power-ups reflect ownership
+  (async ()=>{
+    if(window.GameCenter && GameCenter.me){
+      const r = await GameCenter.me();
+      if(!r.ok){ location.href = '/'; return; }   // not signed in -> hub (shared SDK auth)
+      coins = r.data.coins||0; owned = r.data.items||{};
+    }
+    $('menu').classList.remove('hidden');
+  })();
 
   // ---------- resize ----------
   function resize(){
