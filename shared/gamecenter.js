@@ -339,6 +339,7 @@
       items: [
         { key: 'echo_big_waves', name: 'Bigger Waves', desc: 'Your pulses travel much farther through the cave', price: 40, permanent: true },
         { key: 'echo_fast', name: 'Faster Light', desc: 'Glide through the cave noticeably faster', price: 80, permanent: true },
+        { key: 'echo_rapid', name: 'Rapid Pulse', desc: 'Less time between auto pulses (Auto mode)', price: 60, permanent: true },
         { key: 'echo_phase', name: 'Wall Pass', desc: 'Press E to slip through walls for 2s (long cooldown)', price: 200, permanent: true },
       ],
       // Light colours: owned as items, equipped locally (the player IS the light).

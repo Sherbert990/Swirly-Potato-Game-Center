@@ -159,7 +159,7 @@
   const PULSE_MAXR = 470;
   const PULSE_BAND = 24;
   const AUTO_INTERVAL = 1.5;     // gentle breathing pulse
-  const MANUAL_CD = 0.17;
+  const MANUAL_CD = 0.6;         // min gap between manual pulses — stops space-spamming for light
   const FADE = 0.963;            // per-frame-at-60fps light decay
   const COLLECT_DIST = 0.75 * CELL;
 
@@ -199,7 +199,9 @@
   function pulseAuto(){ return (localStorage.getItem('echoPulse') || 'auto') !== 'manual'; }
   function ownsFast(){ return owned['echo_fast'] > 0; }
   function ownsPhase(){ return owned['echo_phase'] > 0; }
+  function ownsRapid(){ return owned['echo_rapid'] > 0; }
   function moveSpeed(){ return ownsFast() ? SPEED * 1.45 : SPEED; }
+  function autoInterval(){ return ownsRapid() ? 0.95 : AUTO_INTERVAL; }   // shorter gap between auto pulses
   // Wall Pass: a 2s window where the player ignores walls, on a long cooldown.
   let phaseUntil = 0, phaseReadyAt = 0;
   function phasing(){ return performance.now() < phaseUntil; }
@@ -390,7 +392,7 @@
       manualTimer = MANUAL_CD; pulse(true);
       if(mode==='dark') gm.meter = Math.max(0, gm.meter - 1.2);   // gentle: manual mode needs to pulse to see
     }
-    if(pulseAuto() && autoTimer<=0){ autoTimer = AUTO_INTERVAL; pulse(false); }
+    if(pulseAuto() && autoTimer<=0){ autoTimer = autoInterval(); pulse(false); }
 
     // beacon from the exit once it's active
     if(exitActive()){
