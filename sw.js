@@ -1,6 +1,6 @@
 /* The Stickmen Hub service worker — installable + offline app shell.
  * Bump CACHE on any shell change so old caches purge. */
-const CACHE = 'stickmen-v20';
+const CACHE = 'stickmen-v21';
 const SHELL = [
   '/', '/manifest.webmanifest',
   '/shared/gamecenter.js',
@@ -8,7 +8,7 @@ const SHELL = [
   '/games/dont-look-down/dont_look_down.html',
   '/games/echo/index.html',
   '/design/hub/background.png', '/design/hub/lavender-cover.png',
-  '/design/hub/dontlookdown-cover.png', '/design/hub/echo-cover.svg', '/design/hub/journey-strip.png',
+  '/design/hub/dontlookdown-cover.png', '/design/hub/echo-cover.png', '/design/hub/journey-strip.png',
   '/assets/icons/icon-192.png', '/assets/icons/icon-512.png',
 ];
 
