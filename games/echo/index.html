@@ -1,0 +1,629 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>ECHO</title>
+<link rel="manifest" href="/manifest.webmanifest">
+<meta name="theme-color" content="#04060b">
+<link rel="apple-touch-icon" href="/assets/icons/icon-192.png">
+<style>
+  :root{
+    --bg:#04060b;
+    --ink:#cfe9ff;
+    --dim:#5b7290;
+    --cyan:#5fe6ff;
+    --amber:#ffb35f;
+    --mote:#7dffc0;
+    --danger:#ff6b7d;
+    --mono: ui-monospace, "SF Mono", Menlo, Consolas, monospace;
+  }
+  *{margin:0;padding:0;box-sizing:border-box}
+  html,body{height:100%;background:var(--bg);overflow:hidden;color:var(--ink);font-family:var(--mono)}
+  #wrap{position:fixed;inset:0;display:flex;align-items:center;justify-content:center}
+  canvas{display:block;background:#04060b;touch-action:none}
+
+  /* ---- shared overlay ---- */
+  .overlay{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;
+    text-align:center;padding:24px;background:radial-gradient(120% 120% at 50% 40%, rgba(8,14,26,.86), rgba(2,4,9,.97));
+    backdrop-filter:blur(2px);z-index:10}
+  .hidden{display:none!important}
+
+  .title{font-size:clamp(56px,16vw,140px);font-weight:800;letter-spacing:.22em;margin-left:.22em;
+    color:#eaf7ff;text-shadow:0 0 28px rgba(95,230,255,.55),0 0 6px rgba(95,230,255,.9)}
+  .tag{color:var(--dim);letter-spacing:.32em;text-transform:uppercase;font-size:12px;margin-top:6px}
+  .lede{max-width:440px;color:var(--ink);opacity:.78;line-height:1.6;margin:26px 0 30px;font-size:14px}
+
+  .modes{display:flex;gap:16px;flex-wrap:wrap;justify-content:center}
+  .mode{cursor:pointer;width:210px;border:1px solid rgba(95,230,255,.22);border-radius:14px;
+    padding:20px 18px;background:rgba(95,230,255,.04);transition:.18s;text-align:left}
+  .mode:hover,.mode:focus{border-color:var(--cyan);background:rgba(95,230,255,.1);transform:translateY(-2px);outline:none}
+  .mode.dark{border-color:rgba(255,179,95,.22);background:rgba(255,179,95,.04)}
+  .mode.dark:hover,.mode.dark:focus{border-color:var(--amber);background:rgba(255,179,95,.1)}
+  .mode h3{font-size:16px;letter-spacing:.06em;margin-bottom:8px;color:#eaf7ff}
+  .mode.dark h3{color:#ffe0c0}
+  .mode p{font-size:12px;line-height:1.5;color:var(--dim)}
+
+  .controls{margin-top:30px;color:var(--dim);font-size:11.5px;letter-spacing:.08em;line-height:1.9}
+  .key{display:inline-block;border:1px solid rgba(95,230,255,.3);border-radius:5px;padding:1px 7px;
+    color:var(--ink);margin:0 2px;font-size:11px}
+
+  .big{font-size:clamp(34px,9vw,64px);font-weight:800;letter-spacing:.1em}
+  .big.win{color:#eaf7ff;text-shadow:0 0 24px rgba(125,255,192,.5)}
+  .big.lose{color:var(--danger);text-shadow:0 0 24px rgba(255,107,125,.45)}
+  .sub{color:var(--dim);margin-top:12px;letter-spacing:.1em;font-size:14px}
+  .btnrow{display:flex;gap:14px;margin-top:30px}
+  .btn{cursor:pointer;border:1px solid var(--cyan);color:var(--cyan);background:rgba(95,230,255,.06);
+    border-radius:10px;padding:12px 22px;font-family:var(--mono);font-size:13px;letter-spacing:.12em;
+    text-transform:uppercase;transition:.16s}
+  .btn:hover,.btn:focus{background:var(--cyan);color:#04060b;outline:none}
+  .btn.ghost{border-color:var(--dim);color:var(--dim)}
+  .btn.ghost:hover{background:var(--dim);color:#04060b}
+
+  /* ---- HUD ---- */
+  #hud{position:absolute;inset:0;pointer-events:none;z-index:5;font-size:12px;letter-spacing:.14em}
+  #hud .corner{position:absolute;padding:16px 18px;text-transform:uppercase;color:var(--dim)}
+  #lvl{top:0;left:0}
+  #lvl b{color:var(--ink);font-size:15px}
+  #status{top:0;left:50%;transform:translateX(-50%);text-align:center;padding-top:16px}
+  #status .label{color:var(--dim);font-size:10px}
+  #status .val{color:var(--cyan);font-size:18px;margin-top:3px;text-shadow:0 0 12px rgba(95,230,255,.5)}
+  #meterwrap{width:200px;height:8px;border:1px solid rgba(255,179,95,.4);border-radius:6px;margin-top:8px;overflow:hidden;background:rgba(0,0,0,.4)}
+  #meter{height:100%;width:100%;background:linear-gradient(90deg,#ff6b7d,#ffb35f);transition:width .12s linear}
+  #right{top:0;right:0;text-align:right}
+  #mute{pointer-events:auto;cursor:pointer;color:var(--dim);background:none;border:none;font-family:var(--mono);
+    font-size:12px;letter-spacing:.14em;text-transform:uppercase}
+  #mute:hover{color:var(--ink)}
+  #hint{position:absolute;bottom:26px;left:50%;transform:translateX(-50%);color:var(--dim);
+    font-size:12px;letter-spacing:.12em;transition:opacity 1s;text-align:center}
+
+  @media(max-width:520px){
+    .mode{width:100%}
+    #status{padding-top:12px}
+  }
+</style>
+</head>
+<body>
+<!-- Shared Game Center SDK: adds the "← Home" button, Settings, and PWA service worker -->
+<script src="/shared/gamecenter.js"></script>
+<div id="wrap"><canvas id="c"></canvas></div>
+
+<!-- HUD -->
+<div id="hud" class="hidden">
+  <div class="corner" id="lvl">Cave <b>1</b></div>
+  <div class="corner" id="status"></div>
+  <div class="corner" id="right"><button id="mute">♪ sound on</button></div>
+  <div id="hint"></div>
+</div>
+
+<!-- MENU -->
+<div id="menu" class="overlay">
+  <div class="title">ECHO</div>
+  <div class="tag">see with sound</div>
+  <p class="lede">You are a pulse of light in the dark. Send out a ring and the walls it touches flicker into view, then fade from memory. Feel your way through the cave.</p>
+  <div class="modes">
+    <div class="mode" id="modeCollect" tabindex="0" role="button">
+      <h3>◇ Collect &amp; Escape</h3>
+      <p>Find every glowing mote in the cave. They ping back when you're near. Gather them all and the exit opens — no clock, just the dark.</p>
+    </div>
+    <div class="mode dark" id="modeDark" tabindex="0" role="button">
+      <h3>◈ Beat the Dark</h3>
+      <p>Your light is running out. Race to the exit before it fades to nothing. A warm beacon ripples from the way out — follow it home.</p>
+    </div>
+  </div>
+  <div class="controls">
+    move <span class="key">W A S D</span> / <span class="key">↑ ← ↓ →</span> &nbsp;·&nbsp; pulse <span class="key">space</span> &nbsp;·&nbsp; restart <span class="key">R</span>
+  </div>
+</div>
+
+<!-- LEVEL CLEARED -->
+<div id="cleared" class="overlay hidden">
+  <div class="big win">ESCAPED</div>
+  <div class="sub" id="clearedSub">into the next dark…</div>
+</div>
+
+<!-- GAME OVER (dark mode) -->
+<div id="over" class="overlay hidden">
+  <div class="big lose">THE DARK WON</div>
+  <div class="sub" id="overSub">your light went out</div>
+  <div class="btnrow">
+    <button class="btn" id="retry">Try again</button>
+    <button class="btn ghost" id="toMenu">Menu</button>
+  </div>
+</div>
+
+<script>
+(() => {
+  "use strict";
+  const canvas = document.getElementById('c');
+  const ctx = canvas.getContext('2d');
+
+  // ---------- tunables ----------
+  const CELL = 46;
+  const PLAYER_R = 10;
+  const SPEED = 178;
+  const GLOW_BASE = 80;          // always-visible radius around player
+  const PULSE_SPEED = 305;
+  const PULSE_MAXR = 470;
+  const PULSE_BAND = 24;
+  const AUTO_INTERVAL = 1.5;     // gentle breathing pulse
+  const MANUAL_CD = 0.17;
+  const FADE = 0.963;            // per-frame-at-60fps light decay
+  const COLLECT_DIST = 0.75 * CELL;
+
+  // ---------- state ----------
+  let W = 0, H = 0;
+  let mode = null;               // 'collect' | 'dark'
+  let level = 1;
+  let game = null;               // current level object
+  let running = false;
+  let lastT = 0;
+  let muted = false;
+
+  const keys = {};
+  let manualTimer = 0, autoTimer = 0;
+
+  // ---------- audio (synth, no files) ----------
+  let actx = null;
+  function audio(){ if(!actx){ try{ actx = new (window.AudioContext||window.webkitAudioContext)(); }catch(e){} } if(actx&&actx.state==='suspended') actx.resume(); return actx; }
+  function blip(freq, dur, type='sine', vol=0.12, slideTo=null){
+    if(muted) return; const a = audio(); if(!a) return;
+    const o = a.createOscillator(), g = a.createGain();
+    o.type = type; o.frequency.value = freq;
+    if(slideTo) o.frequency.exponentialRampToValueAtTime(slideTo, a.currentTime+dur);
+    g.gain.value = vol; g.gain.exponentialRampToValueAtTime(0.0001, a.currentTime+dur);
+    o.connect(g).connect(a.destination); o.start(); o.stop(a.currentTime+dur);
+  }
+  const sfx = {
+    pulse: () => blip(420, 0.28, 'sine', 0.07, 240),
+    auto:  () => blip(300, 0.22, 'sine', 0.03, 200),
+    mote:  () => blip(880, 0.18, 'triangle', 0.10, 1320),
+    beacon:() => blip(180, 0.5, 'sine', 0.05, 130),
+    win:   () => { [523,659,784,1046].forEach((f,i)=>setTimeout(()=>blip(f,0.3,'triangle',0.11),i*90)); },
+    lose:  () => { [330,247,165].forEach((f,i)=>setTimeout(()=>blip(f,0.5,'sawtooth',0.08),i*140)); },
+  };
+
+  // ---------- maze ----------
+  function buildMaze(cols, rows){
+    const gw = 2*cols+1, gh = 2*rows+1;
+    const g = Array.from({length:gh}, () => new Array(gw).fill(1));
+    const visited = Array.from({length:rows}, () => new Array(cols).fill(false));
+    const stack = [[0,0]]; visited[0][0] = true; g[1][1] = 0;
+    const dirs = [[0,-1],[0,1],[-1,0],[1,0]];
+    while(stack.length){
+      const [cx,cy] = stack[stack.length-1];
+      const opts = [];
+      for(const [dx,dy] of dirs){
+        const nx=cx+dx, ny=cy+dy;
+        if(nx>=0&&nx<cols&&ny>=0&&ny<rows&&!visited[ny][nx]) opts.push([nx,ny,dx,dy]);
+      }
+      if(opts.length){
+        const [nx,ny,dx,dy] = opts[(Math.random()*opts.length)|0];
+        g[2*cy+1+dy][2*cx+1+dx] = 0;   // knock wall between
+        g[2*ny+1][2*nx+1] = 0;
+        visited[ny][nx] = true; stack.push([nx,ny]);
+      } else stack.pop();
+    }
+    return {g, gw, gh};
+  }
+
+  // BFS distances over floor cells from a grid cell
+  function bfsDist(g, gw, gh, sx, sy){
+    const dist = Array.from({length:gh}, () => new Array(gw).fill(-1));
+    const q = [[sx,sy]]; dist[sy][sx] = 0; let head = 0;
+    const d4 = [[0,-1],[0,1],[-1,0],[1,0]];
+    while(head < q.length){
+      const [x,y] = q[head++];
+      for(const [dx,dy] of d4){
+        const nx=x+dx, ny=y+dy;
+        if(nx>=0&&nx<gw&&ny>=0&&ny<gh&&g[ny][nx]===0&&dist[ny][nx]<0){
+          dist[ny][nx] = dist[y][x]+1; q.push([nx,ny]);
+        }
+      }
+    }
+    return dist;
+  }
+
+  // ---------- level setup ----------
+  function newLevel(){
+    const cols = Math.min(7 + level*2, 26);
+    const rows = Math.min(5 + level*2, 18);
+    const {g, gw, gh} = buildMaze(cols, rows);
+
+    const sx = 1, sy = 1;                       // start grid cell
+    const dist = bfsDist(g, gw, gh, sx, sy);
+
+    // exit = farthest reachable floor cell
+    let ex = sx, ey = sy, best = -1, maxD = 0;
+    const floors = [];
+    for(let y=0;y<gh;y++) for(let x=0;x<gw;x++) if(g[y][x]===0){
+      floors.push([x,y]);
+      if(dist[y][x] > maxD) maxD = dist[y][x];
+      if(dist[y][x] > best){ best = dist[y][x]; ex = x; ey = y; }
+    }
+
+    // motes: spread across mid-to-far floor cells (collect mode)
+    const moteCount = mode==='collect' ? Math.min(3 + Math.floor(level/2), 7) : 0;
+    const motes = [];
+    if(moteCount){
+      const candidates = floors.filter(([x,y]) =>
+        dist[y][x] > maxD*0.2 && !(x===ex&&y===ey) && !(x===sx&&y===sy));
+      // shuffle
+      for(let i=candidates.length-1;i>0;i--){ const j=(Math.random()*(i+1))|0; [candidates[i],candidates[j]]=[candidates[j],candidates[i]]; }
+      for(let i=0;i<moteCount && i<candidates.length;i++){
+        const [x,y] = candidates[i];
+        motes.push({ x:(x+0.5)*CELL, y:(y+0.5)*CELL, t:Math.random()*6, got:false });
+      }
+    }
+
+    // dark-mode light budget scaled to distance to exit
+    const budget = mode==='dark' ? Math.min(16 + maxD*1.05 + level, 60) : 0;
+
+    game = {
+      g, gw, gh,
+      light: Array.from({length:gh}, () => new Float32Array(gw)),
+      px:(sx+0.5)*CELL, py:(sy+0.5)*CELL, vx:0, vy:0,
+      exit:{ x:(ex+0.5)*CELL, y:(ey+0.5)*CELL, t:0 },
+      motes, collected:0, totalMotes:moteCount,
+      pulses:[],
+      camX:0, camY:0,
+      meter:100, budget, drain: budget>0 ? 100/budget : 0,
+      beaconTimer: 0,
+      time:0,
+      won:false, lost:false, flash:0,
+    };
+    pulse(false); // initial reveal
+    setHud();
+    showHint(mode==='collect'
+      ? `find ${moteCount} motes — then escape`
+      : `reach the exit before your light fades`);
+  }
+
+  function pulse(manual){
+    if(!game) return;
+    game.pulses.push({ x:game.px, y:game.py, r:0, max:PULSE_MAXR, warm:false });
+    manual ? sfx.pulse() : sfx.auto();
+  }
+  function beacon(){
+    game.pulses.push({ x:game.exit.x, y:game.exit.y, r:0, max:PULSE_MAXR*1.4, warm:true });
+    sfx.beacon();
+  }
+
+  // ---------- helpers ----------
+  function isWall(px,py){
+    const gx = Math.floor(px/CELL), gy = Math.floor(py/CELL);
+    if(gx<0||gy<0||gx>=game.gw||gy>=game.gh) return true;
+    return game.g[gy][gx]===1;
+  }
+  function collides(px,py,r){
+    if(isWall(px,py)) return true;
+    for(let a=0;a<8;a++){ const ang=a*Math.PI/4;
+      if(isWall(px+Math.cos(ang)*r, py+Math.sin(ang)*r)) return true; }
+    return false;
+  }
+  const exitActive = () => mode==='dark' || game.collected>=game.totalMotes;
+
+  // ---------- update ----------
+  function update(dt){
+    const gm = game;
+    // input -> velocity
+    let ix=0, iy=0;
+    if(keys['arrowleft']||keys['a']) ix-=1;
+    if(keys['arrowright']||keys['d']) ix+=1;
+    if(keys['arrowup']||keys['w']) iy-=1;
+    if(keys['arrowdown']||keys['s']) iy+=1;
+    if(ix&&iy){ const k=Math.SQRT1_2; ix*=k; iy*=k; }
+    gm.vx = ix*SPEED; gm.vy = iy*SPEED;
+
+    // move with per-axis collision
+    const nx = gm.px + gm.vx*dt;
+    if(!collides(nx, gm.py, PLAYER_R)) gm.px = nx;
+    const ny = gm.py + gm.vy*dt;
+    if(!collides(gm.px, ny, PLAYER_R)) gm.py = ny;
+
+    // pulses (manual + auto)
+    manualTimer -= dt; autoTimer -= dt;
+    if((keys[' ']||keys['space']) && manualTimer<=0){
+      manualTimer = MANUAL_CD; pulse(true);
+      if(mode==='dark') gm.meter = Math.max(0, gm.meter - 3.5);
+    }
+    if(autoTimer<=0){ autoTimer = AUTO_INTERVAL; pulse(false); }
+
+    // beacon from the exit once it's active
+    if(exitActive()){
+      gm.beaconTimer -= dt;
+      if(gm.beaconTimer<=0){ gm.beaconTimer = mode==='dark'?2.4:2.8; beacon(); }
+    }
+
+    // advance pulses
+    for(const p of gm.pulses) p.r += PULSE_SPEED*dt*(p.warm?1.15:1);
+    gm.pulses = gm.pulses.filter(p => p.r < p.max);
+
+    // light decay (faster as the dark closes in)
+    let fade = FADE;
+    if(mode==='dark'){ const m = gm.meter/100; fade = FADE - (1-m)*0.06; }
+    const fadeStep = Math.pow(fade, dt*60);
+    const L = gm.light;
+    for(let y=0;y<gm.gh;y++){ const row=L[y]; for(let x=0;x<gm.gw;x++) if(row[x]>0.003) row[x]*=fadeStep; else row[x]=0; }
+
+    // reveal: pulses sweeping over cells
+    for(const p of gm.pulses){
+      const rad = p.r, lo = rad-PULSE_BAND, hi = rad+PULSE_BAND;
+      const cgx = p.x/CELL, cgy = p.y/CELL, span = Math.ceil(hi/CELL)+1;
+      const x0=Math.max(0,(cgx-span)|0), x1=Math.min(gm.gw-1,(cgx+span)|0);
+      const y0=Math.max(0,(cgy-span)|0), y1=Math.min(gm.gh-1,(cgy+span)|0);
+      const falloff = Math.max(0.25, 1 - rad/p.max);
+      for(let y=y0;y<=y1;y++) for(let x=x0;x<=x1;x++){
+        const dx=(x+0.5)*CELL-p.x, dy=(y+0.5)*CELL-p.y;
+        const d=Math.hypot(dx,dy);
+        if(d>=lo && d<=hi){
+          const edge = 1 - Math.abs(d-rad)/PULSE_BAND;
+          const v = edge*falloff*(p.warm?0.95:1);
+          if(v>L[y][x]) L[y][x]=v;
+        }
+      }
+    }
+    // permanent glow around the player
+    const glowR = mode==='dark' ? GLOW_BASE*(0.5+0.5*gm.meter/100) : GLOW_BASE;
+    const grC = Math.ceil(glowR/CELL);
+    const pgx = (gm.px/CELL)|0, pgy=(gm.py/CELL)|0;
+    for(let y=Math.max(0,pgy-grC);y<=Math.min(gm.gh-1,pgy+grC);y++)
+      for(let x=Math.max(0,pgx-grC);x<=Math.min(gm.gw-1,pgx+grC);x++){
+        const dx=(x+0.5)*CELL-gm.px, dy=(y+0.5)*CELL-gm.py;
+        const d=Math.hypot(dx,dy);
+        if(d<glowR){ const v=(1-d/glowR)*0.95; if(v>gm.light[y][x]) gm.light[y][x]=v; }
+      }
+    // motes glow + ping + collect
+    for(const m of gm.motes){
+      if(m.got) continue;
+      m.t += dt;
+      const mgx=(m.x/CELL)|0, mgy=(m.y/CELL)|0;
+      const ping = 0.4 + 0.35*(0.5+0.5*Math.sin(m.t*3));
+      gm.light[mgy][mgx] = Math.max(gm.light[mgy][mgx], ping);
+      const dToP = Math.hypot(m.x-gm.px, m.y-gm.py);
+      if(dToP < COLLECT_DIST){
+        m.got = true; gm.collected++; gm.flash=1; sfx.mote();
+        if(mode==='dark') gm.meter = Math.min(100, gm.meter+8);
+        if(gm.collected>=gm.totalMotes){ gm.beaconTimer=0.1; showHint('the exit is open — find your way out'); }
+        setHud();
+      }
+    }
+    // exit glow
+    gm.exit.t += dt;
+    if(exitActive()){
+      const egx=(gm.exit.x/CELL)|0, egy=(gm.exit.y/CELL)|0;
+      gm.light[egy][egx] = Math.max(gm.light[egy][egx], 0.55+0.25*Math.sin(gm.exit.t*4));
+    }
+    // reach exit?
+    if(exitActive() && Math.hypot(gm.exit.x-gm.px, gm.exit.y-gm.py) < COLLECT_DIST){
+      winLevel(); return;
+    }
+
+    // dark meter drain
+    if(mode==='dark'){
+      gm.meter = Math.max(0, gm.meter - gm.drain*dt);
+      if(gm.meter<=0){ loseGame(); return; }
+      setHud();
+    } else { gm.time += dt; setHud(); }
+
+    if(gm.flash>0) gm.flash = Math.max(0, gm.flash-dt*2.5);
+
+    // camera follows player, clamped to maze
+    const mazeW = gm.gw*CELL, mazeH = gm.gh*CELL;
+    gm.camX = mazeW<=W ? (mazeW-W)/2 : clamp(gm.px - W/2, 0, mazeW-W);
+    gm.camY = mazeH<=H ? (mazeH-H)/2 : clamp(gm.py - H/2, 0, mazeH-H);
+  }
+  const clamp = (v,a,b)=>v<a?a:v>b?b:v;
+
+  // ---------- render ----------
+  function render(){
+    const gm = game;
+    ctx.fillStyle = '#04060b';
+    ctx.fillRect(0,0,W,H);
+    ctx.save();
+    ctx.translate(-gm.camX, -gm.camY);
+
+    // visible cell window
+    const x0=Math.max(0,(gm.camX/CELL)|0), x1=Math.min(gm.gw-1,((gm.camX+W)/CELL|0)+1);
+    const y0=Math.max(0,(gm.camY/CELL)|0), y1=Math.min(gm.gh-1,((gm.camY+H)/CELL|0)+1);
+    for(let y=y0;y<=y1;y++) for(let x=x0;x<=x1;x++){
+      const l = gm.light[y][x]; if(l<0.02) continue;
+      const px=x*CELL, py=y*CELL;
+      if(gm.g[y][x]===1){ // wall — the bright, solid thing you bump into
+        ctx.fillStyle = `rgba(108,196,255,${Math.min(1,l)*0.92})`;
+        ctx.fillRect(px,py,CELL,CELL);
+        ctx.fillStyle = `rgba(220,245,255,${Math.min(1,l)*0.5})`;
+        ctx.fillRect(px+2,py+2,CELL-4,4);
+      } else {            // floor — a faint wash
+        ctx.fillStyle = `rgba(46,86,128,${l*0.4})`;
+        ctx.fillRect(px,py,CELL,CELL);
+      }
+    }
+
+    // faint sonar rings (helps you read direction; warm = beacon from exit)
+    for(const p of gm.pulses){
+      ctx.beginPath(); ctx.arc(p.x,p.y,p.r,0,Math.PI*2);
+      const a = (1 - p.r/p.max) * (p.warm?0.5:0.16);
+      ctx.strokeStyle = p.warm ? `rgba(255,179,95,${a})` : `rgba(95,230,255,${a})`;
+      ctx.lineWidth = p.warm?2.5:1.5; ctx.stroke();
+    }
+
+    // motes
+    for(const m of gm.motes){ if(m.got) continue;
+      const r = 5 + 2*Math.sin(m.t*3);
+      const grd = ctx.createRadialGradient(m.x,m.y,0,m.x,m.y,r*4);
+      grd.addColorStop(0,'rgba(125,255,192,.9)'); grd.addColorStop(1,'rgba(125,255,192,0)');
+      ctx.fillStyle=grd; ctx.beginPath(); ctx.arc(m.x,m.y,r*4,0,Math.PI*2); ctx.fill();
+      ctx.fillStyle='#d6ffe9'; ctx.beginPath(); ctx.arc(m.x,m.y,r*0.6,0,Math.PI*2); ctx.fill();
+    }
+
+    // exit
+    const e = gm.exit, on = exitActive();
+    const col = on ? '255,179,95' : '90,114,144';
+    const er = 16 + (on?4*Math.sin(e.t*4):0);
+    if(on){
+      const grd = ctx.createRadialGradient(e.x,e.y,0,e.x,e.y,er*3.4);
+      grd.addColorStop(0,`rgba(${col},.6)`); grd.addColorStop(1,`rgba(${col},0)`);
+      ctx.fillStyle=grd; ctx.beginPath(); ctx.arc(e.x,e.y,er*3.4,0,Math.PI*2); ctx.fill();
+    }
+    ctx.strokeStyle=`rgba(${col},${on?0.95:0.5})`; ctx.lineWidth=3;
+    ctx.beginPath(); ctx.arc(e.x,e.y,er,0,Math.PI*2); ctx.stroke();
+    ctx.beginPath(); ctx.arc(e.x,e.y,er*0.5,0,Math.PI*2); ctx.stroke();
+
+    // player — the light source
+    const pg = ctx.createRadialGradient(gm.px,gm.py,0,gm.px,gm.py,30);
+    pg.addColorStop(0,'rgba(200,245,255,.95)'); pg.addColorStop(1,'rgba(95,230,255,0)');
+    ctx.fillStyle=pg; ctx.beginPath(); ctx.arc(gm.px,gm.py,30,0,Math.PI*2); ctx.fill();
+    ctx.fillStyle='#eafaff'; ctx.beginPath(); ctx.arc(gm.px,gm.py,PLAYER_R*0.7,0,Math.PI*2); ctx.fill();
+
+    ctx.restore();
+
+    // dark-mode "closing in" vignette + warmth toward exit
+    if(mode==='dark'){
+      const dark = 1 - gm.meter/100;
+      const vg = ctx.createRadialGradient(W/2,H/2,Math.min(W,H)*(0.18+0.22*gm.meter/100),W/2,H/2,Math.max(W,H)*0.75);
+      vg.addColorStop(0,'rgba(4,6,11,0)'); vg.addColorStop(1,`rgba(2,3,7,${0.5+0.45*dark})`);
+      ctx.fillStyle=vg; ctx.fillRect(0,0,W,H);
+    }
+    // collect-feedback flash
+    if(gm.flash>0){ ctx.fillStyle=`rgba(125,255,192,${gm.flash*0.12})`; ctx.fillRect(0,0,W,H); }
+  }
+
+  // ---------- loop ----------
+  // Every run gets a fresh token; each frame captures its own token and stops the
+  // moment a newer run begins. This makes it impossible to ever have two loops
+  // running at once (the cause of the lag / "stuck" on re-entry), no matter how the
+  // page got here (fresh load, restored from cache, retry, level advance).
+  let runToken = 0;
+  function startLoop(){
+    const myTok = ++runToken;
+    let lastTick = 0;
+    function tick(){
+      if(!running || myTok !== runToken) return;
+      const now = performance.now();
+      const dt = Math.min(0.05, (now - lastT)/1000 || 0); lastT = now; lastTick = now;
+      update(dt);
+      if(running) render();
+    }
+    // Primary driver: requestAnimationFrame (smooth when the browser feeds frames).
+    (function raf(){ if(!running || myTok !== runToken) return; tick(); requestAnimationFrame(raf); })();
+    // Fallback driver: a timer that keeps the game alive when rAF is starved. Right
+    // after a navigation the browser can stall rAF for up to ~1.5s (even on a
+    // visible, focused page), which otherwise freezes the game on entry ("stuck,
+    // only the corner shows"). The timer only steps when rAF hasn't ticked recently,
+    // so a healthy 60fps loop is never double-stepped.
+    const iv = setInterval(() => {
+      if(!running || myTok !== runToken){ clearInterval(iv); return; }
+      if(performance.now() - lastTick > 40) tick();
+    }, 1000/30);
+  }
+
+  // ---------- flow ----------
+  function startMode(m){
+    mode = m; level = 1;
+    document.getElementById('menu').classList.add('hidden');
+    document.getElementById('over').classList.add('hidden');
+    document.getElementById('cleared').classList.add('hidden');
+    document.getElementById('hud').classList.remove('hidden');
+    audio();
+    beginLevel();
+  }
+  function beginLevel(){
+    resize();   // make sure the canvas matches the viewport before laying out the level
+                // (otherwise a stale/zero size renders only the top-left sliver)
+    newLevel();
+    running = true; lastT = performance.now();
+    startLoop();
+  }
+  function winLevel(){
+    running = false; sfx.win();
+    // Best-effort: record caves-cleared on the shared leaderboard + a few coins.
+    // No-ops when played outside the hub (not signed in).
+    if (window.GameCenter && GameCenter.submitScore) {
+      try { GameCenter.submitScore('echo', level, 3); } catch(e){}
+    }
+    const sub = mode==='collect'
+      ? `cave ${level} cleared in ${game.time.toFixed(1)}s`
+      : `escaped with ${Math.round(game.meter)}% light to spare`;
+    document.getElementById('clearedSub').textContent = sub;
+    const c = document.getElementById('cleared'); c.classList.remove('hidden');
+    setTimeout(()=>{ c.classList.add('hidden'); level++; beginLevel(); }, 1500);
+  }
+  function loseGame(){
+    running = false; sfx.lose();
+    document.getElementById('overSub').textContent = `you reached cave ${level}`;
+    document.getElementById('over').classList.remove('hidden');
+  }
+
+  // ---------- HUD ----------
+  function setHud(){
+    document.querySelector('#lvl b').textContent = level;
+    const s = document.getElementById('status');
+    if(mode==='collect'){
+      s.innerHTML = `<div class="label">MOTES</div><div class="val">${game.collected} / ${game.totalMotes}</div>`;
+    } else {
+      s.innerHTML = `<div class="label">LIGHT</div><div id="meterwrap"><div id="meter"></div></div>`;
+      const mEl = document.getElementById('meter'); if(mEl) mEl.style.width = game.meter+'%';
+    }
+  }
+  let hintTimer = null;
+  function showHint(txt){
+    const h = document.getElementById('hint');
+    h.textContent = txt; h.style.opacity = '1';
+    clearTimeout(hintTimer);
+    hintTimer = setTimeout(()=>{ h.style.opacity='0'; }, 3200);
+  }
+
+  // ---------- input ----------
+  addEventListener('keydown', e=>{
+    const k = e.key.toLowerCase();
+    if(k===' '){ keys[' ']=true; e.preventDefault(); } else keys[k]=true;
+    if(k==='r' && mode){ if(running){ beginLevel(); } }
+    audio();
+  });
+  addEventListener('keyup', e=>{ const k=e.key.toLowerCase(); if(k===' ')keys[' ']=false; else keys[k]=false; });
+
+  // touch: drag to move, tap to pulse
+  let touchId=null, tStart=null;
+  canvas.addEventListener('touchstart', e=>{ audio(); const t=e.changedTouches[0]; touchId=t.identifier; tStart={x:t.clientX,y:t.clientY}; }, {passive:true});
+  canvas.addEventListener('touchmove', e=>{
+    for(const t of e.changedTouches){ if(t.identifier!==touchId) continue;
+      const dx=t.clientX-tStart.x, dy=t.clientY-tStart.y;
+      keys['a']=dx<-12; keys['d']=dx>12; keys['w']=dy<-12; keys['s']=dy>12;
+    }
+  }, {passive:true});
+  canvas.addEventListener('touchend', e=>{
+    for(const t of e.changedTouches){ if(t.identifier!==touchId) continue;
+      const moved = Math.hypot(t.clientX-tStart.x, t.clientY-tStart.y);
+      if(moved<14 && running){ manualTimer=MANUAL_CD; pulse(true); if(mode==='dark') game.meter=Math.max(0,game.meter-3.5); }
+      keys['a']=keys['d']=keys['w']=keys['s']=false; touchId=null;
+    }
+  }, {passive:true});
+
+  // buttons
+  document.getElementById('modeCollect').onclick = ()=>startMode('collect');
+  document.getElementById('modeDark').onclick = ()=>startMode('dark');
+  document.getElementById('modeCollect').onkeydown = e=>{ if(e.key==='Enter'||e.key===' ')startMode('collect'); };
+  document.getElementById('modeDark').onkeydown = e=>{ if(e.key==='Enter'||e.key===' ')startMode('dark'); };
+  document.getElementById('retry').onclick = ()=>{ document.getElementById('over').classList.add('hidden'); beginLevel(); };
+  document.getElementById('toMenu').onclick = ()=>{ running=false; document.getElementById('over').classList.add('hidden'); document.getElementById('hud').classList.add('hidden'); document.getElementById('menu').classList.remove('hidden'); };
+  document.getElementById('mute').onclick = ()=>{ muted=!muted; document.getElementById('mute').textContent = muted?'♪ sound off':'♪ sound on'; };
+
+  // ---------- resize ----------
+  function resize(){
+    W = window.innerWidth || document.documentElement.clientWidth || canvas.clientWidth || 680;
+    H = window.innerHeight || document.documentElement.clientHeight || canvas.clientHeight || 480;
+    canvas.width = W; canvas.height = H;
+  }
+  addEventListener('resize', resize);
+  // If the page comes back from the browser's back/forward cache, the old script
+  // state + animation loop are restored stale — re-entering then stacks a second
+  // loop (lag) over a zero-size canvas (top-left sliver). Force a clean reload.
+  addEventListener('pageshow', (e) => { if (e.persisted) location.reload(); else resize(); });
+  addEventListener('pagehide', () => { running = false; runToken++; });   // stop the loop when leaving
+  resize();
+  requestAnimationFrame(resize);          // re-measure once layout has settled
+})();
+</script>
+</body>
+</html>

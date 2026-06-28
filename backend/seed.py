@@ -14,6 +14,7 @@ GAMES = [
     #   -hard : highest level reached in Hard Mode
     ("lavender-leap-time", "Lavender Leap · Time Trial"),
     ("lavender-leap-hard", "Lavender Leap · Hard Mode"),
+    ("echo", "Echo"),  # see-with-sound cave game; score = caves cleared
 ]
 
 # Combined avatar catalog (DESIGN.md §7). Free = price 0.
