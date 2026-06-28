@@ -197,6 +197,19 @@
   function ownsBigWaves(){ return owned['echo_big_waves'] > 0; }
   function pulseMaxR(){ return ownsBigWaves() ? 720 : 470; }
   function pulseAuto(){ return (localStorage.getItem('echoPulse') || 'auto') !== 'manual'; }
+  function ownsFast(){ return owned['echo_fast'] > 0; }
+  function ownsPhase(){ return owned['echo_phase'] > 0; }
+  function moveSpeed(){ return ownsFast() ? SPEED * 1.45 : SPEED; }
+  // Wall Pass: a 2s window where the player ignores walls, on a long cooldown.
+  let phaseUntil = 0, phaseReadyAt = 0;
+  function phasing(){ return performance.now() < phaseUntil; }
+  function tryPhase(){
+    if(!ownsPhase() || !running) return;
+    const now = performance.now();
+    if(now < phaseReadyAt) return;          // still cooling down
+    phaseUntil = now + 2000; phaseReadyAt = now + 15000;
+    showHint('phasing — slip through the walls!'); sfx.beacon();
+  }
   async function refreshWallet(){
     if(!(window.GameCenter && GameCenter.me)) return;
     try { const r = await GameCenter.me(); if(r && r.ok){ coins = r.data.coins || 0; owned = r.data.items || {}; } } catch(e){}
@@ -317,11 +330,12 @@
       time:0,
       won:false, lost:false, flash:0,
     };
+    phaseUntil = 0; phaseReadyAt = 0;   // fresh Wall Pass each level (not mid-phase on spawn)
     pulse(false); // initial reveal
     setHud();
-    showHint(mode==='collect'
-      ? `find ${moteCount} motes — then escape`
-      : `reach the exit before your light fades`);
+    let baseHint = mode==='collect' ? `find ${moteCount} motes — then escape` : `reach the exit before your light fades`;
+    if(level===1 && ownsPhase()) baseHint += ' · press E to phase through walls';
+    showHint(baseHint);
   }
 
   function pulse(manual){
@@ -341,6 +355,8 @@
     return game.g[gy][gx]===1;
   }
   function collides(px,py,r){
+    if(phasing()) return false;                       // Wall Pass active — ignore walls
+    if(isWall(game.px, game.py)) return false;         // stuck inside a wall (phase ended) — let them walk out
     if(isWall(px,py)) return true;
     for(let a=0;a<8;a++){ const ang=a*Math.PI/4;
       if(isWall(px+Math.cos(ang)*r, py+Math.sin(ang)*r)) return true; }
@@ -358,7 +374,8 @@
     if(keys['arrowup']||keys['w']) iy-=1;
     if(keys['arrowdown']||keys['s']) iy+=1;
     if(ix&&iy){ const k=Math.SQRT1_2; ix*=k; iy*=k; }
-    gm.vx = ix*SPEED; gm.vy = iy*SPEED;
+    const spd = moveSpeed();
+    gm.vx = ix*spd; gm.vy = iy*spd;
 
     // move with per-axis collision
     const nx = gm.px + gm.vx*dt;
@@ -368,9 +385,10 @@
 
     // pulses (manual + auto)
     manualTimer -= dt; autoTimer -= dt;
-    if((keys[' ']||keys['space']) && manualTimer<=0){
+    // Manual pulse only in Manual mode — in Auto mode, space makes no extra light.
+    if(!pulseAuto() && (keys[' ']||keys['space']) && manualTimer<=0){
       manualTimer = MANUAL_CD; pulse(true);
-      if(mode==='dark') gm.meter = Math.max(0, gm.meter - 3.5);
+      if(mode==='dark') gm.meter = Math.max(0, gm.meter - 1.2);   // gentle: manual mode needs to pulse to see
     }
     if(pulseAuto() && autoTimer<=0){ autoTimer = AUTO_INTERVAL; pulse(false); }
 
@@ -521,6 +539,11 @@
     pg.addColorStop(0,`rgba(${C.mid},.95)`); pg.addColorStop(1,`rgba(${C.ring},0)`);
     ctx.fillStyle=pg; ctx.beginPath(); ctx.arc(gm.px,gm.py,30,0,Math.PI*2); ctx.fill();
     ctx.fillStyle=`rgb(${C.core})`; ctx.beginPath(); ctx.arc(gm.px,gm.py,PLAYER_R*0.7,0,Math.PI*2); ctx.fill();
+    if(phasing()){   // Wall Pass shimmer so the open window is visible
+      const a = Math.max(0, (phaseUntil - performance.now())/2000);
+      ctx.strokeStyle=`rgba(${C.ring},${0.22+0.55*a})`; ctx.lineWidth=2.5;
+      ctx.beginPath(); ctx.arc(gm.px,gm.py,15+7*(0.5+0.5*Math.sin(performance.now()/110)),0,Math.PI*2); ctx.stroke();
+    }
 
     ctx.restore();
 
@@ -623,6 +646,7 @@
     const k = e.key.toLowerCase();
     if(k===' '){ keys[' ']=true; e.preventDefault(); } else keys[k]=true;
     if(k==='r' && mode){ if(running){ beginLevel(); } }
+    if(k==='e' && running){ tryPhase(); }
     audio();
   });
   addEventListener('keyup', e=>{ const k=e.key.toLowerCase(); if(k===' ')keys[' ']=false; else keys[k]=false; });
@@ -639,7 +663,7 @@
   canvas.addEventListener('touchend', e=>{
     for(const t of e.changedTouches){ if(t.identifier!==touchId) continue;
       const moved = Math.hypot(t.clientX-tStart.x, t.clientY-tStart.y);
-      if(moved<14 && running){ manualTimer=MANUAL_CD; pulse(true); if(mode==='dark') game.meter=Math.max(0,game.meter-3.5); }
+      if(moved<14 && running && !pulseAuto()){ manualTimer=MANUAL_CD; pulse(true); if(mode==='dark') game.meter=Math.max(0,game.meter-1.2); }
       keys['a']=keys['d']=keys['w']=keys['s']=false; touchId=null;
     }
   }, {passive:true});

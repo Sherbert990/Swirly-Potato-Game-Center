@@ -64,6 +64,8 @@ STORE_ITEMS = [
     ("echo-red", "Red Light", "echo_color", 30),
     ("echo-pink", "Pink Light", "echo_color", 30),
     ("echo_big_waves", "Bigger Waves", "echo_powerup", 40),  # pulses travel farther
+    ("echo_fast", "Faster Light", "echo_powerup", 80),       # move faster (permanent)
+    ("echo_phase", "Wall Pass", "echo_powerup", 200),        # phase through walls for 2s (permanent, cooldown)
 ]
 
 # Which game each store item belongs to ('' = available everywhere). The buy/use
@@ -74,6 +76,7 @@ ITEM_GAME = {
     "echo-purple": "echo", "echo-blue": "echo", "echo-green": "echo",
     "echo-yellow": "echo", "echo-orange": "echo", "echo-red": "echo",
     "echo-pink": "echo", "echo_big_waves": "echo",
+    "echo_fast": "echo", "echo_phase": "echo",
 }
 
 # (key, name, description, game ('' = any), metric, threshold)
