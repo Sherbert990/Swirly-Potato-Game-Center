@@ -7,8 +7,9 @@ import os
 from pathlib import Path
 from dotenv import load_dotenv
 
-# Load backend/.env explicitly so it works regardless of the working directory.
-load_dotenv(Path(__file__).resolve().parent / ".env")
+# Load the repo-root .env explicitly so it works regardless of the working
+# directory. (In prod the platform injects real env vars and there is no file.)
+load_dotenv(Path(__file__).resolve().parent.parent / ".env")
 
 ENV = os.getenv("ENV", "dev")  # "dev" | "prod"
 
