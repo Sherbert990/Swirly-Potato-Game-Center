@@ -121,13 +121,14 @@
       "skinGroups": [
         {
           "title": "Target skins", "prefKey": "archerySkin", "event": "gc:archeryskin", "default": "classic", "itemType": "archery_skin",
+          "_comment": "rings = 5 band colours centre -> outer; the Store renders them as a mini target preview.",
           "choices": [
-            { "name": "Classic", "pref": "classic", "swatch": "#ecbe3c" },
-            { "key": "arch-skin-carbon", "name": "Carbon", "pref": "carbon", "swatch": "#e8e8e8", "price": 25 },
-            { "key": "arch-skin-sunset", "name": "Sunset", "pref": "sunset", "swatch": "#f6c14b", "price": 40 },
-            { "key": "arch-skin-frost", "name": "Frost", "pref": "frost", "swatch": "#7fc6d6", "price": 55 },
-            { "key": "arch-skin-emerald", "name": "Emerald", "pref": "emerald", "swatch": "#43b06f", "price": 55 },
-            { "key": "arch-skin-neon", "name": "Neon", "pref": "neon", "swatch": "#00e5ff", "price": 90 }
+            { "name": "Classic", "pref": "classic", "swatch": "#ecbe3c", "rings": ["#ecbe3c","#e6483c","#4aa6d6","#2a2622","#efe9da"] },
+            { "key": "arch-skin-carbon", "name": "Carbon", "pref": "carbon", "swatch": "#e8e8e8", "price": 25, "rings": ["#e8e8e8","#6e6e6e","#3a3a3a","#1c1c1c","#0a0a0a"] },
+            { "key": "arch-skin-sunset", "name": "Sunset", "pref": "sunset", "swatch": "#f6c14b", "price": 40, "rings": ["#f6c14b","#e8663d","#a8324f","#5e2749","#2b1636"] },
+            { "key": "arch-skin-frost", "name": "Frost", "pref": "frost", "swatch": "#7fc6d6", "price": 55, "rings": ["#eaf6fb","#7fc6d6","#1f6f8b","#123a4f","#0d2233"] },
+            { "key": "arch-skin-emerald", "name": "Emerald", "pref": "emerald", "swatch": "#43b06f", "price": 55, "rings": ["#c9f57e","#43b06f","#1c6b45","#0e2c1e","#07160f"] },
+            { "key": "arch-skin-neon", "name": "Neon", "pref": "neon", "swatch": "#00e5ff", "price": 90, "rings": ["#00e5ff","#e91e8c","#7b1fa2","#3a0f57","#16081f"] }
           ]
         }
       ]

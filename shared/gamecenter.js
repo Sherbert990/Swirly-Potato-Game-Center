@@ -381,10 +381,18 @@
 
   function storeMsg(t) { const m = storeEl && storeEl.querySelector('[data-msg]'); if (m) m.textContent = t || ''; }
 
+  // A concentric-ring target preview from 5 band colours (centre -> outer).
+  function targetSwatch(rings) {
+    const stops = rings.map((c, i) => c + ' ' + (i * 20) + '% ' + ((i + 1) * 20) + '%').join(',');
+    return '<span style="flex:none;width:44px;height:48px;border-radius:11px;background:var(--gc-field);border:1px solid var(--gc-line);display:flex;align-items:center;justify-content:center">' +
+      '<span style="width:32px;height:32px;border-radius:50%;background:radial-gradient(circle,' + stops + ');box-shadow:0 0 0 1px rgba(0,0,0,.35),0 0 8px rgba(0,0,0,.25)"></span></span>';
+  }
   function rowHtml(opts) {
-    // opts: skinKey?, title, sub, btnLabel, btnAttr, disabled, done
+    // opts: skinKey?, rings?, swatch?, title, sub, btnLabel, btnAttr, disabled, done
     const sw = opts.skinKey
       ? '<canvas data-skin="' + opts.skinKey + '" width="44" height="48" style="flex:none;width:44px;height:48px;border-radius:11px;background:var(--gc-field);border:1px solid var(--gc-line)"></canvas>'
+      : (opts.rings && opts.rings.length)
+      ? targetSwatch(opts.rings)
       : opts.swatch
       ? '<span style="flex:none;width:44px;height:48px;border-radius:11px;background:var(--gc-field);border:1px solid var(--gc-line);display:flex;align-items:center;justify-content:center"><span style="width:26px;height:26px;border-radius:50%;background:' + opts.swatch + ';box-shadow:0 0 12px ' + opts.swatch + '"></span></span>'
       : '';
@@ -473,6 +481,7 @@
         const equipped = isOwned && pref === col.pref;
         html += rowHtml({
           swatch: col.swatch,
+          rings: col.rings,
           title: col.name,
           sub: equipped ? 'Currently worn' : isOwned ? (free ? 'Free' : 'Unlocked') : grp.title,
           btnLabel: equipped ? 'Equipped' : isOwned ? 'Equip' : '★ ' + col.price,
