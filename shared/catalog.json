@@ -1,0 +1,198 @@
+{
+  "version": 1,
+  "_comment": "Single source of truth for every game. The backend (backend/seed.py) seeds Games/Avatars/StoreItems/ITEM_GAME from this; the SDK (shared/gamecenter.js) builds the Store catalog, tab order and leaderboard boards from it; the hub renders its cards from it. Adding a game = one entry here (+ the game files). Item/skin/upgrade `key`s must be globally unique. Leaderboard `unit` is a template: {n} = the score, {s} = 's' unless n===1.",
+  "games": [
+    {
+      "slug": "lavender-leap",
+      "name": "Lavender Leap of Doom",
+      "cover": "/design/hub/lavender-cover.png",
+      "blurb": "A leveled parkour game with Time Trial, Freeplay and Hard Mode.",
+      "chips": ["Time Trial", "Freeplay", "Hard Mode"],
+      "playColor": "p1",
+      "play": "/games/lavender-leap/index.html",
+      "leaderboards": [
+        { "board": "lavender-leap-time", "name": "Lavender Leap · Time Trial", "label": "Lavender · Time Trial", "unit": "{n} level{s}" },
+        { "board": "lavender-leap-hard", "name": "Lavender Leap · Hard Mode", "label": "Lavender · Hard Mode", "unit": "level {n}" },
+        { "board": "lavender-leap", "label": "Lavender · Freeplay", "unit": "{n} pts" }
+      ],
+      "items": [
+        { "key": "extra_life", "name": "Extra Life", "desc": "Survive a fall in Hard Mode", "price": 15, "type": "extra_life" },
+        { "key": "boost", "name": "+30s Time Boost", "desc": "Adds 30s to your next Time Trial", "price": 15, "type": "boost" },
+        { "key": "double_jump", "name": "Double Jump Pack", "desc": "10 mid-air jumps · works in any mode", "price": 60, "type": "double_jump" }
+      ],
+      "avatars": [
+        { "key": "ll-cyber-ninja", "name": "Cyber Ninja", "price": 0 },
+        { "key": "ll-mecha-bot", "name": "Mecha Bot", "price": 0 },
+        { "key": "ll-galaxy-slime", "name": "Galaxy Slime", "price": 0 },
+        { "key": "ll-flame-fox", "name": "Flame Fox", "price": 0 },
+        { "key": "ll-star-cadet", "name": "Star Cadet", "price": 20 },
+        { "key": "ll-phantom-knight", "name": "Phantom Knight", "price": 25 },
+        { "key": "ll-lava-golem", "name": "Lava Golem", "price": 30 },
+        { "key": "ll-frost-sprite", "name": "Frost Sprite", "price": 35 },
+        { "key": "ll-neon-bee", "name": "Neon Bee", "price": 40 }
+      ]
+    },
+    {
+      "slug": "dont-look-down",
+      "name": "Don't Look Down",
+      "cover": "/design/hub/dontlookdown-cover.png",
+      "blurb": "An endless parkour game. One wrong look and it's all over.",
+      "chips": ["Endless", "Beat your best"],
+      "playColor": "p2",
+      "play": "/games/dont-look-down/dont_look_down.html",
+      "leaderboards": [
+        { "board": "dont-look-down", "label": "Don't Look Down", "unit": "{n} m" }
+      ],
+      "items": [
+        { "key": "revive", "name": "Revive", "desc": "Get back up after a fall", "price": 25, "type": "revive" },
+        { "key": "headstart", "name": "Head Start", "desc": "Begin a run +50m up", "price": 15, "type": "headstart" },
+        { "key": "rocket_booster", "name": "Rocket Booster", "desc": "Begin a run +100m up", "price": 20, "type": "rocket_booster" },
+        { "key": "doubler", "name": "Star Doubler", "desc": "2× stars for one run", "price": 20, "type": "doubler" }
+      ],
+      "avatars": [
+        { "key": "dld-aqua", "name": "Aqua", "price": 0 },
+        { "key": "dld-ember", "name": "Ember", "price": 0 },
+        { "key": "dld-leaf", "name": "Leaf", "price": 0 },
+        { "key": "dld-wave", "name": "Wave", "price": 0 },
+        { "key": "dld-rose", "name": "Rose", "price": 0 },
+        { "key": "dld-bolt", "name": "Bolt", "price": 0 },
+        { "key": "dld-grape", "name": "Grape", "price": 0 },
+        { "key": "dld-bot", "name": "Bot", "price": 0 },
+        { "key": "dld-mint", "name": "Mint", "price": 0 },
+        { "key": "dld-volt", "name": "Volt", "price": 0 },
+        { "key": "dld-nova", "name": "Nova", "price": 60 },
+        { "key": "dld-phantom", "name": "Phantom", "price": 80 },
+        { "key": "dld-aurora", "name": "Aurora", "price": 100 },
+        { "key": "dld-cosmo", "name": "Cosmo", "price": 120 }
+      ]
+    },
+    {
+      "slug": "echo",
+      "name": "Echo",
+      "cover": "/design/hub/echo-cover.png",
+      "blurb": "See with sound. Send out a pulse, watch the cave flicker into view, then feel your way to the exit.",
+      "chips": ["Collect & Escape", "Beat the Dark"],
+      "playColor": "p3",
+      "play": "/games/echo/index.html",
+      "leaderboards": [
+        { "board": "echo", "label": "Echo", "unit": "cave {n}" }
+      ],
+      "items": [
+        { "key": "echo_big_waves", "name": "Bigger Waves", "desc": "Your pulses travel much farther through the cave", "price": 40, "permanent": true, "type": "echo_powerup" },
+        { "key": "echo_fast", "name": "Faster Light", "desc": "Glide through the cave noticeably faster", "price": 80, "permanent": true, "type": "echo_powerup" },
+        { "key": "echo_rapid", "name": "Rapid Pulse", "desc": "Less time between auto pulses (Auto mode)", "price": 60, "permanent": true, "type": "echo_powerup" },
+        { "key": "echo_phase", "name": "Wall Pass", "desc": "Press E to slip through walls for 2s (long cooldown)", "price": 200, "permanent": true, "type": "echo_powerup" }
+      ],
+      "skinGroups": [
+        {
+          "title": "Light colours", "prefKey": "echoColor", "event": "gc:echocolor", "default": "cyan", "itemType": "echo_color",
+          "choices": [
+            { "name": "Cyan", "pref": "cyan", "swatch": "#5fe6ff" },
+            { "key": "echo-purple", "name": "Purple", "pref": "purple", "swatch": "#a86bff", "price": 20 },
+            { "key": "echo-blue", "name": "Blue", "pref": "blue", "swatch": "#5a9bff", "price": 20 },
+            { "key": "echo-green", "name": "Green", "pref": "green", "swatch": "#50e696", "price": 20 },
+            { "key": "echo-yellow", "name": "Yellow", "pref": "yellow", "swatch": "#ffd23f", "price": 25 },
+            { "key": "echo-orange", "name": "Orange", "pref": "orange", "swatch": "#ff9b3c", "price": 25 },
+            { "key": "echo-red", "name": "Red", "pref": "red", "swatch": "#ff5a64", "price": 30 },
+            { "key": "echo-pink", "name": "Pink", "pref": "pink", "swatch": "#ff6ec7", "price": 30 }
+          ]
+        }
+      ]
+    },
+    {
+      "slug": "archery-range",
+      "name": "Archery Range",
+      "cover": "/design/hub/archery-cover.svg",
+      "blurb": "Draw the bow, judge the wind, and loose. Sixteen levels, each blowing harder than the last.",
+      "chips": ["16 Levels", "Wind & Nerve"],
+      "playColor": "p1",
+      "play": "/games/archery-range/index.html",
+      "leaderboards": [
+        { "board": "archery-range", "label": "Archery Range", "unit": "{n} pts" }
+      ],
+      "items": [
+        { "key": "arch_golden_arrow", "name": "Golden Arrow", "desc": "Your next arrow scores double", "price": 18, "type": "archery_power" },
+        { "key": "arch_slow_time", "name": "Slow Time", "desc": "A longer steady window for one clean shot", "price": 24, "type": "archery_power" },
+        { "key": "arch_wind_block", "name": "Wind Blocker", "desc": "Kills the wind for a whole round", "price": 26, "type": "archery_power" },
+        { "key": "arch_steady_hand", "name": "Steady Hand", "desc": "Stops your breathing sway for a round", "price": 32, "type": "archery_power" },
+        { "key": "arch_magnet", "name": "Bullseye Magnet", "desc": "Your next arrow is pulled toward the gold", "price": 34, "type": "archery_power" },
+        { "key": "arch_wide_target", "name": "Wide Target", "desc": "Grows the target for a whole round", "price": 38, "type": "archery_power" }
+      ],
+      "skinGroups": [
+        {
+          "title": "Target skins", "prefKey": "archerySkin", "event": "gc:archeryskin", "default": "classic", "itemType": "archery_skin",
+          "choices": [
+            { "name": "Classic", "pref": "classic", "swatch": "#ecbe3c" },
+            { "key": "arch-skin-carbon", "name": "Carbon", "pref": "carbon", "swatch": "#e8e8e8", "price": 25 },
+            { "key": "arch-skin-sunset", "name": "Sunset", "pref": "sunset", "swatch": "#f6c14b", "price": 40 },
+            { "key": "arch-skin-frost", "name": "Frost", "pref": "frost", "swatch": "#7fc6d6", "price": 55 },
+            { "key": "arch-skin-emerald", "name": "Emerald", "pref": "emerald", "swatch": "#43b06f", "price": 55 },
+            { "key": "arch-skin-neon", "name": "Neon", "pref": "neon", "swatch": "#00e5ff", "price": 90 }
+          ]
+        }
+      ]
+    },
+    {
+      "slug": "fencing-riposte",
+      "name": "Riposte",
+      "cover": "/design/hub/riposte-cover.svg",
+      "blurb": "Cat vs dog rhythm fencing. Watch the arrows, wait for the beat, then repeat the phrase to score.",
+      "chips": ["1 or 2 Players", "Fast Mode"],
+      "playColor": "p2",
+      "play": "/games/fencing-riposte/index.html",
+      "leaderboards": [
+        { "board": "fencing-riposte", "label": "Riposte", "unit": "{n} rally" }
+      ],
+      "items": [
+        { "key": "rip_retry", "name": "Retry", "desc": "Replay a flubbed pattern instead of losing the point", "price": 5, "type": "riposte_power" }
+      ],
+      "skinGroups": [
+        {
+          "title": "Blade colour", "prefKey": "riposteBlade", "event": "gc:riposteblade", "default": "silver", "itemType": "riposte_skin",
+          "choices": [
+            { "name": "Silver", "pref": "silver", "swatch": "#d7dde6" },
+            { "name": "Gold", "pref": "gold", "swatch": "#ffcf5c" },
+            { "key": "rip-blade-crimson", "name": "Crimson", "pref": "crimson", "swatch": "#ff5a5a", "price": 5 },
+            { "key": "rip-blade-azure", "name": "Azure", "pref": "azure", "swatch": "#5aa0ff", "price": 5 },
+            { "key": "rip-blade-emerald", "name": "Emerald", "pref": "emerald", "swatch": "#5ae08a", "price": 5 },
+            { "key": "rip-blade-violet", "name": "Violet", "pref": "violet", "swatch": "#c98bff", "price": 8 }
+          ]
+        },
+        {
+          "title": "Outfit colour", "prefKey": "riposteOutfit", "event": "gc:riposteoutfit", "default": "white", "itemType": "riposte_skin",
+          "choices": [
+            { "name": "White", "pref": "white", "swatch": "#eef1f6" },
+            { "name": "Charcoal", "pref": "charcoal", "swatch": "#3a4657" },
+            { "key": "rip-outfit-ruby", "name": "Ruby", "pref": "ruby", "swatch": "#ff8f7a", "price": 5 },
+            { "key": "rip-outfit-ocean", "name": "Ocean", "pref": "ocean", "swatch": "#8fb4ff", "price": 5 },
+            { "key": "rip-outfit-mint", "name": "Mint", "pref": "mint", "swatch": "#8fe0a0", "price": 5 },
+            { "key": "rip-outfit-royal", "name": "Royal", "pref": "royal", "swatch": "#c9a0ff", "price": 8 }
+          ]
+        }
+      ]
+    },
+    {
+      "slug": "genesis",
+      "name": "Genesis",
+      "cover": "/design/hub/genesis-cover.svg",
+      "blurb": "Terraform dead rocks into living worlds, build out your solar systems, and grow a whole galaxy.",
+      "chips": ["Idle Builder", "Terraform"],
+      "playColor": "p3",
+      "play": "/games/genesis/index.html",
+      "leaderboards": [
+        { "board": "genesis", "label": "Genesis", "unit": "{n} world{s}" }
+      ],
+      "items": [
+        { "key": "gen_ring", "name": "Planetary Ring", "desc": "A luminous ring to adorn one planet (bought in-game)", "price": 6, "type": "genesis_ring", "hidden": true }
+      ],
+      "upgrades": [
+        { "name": "Twin Tap", "desc": "More energy per tap", "itemType": "genesis_upgrade", "levels": [{ "key": "gen_tap1", "price": 2 }, { "key": "gen_tap2", "price": 4 }, { "key": "gen_tap3", "price": 8 }] },
+        { "name": "Auto-Collector", "desc": "Passive energy per second", "itemType": "genesis_upgrade", "levels": [{ "key": "gen_auto1", "price": 3 }, { "key": "gen_auto2", "price": 6 }, { "key": "gen_auto3", "price": 12 }] },
+        { "name": "Efficient Builders", "desc": "Structures cost less energy", "itemType": "genesis_upgrade", "levels": [{ "key": "gen_build1", "price": 3 }, { "key": "gen_build2", "price": 5 }, { "key": "gen_build3", "price": 8 }, { "key": "gen_build4", "price": 12 }] },
+        { "name": "Terraform Accelerator", "desc": "Terraform speed boost", "itemType": "genesis_upgrade", "levels": [{ "key": "gen_accel1", "price": 4 }, { "key": "gen_accel2", "price": 7 }, { "key": "gen_accel3", "price": 11 }, { "key": "gen_accel4", "price": 16 }] },
+        { "name": "Kickstart Reserves", "desc": "Start each world with more energy", "itemType": "genesis_upgrade", "levels": [{ "key": "gen_kick1", "price": 2 }, { "key": "gen_kick2", "price": 4 }, { "key": "gen_kick3", "price": 8 }] },
+        { "name": "Star Space", "desc": "Unlock room for another solar system", "itemType": "genesis_space", "levels": [{ "key": "gen_space3", "price": 8 }, { "key": "gen_space4", "price": 14 }, { "key": "gen_space5", "price": 22 }, { "key": "gen_space6", "price": 32 }] }
+      ]
+    }
+  ]
+}

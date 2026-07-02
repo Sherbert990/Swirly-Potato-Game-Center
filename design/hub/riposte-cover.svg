@@ -1,0 +1,32 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 560 300" width="560" height="300" role="img" aria-label="Riposte">
+  <defs>
+    <linearGradient id="rp-bg" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="#141b2e"/><stop offset="100%" stop-color="#0b0e14"/>
+    </linearGradient>
+    <linearGradient id="rp-ttl" x1="0" y1="0" x2="1" y2="0">
+      <stop offset="0%" stop-color="#ff7a4d"/><stop offset="50%" stop-color="#ffcf5c"/><stop offset="100%" stop-color="#7ad67a"/>
+    </linearGradient>
+  </defs>
+  <rect width="560" height="300" fill="url(#rp-bg)"/>
+  <rect x="46" y="214" width="468" height="60" fill="#20293a" stroke="#3a4a63"/>
+  <line x1="280" y1="214" x2="280" y2="274" stroke="#2b3648"/>
+  <!-- cat (left) -->
+  <g transform="translate(150,150)">
+    <circle cx="0" cy="-26" r="30" fill="#eb8f42"/>
+    <polygon points="-24,-46 -14,-64 -6,-44" fill="#eb8f42"/><polygon points="24,-46 14,-64 6,-44" fill="#eb8f42"/>
+    <rect x="-26" y="-4" width="52" height="58" rx="8" fill="#eef1f6"/>
+    <circle cx="-9" cy="-30" r="4" fill="#171009"/><circle cx="9" cy="-30" r="4" fill="#171009"/>
+  </g>
+  <!-- dog (right) -->
+  <g transform="translate(410,150)">
+    <circle cx="0" cy="-26" r="30" fill="#b07b45"/>
+    <ellipse cx="-26" cy="-30" rx="10" ry="20" fill="#7c4f28"/><ellipse cx="26" cy="-30" rx="10" ry="20" fill="#7c4f28"/>
+    <rect x="-26" y="-4" width="52" height="58" rx="8" fill="#eef1f6"/>
+    <circle cx="-9" cy="-30" r="4" fill="#171009"/><circle cx="9" cy="-30" r="4" fill="#171009"/>
+  </g>
+  <!-- crossed blades -->
+  <line x1="176" y1="120" x2="300" y2="150" stroke="#ffcf5c" stroke-width="4" stroke-linecap="round"/>
+  <line x1="384" y1="120" x2="260" y2="150" stroke="#d7dde6" stroke-width="4" stroke-linecap="round"/>
+  <text x="280" y="58" text-anchor="middle" font-family="'Trebuchet MS', sans-serif" font-size="46" font-weight="800" letter-spacing="6" fill="url(#rp-ttl)">RIPOSTE</text>
+  <text x="280" y="86" text-anchor="middle" font-family="'Trebuchet MS', sans-serif" font-size="15" letter-spacing="2" fill="#c3ccd6">CAT vs DOG · RHYTHM FENCING</text>
+</svg>

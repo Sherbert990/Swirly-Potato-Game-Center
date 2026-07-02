@@ -1,86 +1,75 @@
 """
-Reference-data seed (T3): games, avatars, store_items. Phase 1 cannot pass without
-a `games` row (FK on scores). Idempotent — safe to run repeatedly.
+Reference-data seed (T3): games, avatars, store_items — all DERIVED from the single
+source of truth, ../shared/catalog.json, so the backend, the SDK (shared/gamecenter.js)
+and the hub can never drift. Adding a game = one entry in catalog.json; no edits here.
+
+Achievements are not part of the shared catalog (backend-only), so they stay below.
+Idempotent — safe to run repeatedly.
 """
+import json
+from pathlib import Path
+
 from sqlalchemy.orm import Session as OrmSession
 
 from .models import Game, Avatar, StoreItem, Achievement
 
-GAMES = [
-    ("lavender-leap", "Lavender Leap of Doom"),
-    ("dont-look-down", "Don't Look Down"),
-    # Per-mode leaderboards for Lavender Leap (separate boards, separate scores):
-    #   -time : levels cleared in a Time Trial
-    #   -hard : highest level reached in Hard Mode
-    ("lavender-leap-time", "Lavender Leap · Time Trial"),
-    ("lavender-leap-hard", "Lavender Leap · Hard Mode"),
-    ("echo", "Echo"),  # see-with-sound cave game; score = caves cleared
-]
+CATALOG_PATH = Path(__file__).resolve().parent.parent / "shared" / "catalog.json"
+_ROMAN = ["", "I", "II", "III", "IV", "V", "VI", "VII", "VIII"]
 
-# Combined avatar catalog (DESIGN.md §7). Free = price 0.
-AVATARS = [
-    # Lavender Leap set
-    ("ll-cyber-ninja", "Cyber Ninja", "lavender-leap", 0, False),
-    ("ll-mecha-bot", "Mecha Bot", "lavender-leap", 0, False),
-    ("ll-galaxy-slime", "Galaxy Slime", "lavender-leap", 0, False),
-    ("ll-flame-fox", "Flame Fox", "lavender-leap", 0, False),
-    ("ll-star-cadet", "Star Cadet", "lavender-leap", 20, False),
-    ("ll-phantom-knight", "Phantom Knight", "lavender-leap", 25, False),
-    ("ll-lava-golem", "Lava Golem", "lavender-leap", 30, False),
-    ("ll-frost-sprite", "Frost Sprite", "lavender-leap", 35, False),
-    ("ll-neon-bee", "Neon Bee", "lavender-leap", 40, False),
-    # Don't Look Down set
-    ("dld-aqua", "Aqua", "dont-look-down", 0, False),
-    ("dld-ember", "Ember", "dont-look-down", 0, False),
-    ("dld-leaf", "Leaf", "dont-look-down", 0, False),
-    ("dld-wave", "Wave", "dont-look-down", 0, False),
-    ("dld-rose", "Rose", "dont-look-down", 0, False),
-    ("dld-bolt", "Bolt", "dont-look-down", 0, False),
-    ("dld-grape", "Grape", "dont-look-down", 0, False),
-    ("dld-bot", "Bot", "dont-look-down", 0, False),
-    ("dld-mint", "Mint", "dont-look-down", 0, False),
-    ("dld-volt", "Volt", "dont-look-down", 0, False),
-    ("dld-nova", "Nova", "dont-look-down", 60, True),
-    ("dld-phantom", "Phantom", "dont-look-down", 80, True),
-    ("dld-aurora", "Aurora", "dont-look-down", 100, True),
-    ("dld-cosmo", "Cosmo", "dont-look-down", 120, True),
-]
 
-STORE_ITEMS = [
-    ("revive", "Revive", "revive", 25),
-    ("headstart", "Head Start", "headstart", 15),
-    ("doubler", "Star Doubler", "doubler", 20),
-    ("extra_life", "Extra Life", "extra_life", 15),
-    ("boost", "Boost", "boost", 15),
-    # Game-scoped power-ups (scope is enforced client-side; see ITEM_GAME).
-    ("double_jump", "Double Jump Pack", "double_jump", 60),   # Lavender: 10 mid-air jumps (any mode)
-    ("rocket_booster", "Rocket Booster", "rocket_booster", 20),  # Don't Look Down: +100ft head start
-    # Echo (see-with-sound) — light colors (avatars) + a pulse power-up.
-    ("echo-purple", "Purple Light", "echo_color", 20),
-    ("echo-blue", "Blue Light", "echo_color", 20),
-    ("echo-green", "Green Light", "echo_color", 20),
-    ("echo-yellow", "Yellow Light", "echo_color", 25),
-    ("echo-orange", "Orange Light", "echo_color", 25),
-    ("echo-red", "Red Light", "echo_color", 30),
-    ("echo-pink", "Pink Light", "echo_color", 30),
-    ("echo_big_waves", "Bigger Waves", "echo_powerup", 40),  # pulses travel farther
-    ("echo_fast", "Faster Light", "echo_powerup", 80),       # move faster (permanent)
-    ("echo_phase", "Wall Pass", "echo_powerup", 200),        # phase through walls for 2s (permanent, cooldown)
-    ("echo_rapid", "Rapid Pulse", "echo_powerup", 60),       # shorter gap between auto pulses
-]
+def load_catalog() -> dict:
+    with open(CATALOG_PATH, encoding="utf-8") as f:
+        return json.load(f)
 
-# Which game each store item belongs to ('' = available everywhere). The buy/use
-# endpoints validate only by key; this map lets each game show just its own items.
-ITEM_GAME = {
-    "double_jump": "lavender-leap",
-    "rocket_booster": "dont-look-down",
-    "echo-purple": "echo", "echo-blue": "echo", "echo-green": "echo",
-    "echo-yellow": "echo", "echo-orange": "echo", "echo-red": "echo",
-    "echo-pink": "echo", "echo_big_waves": "echo",
-    "echo_fast": "echo", "echo_phase": "echo", "echo_rapid": "echo",
-}
 
-# (key, name, description, game ('' = any), metric, threshold)
+def derive(catalog: dict):
+    """Flatten the manifest into the rows the DB needs.
+    Returns (games, avatars, store_items, item_game):
+      games       -> [(slug, name)]              (main slugs + every leaderboard board slug)
+      avatars     -> [(key, name, source_game, price, is_premium)]
+      store_items -> [(key, name, type, price)]  (items + keyed skin choices + upgrade levels)
+      item_game   -> {store_item_key: game_slug} (lets each game show only its own items)
+    """
+    games, avatars, store_items, item_game = [], [], [], {}
+    seen_games = set()
+
+    def add_game(slug, name):
+        if slug not in seen_games:
+            seen_games.add(slug)
+            games.append((slug, name))
+
+    def add_item(key, name, typ, price, slug):
+        store_items.append((key, name, typ, price))
+        item_game[key] = slug
+
+    for g in catalog.get("games", []):
+        slug, name = g["slug"], g["name"]
+        add_game(slug, name)
+        for b in g.get("leaderboards", []):
+            add_game(b["board"], b.get("name", b.get("label", name)))
+        for a in g.get("avatars", []):
+            avatars.append((a["key"], a["name"], slug, a.get("price", 0),
+                            bool(a.get("premium", a.get("price", 0) > 0))))
+        for it in g.get("items", []):
+            add_item(it["key"], it["name"], it.get("type", "item"), it["price"], slug)
+        for grp in g.get("skinGroups", []):
+            noun = (grp.get("title", "").split() or [""])[0]  # "Light colours" -> "Light"
+            for ch in grp.get("choices", []):
+                if ch.get("key"):  # free defaults have no key -> not a store item
+                    label = (ch["name"] + " " + noun).strip()
+                    add_item(ch["key"], label, grp.get("itemType", "cosmetic"), ch["price"], slug)
+        for up in g.get("upgrades", []):
+            for i, lv in enumerate(up.get("levels", []), start=1):
+                add_item(lv["key"], f"{up['name']} {_ROMAN[i]}",
+                         up.get("itemType", "upgrade"), lv["price"], slug)
+    return games, avatars, store_items, item_game
+
+
+# Derived once at import so `from .seed import GAMES/AVATARS/STORE_ITEMS/ITEM_GAME` still works.
+CATALOG = load_catalog()
+GAMES, AVATARS, STORE_ITEMS, ITEM_GAME = derive(CATALOG)
+
+# (key, name, description, game ('' = any), metric, threshold) — backend-only, not in the catalog.
 ACHIEVEMENTS = [
     ("getting-started", "Getting Started", "Play your first game", "", "score", 1),
     ("coin-collector", "Coin Collector", "Hold 100 coins", "", "coins", 100),

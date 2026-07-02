@@ -135,29 +135,8 @@ h1,.gtitle,.brand,.wm{font-family:Fredoka,sans-serif}
     <svg viewBox="0 0 40 52" width="46" height="60" style="color:var(--accent)" aria-hidden="true"><circle cx="20" cy="8" r="6" fill="none" stroke="currentColor" stroke-width="3"/><line x1="20" y1="14" x2="19" y2="31" stroke="currentColor" stroke-width="3" stroke-linecap="round"/><line x1="20" y1="18" x2="34" y2="4" stroke="currentColor" stroke-width="3" stroke-linecap="round"/><line x1="20" y1="18" x2="8" y2="24" stroke="currentColor" stroke-width="3" stroke-linecap="round"/><line x1="19" y1="31" x2="9" y2="49" stroke="currentColor" stroke-width="3" stroke-linecap="round"/><line x1="19" y1="31" x2="29" y2="47" stroke="currentColor" stroke-width="3" stroke-linecap="round"/></svg>
   </div>
 
-  <div class="games">
-    <article class="card">
-      <img class="cover" src="/design/hub/lavender-cover.png" alt="Lavender Leap of Doom">
-      <div class="gtitle">Lavender Leap of Doom</div>
-      <div class="gdesc">A leveled parkour game with Time Trial, Freeplay and Hard Mode.</div>
-      <div class="chips"><span class="chip">Time Trial</span><span class="chip">Freeplay</span><span class="chip">Hard Mode</span></div>
-      <a class="play p1" href="/games/lavender-leap/index.html"><i class="ti ti-player-play" aria-hidden="true"></i> Play</a>
-    </article>
-    <article class="card">
-      <img class="cover" src="/design/hub/dontlookdown-cover.png" alt="Don't Look Down">
-      <div class="gtitle">Don't Look Down</div>
-      <div class="gdesc">An endless parkour game. One wrong look and it's all over.</div>
-      <div class="chips"><span class="chip">Endless</span><span class="chip">Beat your best</span></div>
-      <a class="play p2" href="/games/dont-look-down/dont_look_down.html"><i class="ti ti-player-play" aria-hidden="true"></i> Play</a>
-    </article>
-    <article class="card">
-      <img class="cover" src="/design/hub/echo-cover.png" alt="Echo">
-      <div class="gtitle">Echo</div>
-      <div class="gdesc">See with sound. Send out a pulse, watch the cave flicker into view, then feel your way to the exit.</div>
-      <div class="chips"><span class="chip">Collect &amp; Escape</span><span class="chip">Beat the Dark</span></div>
-      <a class="play p3" href="/games/echo/index.html"><i class="ti ti-player-play" aria-hidden="true"></i> Play</a>
-    </article>
-  </div>
+  <!-- Cards are rendered from the shared manifest (shared/catalog.json) — see renderGames(). -->
+  <div class="games" id="gamesGrid"></div>
 
   <div class="journey"><img src="/design/hub/journey-strip.png" alt="Play games, earn coins, climb leaderboards, become a legend"></div>
 </div>
@@ -305,6 +284,24 @@ fetch('/version.json', {cache:'no-store'})
   .then(r => r.json())
   .then(d => { if (d && d.version) document.getElementById('verBadge').textContent = 'v' + d.version; })
   .catch(() => { document.getElementById('verBadge').style.display = 'none'; });
+
+// ---- game cards: rendered from the shared manifest (shared/catalog.json) ----
+// Add a game there and its card appears here automatically — no edits to this file.
+async function renderGames(){
+  try{
+    const cat = await GameCenter.catalog();
+    const esc = s => String(s).replace(/[&<>"]/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+    $('gamesGrid').innerHTML = (cat.games||[]).map(g =>
+      `<article class="card">
+        <img class="cover" src="${esc(g.cover)}" alt="${esc(g.name)}">
+        <div class="gtitle">${esc(g.name)}</div>
+        <div class="gdesc">${esc(g.blurb||'')}</div>
+        <div class="chips">${(g.chips||[]).map(c => `<span class="chip">${esc(c)}</span>`).join('')}</div>
+        <a class="play ${esc(g.playColor||'p1')}" href="${esc(g.play||('/games/'+g.slug+'/index.html'))}"><i class="ti ti-player-play" aria-hidden="true"></i> Play</a>
+      </article>`).join('');
+  }catch(e){}
+}
+renderGames();
 
 // ---- boot: already logged in? ----
 (async () => {
