@@ -551,7 +551,7 @@ function goalSummary(t){ const g=goalsFor(t); const lab={heat:'Heat',atmo:'Atmos
 /* Upgrade catalog lives in shared/catalog.json now; storeLv() reads owned levels
    from the shared wallet (see GEN_UP). Purchases go through the shared Store overlay. */
 /* the first two systems are free; each additional "star space" is bought with stardust */
-const FREE_SYSTEMS=2, MAX_SYSTEMS=6, STARSPACE_COST=[8,14,22,32];
+const FREE_SYSTEMS=2, MAX_SYSTEMS=6, STARSPACE_COST=[40,75,130,200];  // keep in sync with catalog.json gen_space3..6
 function maxSystems(){ return MAX_SYSTEMS; }
 function starSpaceCost(count){ return count<FREE_SYSTEMS ? 0 : (STARSPACE_COST[count-FREE_SYSTEMS]||0); }
 /* ============================================================

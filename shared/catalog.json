@@ -187,12 +187,12 @@
         { "key": "gen_ring", "name": "Planetary Ring", "desc": "A luminous ring to adorn one planet (bought in-game)", "price": 6, "type": "genesis_ring", "hidden": true }
       ],
       "upgrades": [
-        { "name": "Twin Tap", "desc": "More energy per tap", "itemType": "genesis_upgrade", "levels": [{ "key": "gen_tap1", "price": 2 }, { "key": "gen_tap2", "price": 4 }, { "key": "gen_tap3", "price": 8 }] },
-        { "name": "Auto-Collector", "desc": "Passive energy per second", "itemType": "genesis_upgrade", "levels": [{ "key": "gen_auto1", "price": 3 }, { "key": "gen_auto2", "price": 6 }, { "key": "gen_auto3", "price": 12 }] },
-        { "name": "Efficient Builders", "desc": "Structures cost less energy", "itemType": "genesis_upgrade", "levels": [{ "key": "gen_build1", "price": 3 }, { "key": "gen_build2", "price": 5 }, { "key": "gen_build3", "price": 8 }, { "key": "gen_build4", "price": 12 }] },
-        { "name": "Terraform Accelerator", "desc": "Terraform speed boost", "itemType": "genesis_upgrade", "levels": [{ "key": "gen_accel1", "price": 4 }, { "key": "gen_accel2", "price": 7 }, { "key": "gen_accel3", "price": 11 }, { "key": "gen_accel4", "price": 16 }] },
-        { "name": "Kickstart Reserves", "desc": "Start each world with more energy", "itemType": "genesis_upgrade", "levels": [{ "key": "gen_kick1", "price": 2 }, { "key": "gen_kick2", "price": 4 }, { "key": "gen_kick3", "price": 8 }] },
-        { "name": "Star Space", "desc": "Unlock room for another solar system", "itemType": "genesis_space", "levels": [{ "key": "gen_space3", "price": 8 }, { "key": "gen_space4", "price": 14 }, { "key": "gen_space5", "price": 22 }, { "key": "gen_space6", "price": 32 }] }
+        { "name": "Twin Tap", "desc": "More energy per tap", "itemType": "genesis_upgrade", "levels": [{ "key": "gen_tap1", "price": 10 }, { "key": "gen_tap2", "price": 25 }, { "key": "gen_tap3", "price": 55 }] },
+        { "name": "Auto-Collector", "desc": "Passive energy per second", "itemType": "genesis_upgrade", "levels": [{ "key": "gen_auto1", "price": 15 }, { "key": "gen_auto2", "price": 35 }, { "key": "gen_auto3", "price": 75 }] },
+        { "name": "Efficient Builders", "desc": "Structures cost less energy", "itemType": "genesis_upgrade", "levels": [{ "key": "gen_build1", "price": 15 }, { "key": "gen_build2", "price": 30 }, { "key": "gen_build3", "price": 55 }, { "key": "gen_build4", "price": 90 }] },
+        { "name": "Terraform Accelerator", "desc": "Terraform speed boost", "itemType": "genesis_upgrade", "levels": [{ "key": "gen_accel1", "price": 20 }, { "key": "gen_accel2", "price": 40 }, { "key": "gen_accel3", "price": 70 }, { "key": "gen_accel4", "price": 110 }] },
+        { "name": "Kickstart Reserves", "desc": "Start each world with more energy", "itemType": "genesis_upgrade", "levels": [{ "key": "gen_kick1", "price": 10 }, { "key": "gen_kick2", "price": 25 }, { "key": "gen_kick3", "price": 55 }] },
+        { "name": "Star Space", "desc": "Unlock room for another solar system", "itemType": "genesis_space", "levels": [{ "key": "gen_space3", "price": 40 }, { "key": "gen_space4", "price": 75 }, { "key": "gen_space5", "price": 130 }, { "key": "gen_space6", "price": 200 }] }
       ]
     }
   ]

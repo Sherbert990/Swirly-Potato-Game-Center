@@ -9,9 +9,9 @@
   html, body { height: 100%; background: #0b0e14; color: #e8ecf1;
     font-family: 'Trebuchet MS', system-ui, sans-serif;
     display: flex; align-items: center; justify-content: center; overflow: hidden; }
-  #wrap { position: relative; width: 800px; max-width: 100vw; }
-  canvas { width: 100%; display: block; border-radius: 8px;
-           image-rendering: pixelated; image-rendering: crisp-edges; }
+  /* Fill the viewport with the largest 800:500 box that fits (letterbox the rest). */
+  #wrap { position: relative; width: min(100vw, 160vh); }
+  canvas { width: 100%; height: auto; display: block; border-radius: 8px; }
   .screen { position: absolute; inset: 0; display: flex; flex-direction: column;
     align-items: center; justify-content: center; text-align: center;
     background: rgba(8,11,17,0.94); border-radius: 8px; gap: 7px; padding: 18px; overflow:auto; }
@@ -95,6 +95,18 @@
 const canvas=document.getElementById('c'), ctx=canvas.getContext('2d');
 ctx.imageSmoothingEnabled=false;
 const W=800,H=500, $=id=>document.getElementById(id);
+// All drawing uses the fixed 800x500 logical space; size the backing store to the
+// real on-screen pixels and scale via the transform so it stays crisp at any size.
+const wrap=document.getElementById('wrap');
+function fit(){
+  const dpr=Math.min(window.devicePixelRatio||1,2);
+  const dispW=wrap.clientWidth||W;
+  canvas.width=Math.max(1,Math.round(dispW*dpr));
+  canvas.height=Math.round(canvas.width*H/W);
+  ctx.setTransform(canvas.width/W,0,0,canvas.height/H,0,0);
+  ctx.imageSmoothingEnabled=false;
+}
+addEventListener('resize',fit);
 
 const BASE_BD=0.6, SPEEDUP=0.92, MIN_BD=0.34;
 const HITFRAC=0.34, PERFFRAC=0.15, TARGET=5, RETRY_PRICE=5;
@@ -388,7 +400,7 @@ if(speedEl){ speedEl.value=speedMult; $('speedVal').textContent=speedMult.toFixe
 // gc.onWallet keeps coins/retries fresh after shopping; re-apply skins when equipped in the Store.
 addEventListener('gc:riposteblade', applySkins);
 addEventListener('gc:riposteoutfit', applySkins);
-applySkins(); refreshStats(); showScreen('menu'); refreshWallet(); requestAnimationFrame(loop);
+applySkins(); refreshStats(); showScreen('menu'); refreshWallet(); fit(); requestAnimationFrame(loop);
 </script>
 </body>
 </html>
