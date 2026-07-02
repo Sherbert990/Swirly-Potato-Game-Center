@@ -1,0 +1,1755 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>GENESIS — Solar System Creator</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=Inter:wght@400;500;600&display=swap');
+  :root{
+    --bg:#070a14; --panel:rgba(16,24,42,0.72); --panel-solid:#101a2e;
+    --line:rgba(120,150,200,0.14); --line-soft:rgba(120,150,200,0.08);
+    --ink:#e6edfb; --ink-dim:#8090ad; --ink-faint:#56627d;
+    --accent:#34e0c4; --energy:#ffc861; --heat:#ff6f4d; --atmo:#8fd9ff;
+    --water:#4a9bff; --bio:#5ad96f;
+    --display:'Space Grotesk',-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;
+    --body:'Inter',-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;
+  }
+  *{box-sizing:border-box;margin:0;padding:0;}
+  html,body{height:100%;}
+  body{
+    font-family:var(--body); color:var(--ink); min-height:100%;
+    -webkit-font-smoothing:antialiased; overflow-x:hidden;
+    background:
+      radial-gradient(1200px 800px at 18% -10%, #122042 0%, transparent 55%),
+      radial-gradient(900px 700px at 110% 120%, #15183a 0%, transparent 50%),
+      var(--bg);
+  }
+  .wrap{max-width:1180px;margin:0 auto;padding:clamp(14px,3vw,28px);}
+  h1,h2,h3,h4{font-family:var(--display);}
+  button{font-family:var(--display);cursor:pointer;}
+
+  header.top{display:flex;align-items:center;justify-content:space-between;gap:16px;flex-wrap:wrap;margin-bottom:18px;}
+  .brand{display:flex;align-items:baseline;gap:14px;}
+  .brand h1{font-weight:700;letter-spacing:0.22em;font-size:clamp(18px,3vw,28px);
+    background:linear-gradient(92deg,var(--accent),#7af0d8 40%,#b8f3ff);
+    -webkit-background-clip:text;background-clip:text;color:transparent;}
+  .brand .sub{font-size:11px;letter-spacing:0.32em;text-transform:uppercase;color:var(--ink-faint);}
+  .who{display:flex;align-items:center;gap:10px;font-size:12px;color:var(--ink-dim);}
+  .who b{color:var(--accent);font-family:var(--display);}
+
+  .ghost{font-size:12px;letter-spacing:0.08em;color:var(--ink-dim);background:transparent;
+    border:1px solid var(--line);padding:8px 13px;border-radius:9px;transition:.18s;}
+  .ghost:hover{color:var(--ink);border-color:rgba(120,150,200,0.4);background:rgba(120,150,200,0.06);}
+  .primary{font-size:13px;letter-spacing:0.06em;font-weight:600;color:#062018;border:none;
+    background:linear-gradient(92deg,var(--accent),#5ff0d6);padding:11px 20px;border-radius:11px;transition:.18s;}
+  .primary:hover{filter:brightness(1.08);transform:translateY(-1px);}
+  .primary:disabled{opacity:.4;cursor:not-allowed;transform:none;filter:none;}
+
+  .screen{display:none;}
+  .screen.on{display:block;animation:fade .35s ease;}
+  @keyframes fade{from{opacity:0;transform:translateY(6px);}to{opacity:1;transform:none;}}
+
+  /* ---------- AUTH ---------- */
+  .auth{max-width:420px;margin:6vh auto 0;text-align:center;}
+  .auth .glyph{width:90px;height:90px;margin:0 auto 18px;border-radius:50%;
+    background:radial-gradient(circle at 38% 32%, #6ff0ff, #2b6fd6 45%, #0b1a36 80%);
+    box-shadow:0 0 60px rgba(70,160,255,.35);}
+  .auth h2{font-size:24px;letter-spacing:0.04em;margin-bottom:6px;}
+  .auth p.lede{color:var(--ink-dim);font-size:14px;line-height:1.55;margin-bottom:22px;}
+  .field{text-align:left;margin-bottom:13px;}
+  .field label{display:block;font-size:11px;letter-spacing:0.16em;text-transform:uppercase;
+    color:var(--ink-faint);margin-bottom:6px;font-family:var(--display);}
+  .field input{width:100%;background:var(--panel-solid);border:1px solid var(--line);
+    border-radius:11px;padding:13px 14px;color:var(--ink);font-size:15px;font-family:var(--body);outline:none;transition:.15s;}
+  .field input:focus{border-color:var(--accent);box-shadow:0 0 0 3px rgba(52,224,196,.12);}
+  .auth .primary{width:100%;margin-top:6px;padding:14px;}
+  .switch{margin-top:16px;font-size:13px;color:var(--ink-dim);}
+  .switch a{color:var(--accent);cursor:pointer;text-decoration:none;}
+  .note{margin-top:18px;font-size:11.5px;color:var(--ink-faint);line-height:1.5;
+    background:rgba(255,200,97,.06);border:1px solid rgba(255,200,97,.18);border-radius:10px;padding:10px 12px;text-align:left;}
+  .err{color:var(--heat);font-size:13px;margin-top:10px;min-height:16px;}
+  .profilelist{display:flex;flex-direction:column;gap:9px;margin-bottom:8px;text-align:left;}
+  .pf{display:flex;align-items:center;justify-content:space-between;gap:10px;background:var(--panel);
+    border:1px solid var(--line);border-radius:12px;padding:12px 14px;}
+  .pf .nm{font-family:var(--display);font-weight:600;}
+  .pf .meta{font-size:11px;color:var(--ink-faint);}
+  .pf button{font-size:12px;}
+
+  /* ---------- HOME / SYSTEMS ---------- */
+  .sectitle{font-size:12px;letter-spacing:0.22em;text-transform:uppercase;color:var(--ink-faint);margin:8px 2px 14px;}
+  .syscards{display:grid;grid-template-columns:repeat(auto-fill,minmax(260px,1fr));gap:16px;}
+  .syscard{background:var(--panel);border:1px solid var(--line);border-radius:18px;padding:0;overflow:hidden;
+    cursor:pointer;transition:.18s;display:flex;flex-direction:column;}
+  .syscard:hover{border-color:rgba(52,224,196,.4);transform:translateY(-2px);}
+  .syscard canvas{width:100%;height:150px;display:block;background:#05070f;}
+  .syscard .body{padding:14px 16px;}
+  .syscard h3{font-size:17px;letter-spacing:0.02em;margin-bottom:3px;}
+  .syscard .meta{font-size:12px;color:var(--ink-dim);}
+  .syscard.add{border-style:dashed;align-items:center;justify-content:center;min-height:230px;color:var(--ink-dim);}
+  .syscard.add:hover{color:var(--accent);}
+  .syscard.add .plus{font-size:40px;font-family:var(--display);font-weight:300;line-height:1;}
+  .syscard.add .lab{font-size:13px;letter-spacing:0.1em;margin-top:8px;}
+
+  /* ---------- SYSTEM / EXHIBITION ---------- */
+  .exhibit{position:relative;background:radial-gradient(circle at 50% 45%, rgba(30,46,82,.4), rgba(8,12,22,.2) 60%, transparent);
+    border:1px solid var(--line);border-radius:20px;overflow:hidden;}
+  .exhibit canvas{width:100%;display:block;cursor:pointer;}
+  .exbar{display:flex;gap:10px;flex-wrap:wrap;align-items:center;margin:16px 0;}
+  .exbar .spacer{flex:1;}
+  .planetstrip{display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:10px;margin-top:8px;}
+  .pchip{background:var(--panel);border:1px solid var(--line);border-radius:13px;padding:11px 13px;cursor:pointer;transition:.16s;}
+  .pchip:hover{border-color:rgba(52,224,196,.4);transform:translateY(-1px);}
+  .pchip .pn{font-family:var(--display);font-weight:600;font-size:14px;}
+  .pchip .pt{font-size:11px;color:var(--ink-dim);margin-top:2px;text-transform:capitalize;}
+  .emptyhint{color:var(--ink-faint);font-style:italic;font-size:13px;padding:10px 2px;}
+
+  /* ---------- TERRAFORM GAME ---------- */
+  .grid{display:grid;grid-template-columns:minmax(0,1.05fr) minmax(0,1fr);gap:clamp(14px,2.4vw,24px);align-items:start;}
+  @media(max-width:860px){.grid{grid-template-columns:1fr;}}
+  .stage{position:relative;background:radial-gradient(circle at 50% 38%, rgba(30,46,82,.45), rgba(8,12,22,.2) 60%, transparent);
+    border:1px solid var(--line);border-radius:20px;padding:18px 18px 8px;overflow:hidden;}
+  .planetwrap{position:relative;width:100%;display:flex;justify-content:center;}
+  canvas#planet{width:min(420px,82vw);height:auto;display:block;cursor:pointer;touch-action:manipulation;
+    filter:drop-shadow(0 0 40px rgba(60,120,180,.18));}
+  canvas#planet:focus-visible{outline:2px solid var(--accent);outline-offset:6px;border-radius:50%;}
+  .clickhint{position:absolute;bottom:10px;left:0;right:0;text-align:center;font-size:11px;letter-spacing:0.22em;
+    text-transform:uppercase;color:var(--ink-faint);pointer-events:none;transition:opacity .4s;font-family:var(--display);}
+  .floaters{position:absolute;inset:0;pointer-events:none;overflow:hidden;}
+  .floater{position:absolute;font-family:var(--display);font-weight:600;font-size:15px;color:var(--energy);
+    text-shadow:0 0 12px rgba(255,200,97,.6);animation:rise .9s ease-out forwards;}
+  @keyframes rise{from{opacity:1;transform:translateY(0) scale(1);}to{opacity:0;transform:translateY(-46px) scale(1.15);}}
+  .burstp{position:absolute;width:7px;height:7px;border-radius:50%;pointer-events:none;
+    box-shadow:0 0 8px currentColor;animation:burstfly .72s ease-out forwards;}
+  @keyframes burstfly{from{opacity:1;transform:translate(-50%,-50%) translate(0,0) scale(1);}
+    to{opacity:0;transform:translate(-50%,-50%) translate(var(--dx),var(--dy)) scale(.3);}}
+  .gauge{margin-top:6px;padding:4px 6px 10px;}
+  .gauge .lab{display:flex;justify-content:space-between;align-items:baseline;letter-spacing:0.16em;
+    text-transform:uppercase;font-size:11px;color:var(--ink-dim);margin-bottom:7px;font-family:var(--display);}
+  .gauge .big{font-family:var(--display);font-size:34px;letter-spacing:0.02em;color:var(--ink);font-feature-settings:"tnum";}
+  .gauge .big small{font-size:15px;color:var(--ink-dim);margin-left:2px;}
+  .track{height:9px;border-radius:6px;background:rgba(120,150,200,.12);overflow:hidden;}
+  .track>i{display:block;height:100%;width:0;border-radius:6px;
+    background:linear-gradient(90deg,var(--heat),var(--atmo) 40%,var(--water) 66%,var(--bio));
+    transition:width .35s ease;box-shadow:0 0 14px rgba(90,217,111,.45);}
+  .stat4{display:grid;grid-template-columns:repeat(4,1fr);gap:8px;margin-top:14px;}
+  .stat{background:var(--panel);border:1px solid var(--line-soft);border-radius:11px;padding:9px 9px 10px;text-align:center;}
+  .stat .name{font-family:var(--display);font-size:9.5px;letter-spacing:0.14em;text-transform:uppercase;color:var(--ink-faint);margin-bottom:4px;}
+  .stat .val{font-family:var(--display);font-size:17px;font-feature-settings:"tnum";}
+  .stat .mini{height:4px;border-radius:3px;background:rgba(120,150,200,.14);margin-top:6px;overflow:hidden;}
+  .stat .mini>i{display:block;height:100%;width:0;transition:width .35s;}
+  .stat.heat .val{color:var(--heat);} .stat.heat .mini>i{background:var(--heat);}
+  .stat.atmo .val{color:var(--atmo);} .stat.atmo .mini>i{background:var(--atmo);}
+  .stat.water .val{color:var(--water);} .stat.water .mini>i{background:var(--water);}
+  .stat.bio .val{color:var(--bio);} .stat.bio .mini>i{background:var(--bio);}
+  .log{margin-top:14px;border-top:1px solid var(--line-soft);padding-top:10px;max-height:120px;overflow-y:auto;}
+  .log h4{font-size:10px;letter-spacing:0.2em;text-transform:uppercase;color:var(--ink-faint);margin-bottom:6px;}
+  .log p{font-size:12.5px;color:var(--ink-dim);line-height:1.5;margin-bottom:3px;}
+  .log p b{color:var(--accent);font-weight:600;}
+  .energybar{background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:14px 16px;
+    display:flex;align-items:center;justify-content:space-between;gap:12px;backdrop-filter:blur(6px);}
+  .energybar .ecount{font-family:var(--display);font-weight:600;font-size:26px;color:var(--energy);
+    font-feature-settings:"tnum";line-height:1;text-shadow:0 0 16px rgba(255,200,97,.25);}
+  .energybar .elabel{font-family:var(--display);font-size:10px;letter-spacing:0.2em;text-transform:uppercase;color:var(--ink-faint);margin-top:5px;}
+  .energybar .erate{text-align:right;font-size:12px;color:var(--ink-dim);}
+  .energybar .erate b{color:var(--energy);font-family:var(--display);}
+  .shop{display:flex;flex-direction:column;gap:9px;}
+  .item{width:100%;text-align:left;background:var(--panel);border:1px solid var(--line);border-radius:13px;
+    padding:12px 14px;display:grid;grid-template-columns:36px 1fr auto;gap:12px;align-items:center;transition:.16s;color:inherit;font-family:inherit;}
+  .item:hover:not(:disabled){border-color:rgba(52,224,196,.4);transform:translateY(-1px);background:rgba(20,32,56,.85);}
+  .item:disabled{opacity:.42;cursor:not-allowed;}
+  .item .ic{width:36px;height:36px;border-radius:9px;display:grid;place-items:center;font-size:18px;background:rgba(120,150,200,.1);}
+  .item .nm{font-family:var(--display);font-weight:600;font-size:14px;display:flex;align-items:center;gap:8px;}
+  .item .nm .cnt{font-size:11px;color:var(--ink-faint);font-weight:500;background:rgba(120,150,200,.12);padding:1px 7px;border-radius:20px;}
+  .item .ds{font-size:11.5px;color:var(--ink-dim);margin-top:3px;line-height:1.35;}
+  .item .px{text-align:right;}
+  .item .cost{font-family:var(--display);font-weight:600;font-size:14px;color:var(--energy);font-feature-settings:"tnum";}
+  .item .cost.cant{color:var(--heat);}
+  .item .pl{font-size:10px;color:var(--ink-faint);letter-spacing:0.06em;}
+  .item.up .ic{background:rgba(52,224,196,.12);color:var(--accent);}
+  .item.bought{border-color:rgba(52,224,196,.35);background:rgba(52,224,196,.06);}
+  .item.bought .cost{color:var(--accent);}
+
+  /* ---------- MODALS ---------- */
+  .modal{position:fixed;inset:0;background:rgba(4,7,14,.82);display:none;place-items:center;z-index:50;backdrop-filter:blur(4px);padding:20px;}
+  .modal.on{display:grid;animation:fade .25s ease;}
+  .card{background:var(--panel-solid);border:1px solid var(--line);border-radius:18px;padding:24px 26px;
+    max-width:440px;width:100%;max-height:90vh;overflow-y:auto;}
+  .card.center{text-align:center;}
+  .card h3{letter-spacing:0.1em;text-transform:uppercase;font-size:14px;color:var(--accent);margin-bottom:12px;}
+  .card p{font-size:14px;color:var(--ink-dim);line-height:1.6;margin-bottom:16px;}
+  .card p b{color:var(--energy);font-family:var(--display);}
+  .preview{width:160px;height:160px;margin:0 auto 16px;}
+  .preview canvas{width:160px;height:160px;display:block;}
+  .row{display:flex;gap:10px;margin-top:6px;}
+  .row .primary, .row .ghost{flex:1;text-align:center;}
+  .slider{margin:14px 0;}
+  .slider label{display:flex;justify-content:space-between;font-size:11px;letter-spacing:0.12em;text-transform:uppercase;
+    color:var(--ink-faint);margin-bottom:7px;font-family:var(--display);}
+  .slider label span{color:var(--ink);}
+  input[type=range]{width:100%;-webkit-appearance:none;appearance:none;height:5px;border-radius:5px;
+    background:rgba(120,150,200,.2);outline:none;}
+  input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:17px;height:17px;border-radius:50%;
+    background:var(--accent);cursor:pointer;box-shadow:0 0 10px rgba(52,224,196,.5);}
+  input[type=range]::-moz-range-thumb{width:17px;height:17px;border:none;border-radius:50%;background:var(--accent);cursor:pointer;}
+  .types{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-top:6px;}
+  .typebtn{background:var(--panel);border:1px solid var(--line);border-radius:11px;padding:11px 6px;text-align:center;color:var(--ink-dim);transition:.15s;}
+  .typebtn .em{font-size:20px;display:block;margin-bottom:4px;}
+  .typebtn .tn{font-size:11px;font-family:var(--display);}
+  .typebtn.sel{border-color:var(--accent);background:rgba(52,224,196,.1);color:var(--ink);}
+  .swatches{display:flex;gap:8px;flex-wrap:wrap;margin-top:6px;}
+  .sw{width:30px;height:30px;border-radius:50%;cursor:pointer;border:2px solid transparent;transition:.12s;}
+  .sw.sel{border-color:var(--ink);transform:scale(1.1);}
+  .hint{font-size:11.5px;color:var(--ink-faint);line-height:1.45;margin-top:4px;}
+
+  footer{margin-top:24px;text-align:center;font-size:11px;color:var(--ink-faint);letter-spacing:0.04em;}
+  .saveflash{color:var(--accent);opacity:0;transition:opacity .3s;}
+
+  .dust{font-size:13px;color:var(--energy);font-family:var(--display);font-weight:600;}
+  .goal{font-size:9px;font-family:var(--display);letter-spacing:0.04em;color:var(--ink-faint);margin-top:4px;}
+  .goal.met{color:var(--bio);} .goal.skip{opacity:.45;}
+  .goalbar{font-size:12px;color:var(--ink-dim);text-align:center;margin:10px 0 2px;min-height:16px;}
+  .storeitem{display:grid;grid-template-columns:38px 1fr auto;gap:12px;align-items:center;background:var(--panel);
+    border:1px solid var(--line);border-radius:13px;padding:12px 14px;margin-bottom:9px;}
+  .storeitem .ic{width:38px;height:38px;border-radius:10px;display:grid;place-items:center;font-size:19px;background:rgba(255,200,97,.1);}
+  .storeitem .nm{font-family:var(--display);font-weight:600;font-size:14px;display:flex;align-items:center;gap:8px;}
+  .storeitem .lv{font-size:10.5px;color:var(--ink-faint);font-weight:500;background:rgba(120,150,200,.12);padding:1px 7px;border-radius:20px;}
+  .storeitem .ds{font-size:12px;color:var(--ink-dim);margin-top:3px;}
+  .storeitem button{font-family:var(--display);font-size:12.5px;font-weight:600;color:#3a2400;border:none;
+    background:linear-gradient(92deg,var(--energy),#ffd98a);padding:9px 13px;border-radius:9px;white-space:nowrap;}
+  .storeitem button:disabled{background:rgba(120,150,200,.18);color:var(--ink-faint);cursor:not-allowed;}
+  .storeitem.maxed{opacity:.72;}
+
+  /* ---------- GALAXY ---------- */
+  .galaxy{position:relative;background:radial-gradient(circle at 50% 40%, rgba(30,46,82,.32), rgba(8,12,22,.15) 65%, transparent);
+    border:1px solid var(--line);border-radius:20px;overflow:hidden;}
+  .galaxy canvas{width:100%;display:block;cursor:pointer;}
+  .galaxyhint{text-align:center;font-size:12px;color:var(--ink-faint);margin-top:12px;letter-spacing:.04em;}
+
+  /* ---------- COSMETICS (edit planet) ---------- */
+  .cosmetics{display:flex;gap:10px;margin-top:6px;}
+  .cosmetic{flex:1;background:var(--panel);border:1px solid var(--line);border-radius:13px;padding:11px 12px;text-align:center;
+    color:var(--ink-dim);transition:.15s;}
+  .cosmetic:hover:not(:disabled){border-color:rgba(255,200,97,.4);transform:translateY(-1px);}
+  .cosmetic:disabled{opacity:.5;cursor:not-allowed;}
+  .cosmetic .cn{font-family:var(--display);font-weight:600;font-size:13px;color:var(--ink);display:block;}
+  .cosmetic .cc{font-family:var(--display);font-size:12px;color:var(--energy);margin-top:4px;display:block;font-feature-settings:"tnum";}
+  .cosmetic.owned{border-color:rgba(52,224,196,.35);background:rgba(52,224,196,.06);color:var(--accent);}
+  .cosmetic.owned .cc{color:var(--accent);}
+
+  /* ---------- MUSIC TOGGLE ---------- */
+  .musicbtn{position:fixed;right:16px;bottom:16px;z-index:60;font-size:12px;letter-spacing:.08em;
+    color:var(--ink-dim);background:var(--panel-solid);border:1px solid var(--line);padding:9px 14px;border-radius:30px;
+    backdrop-filter:blur(6px);box-shadow:0 4px 16px rgba(0,0,0,.35);transition:.18s;font-family:var(--display);}
+  .musicbtn:hover{color:var(--ink);border-color:rgba(120,150,200,.4);}
+  .musicbtn.on{color:var(--accent);border-color:rgba(52,224,196,.45);box-shadow:0 0 18px rgba(52,224,196,.2);}
+
+  /* ---------- RANDOM EVENTS ---------- */
+  .eventlayer{position:absolute;inset:0;pointer-events:none;overflow:hidden;z-index:6;}
+  .eventbtn{position:absolute;pointer-events:auto;display:flex;flex-direction:column;align-items:center;gap:2px;
+    background:rgba(16,24,42,0.92);border:1px solid var(--accent);border-radius:13px;padding:8px 12px;cursor:pointer;
+    color:var(--ink);font-family:var(--display);box-shadow:0 0 22px rgba(52,224,196,.4);
+    animation:evpop .28s ease-out, evbob 1.8s ease-in-out .3s infinite alternate;}
+  .eventbtn:hover{filter:brightness(1.12);}
+  .eventbtn.threat{border-color:var(--heat);box-shadow:0 0 22px rgba(255,111,77,.45);}
+  .eventbtn .ee{font-size:26px;line-height:1;}
+  .eventbtn .el{font-size:10px;letter-spacing:.03em;white-space:nowrap;color:var(--ink-dim);}
+  @keyframes evpop{from{opacity:0;transform:scale(.5);}to{opacity:1;transform:scale(1);}}
+  @keyframes evbob{from{transform:translateY(0);}to{transform:translateY(-7px);}}
+
+  /* ---------- TOASTS (achievements) ---------- */
+  .toastlayer{position:fixed;top:16px;left:0;right:0;z-index:80;display:flex;flex-direction:column;align-items:center;gap:8px;pointer-events:none;}
+  .toast{display:flex;align-items:center;gap:12px;background:var(--panel-solid);border:1px solid rgba(52,224,196,.5);
+    border-radius:14px;padding:11px 16px;box-shadow:0 8px 28px rgba(0,0,0,.45),0 0 22px rgba(52,224,196,.22);
+    animation:toastin .4s ease-out;max-width:92vw;}
+  .toast.out{opacity:0;transform:translateY(-10px);transition:.5s;}
+  .toast .ti{font-size:24px;}
+  .toast .tn{font-family:var(--display);font-weight:600;font-size:14px;color:var(--accent);}
+  .toast .td{font-size:11.5px;color:var(--ink-dim);}
+  @keyframes toastin{from{opacity:0;transform:translateY(-16px);}to{opacity:1;transform:none;}}
+  .ach{display:grid;grid-template-columns:38px 1fr auto;gap:12px;align-items:center;background:var(--panel);
+    border:1px solid var(--line);border-radius:13px;padding:11px 14px;margin-bottom:9px;}
+  .ach.locked{opacity:.5;}
+  .ach .ai{width:38px;height:38px;border-radius:10px;display:grid;place-items:center;font-size:19px;background:rgba(52,224,196,.1);}
+  .ach.locked .ai{background:rgba(120,150,200,.1);filter:grayscale(1);}
+  .ach .an{font-family:var(--display);font-weight:600;font-size:14px;}
+  .ach .ad{font-size:12px;color:var(--ink-dim);margin-top:2px;}
+  .ach .ar{font-family:var(--display);font-weight:600;font-size:13px;color:var(--energy);white-space:nowrap;}
+  .ach.done .ar{color:var(--accent);}
+
+  @media (prefers-reduced-motion: reduce){ .floater{animation-duration:.01s;} .track>i,.stat .mini>i{transition:none;} .eventbtn{animation:evpop .28s ease-out;} }
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <!-- ============ AUTH SCREEN ============ -->
+  <section class="screen on" id="screen-auth">
+    <div class="auth">
+      <div class="glyph"></div>
+      <h2 id="authTitle">Welcome, Architect</h2>
+      <p class="lede" id="authLede">Sign in to your profile, or create one to start building solar systems.</p>
+
+      <div id="profilePicker"></div>
+
+      <div id="authForm">
+        <div class="field"><label>Profile name</label><input id="authUser" autocomplete="off" maxlength="20" placeholder="e.g. Stardust"></div>
+        <div class="field"><label>Passcode</label><input id="authPass" type="password" autocomplete="off" maxlength="32" placeholder="a short local passcode"></div>
+        <button class="primary" id="authSubmit">Enter</button>
+        <div class="err" id="authErr"></div>
+        <div class="switch" id="authSwitch"></div>
+      </div>
+
+      <div class="note">These profiles are saved only on this device and aren't real account security — please don't use a password you use anywhere else. The passcode just keeps profiles separate on a shared device.</div>
+    </div>
+  </section>
+
+  <!-- ============ HOME / SYSTEMS ============ -->
+  <section class="screen" id="screen-home">
+    <header class="top">
+      <div class="brand"><h1>GENESIS</h1><span class="sub">Your Solar Systems</span></div>
+      <div class="who"><span class="dust">✦ <b id="dustHome">0</b></span><button class="ghost" id="galaxyBtn">🌌 Galaxy</button><button class="ghost" id="awardsBtn">🏆 Awards</button><button class="ghost" id="storeBtnHome">✦ Store</button><span>Signed in as <b id="whoName"></b></span><button class="ghost" id="logoutBtn">Sign out</button></div>
+    </header>
+    <div class="sectitle">Systems — <span id="sysCount"></span> of <span id="sysMax">2</span></div>
+    <div class="syscards" id="sysCards"></div>
+    <div class="sectitle" style="margin-top:22px">📜 Missions</div>
+    <div id="missionList"></div>
+    <footer>Each system orbits one star. Build planets, name them, and shape them however you like.</footer>
+  </section>
+
+  <!-- ============ GALAXY ============ -->
+  <section class="screen" id="screen-galaxy">
+    <header class="top">
+      <div class="brand"><h1>GALAXY</h1><span class="sub">All your systems</span></div>
+      <div class="who"><button class="ghost" id="galaxyBack">← Home</button></div>
+    </header>
+    <div class="galaxy"><canvas id="galaxyCanvas" width="1000" height="520"></canvas></div>
+    <div class="galaxyhint" id="galaxyHint">Click a system to enter it.</div>
+  </section>
+
+  <!-- ============ SYSTEM / EXHIBITION ============ -->
+  <section class="screen" id="screen-system">
+    <header class="top">
+      <div class="brand"><h1 id="sysTitle">System</h1></div>
+      <div class="who"><button class="ghost" id="backHome">← All systems</button></div>
+    </header>
+    <div class="exhibit"><canvas id="exCanvas" width="1000" height="460"></canvas></div>
+    <div class="exbar">
+      <button class="primary" id="newPlanetBtn">+ Terraform a planet</button>
+      <button class="ghost" id="editStarBtn">Customize star</button>
+      <button class="ghost" id="lineupBtn">↔ Lineup view</button>
+      <button class="ghost" id="storeBtnSys">✦ Store</button>
+      <div class="spacer"></div>
+      <span style="font-size:12px;color:var(--ink-dim)" id="planetCountLab"></span>
+    </div>
+    <div class="sectitle">Worlds in this system</div>
+    <div class="planetstrip" id="planetStrip"></div>
+    <div class="emptyhint" id="noPlanets" style="display:none">No planets yet. Terraform your first world to see it orbit your star.</div>
+  </section>
+
+  <!-- ============ LINEUP VIEW ============ -->
+  <section class="screen" id="screen-lineup">
+    <header class="top">
+      <div class="brand"><h1 id="lineupTitle">Lineup</h1><span class="sub">In order of terraforming</span></div>
+      <div class="who"><button class="ghost" id="lineupBack">← System</button></div>
+    </header>
+    <div class="galaxy"><canvas id="lineupCanvas" width="1000" height="420"></canvas></div>
+    <div class="galaxyhint">Star on the left, then each world in the order you terraformed it. Click a world to customize it.</div>
+  </section>
+
+  <!-- ============ TERRAFORM GAME ============ -->
+  <section class="screen" id="screen-terraform">
+    <header class="top">
+      <div class="brand"><h1>GENESIS</h1><span class="sub">Terraforming Engine</span></div>
+      <div class="who"><button class="ghost" id="abandonBtn">← Back to system</button></div>
+    </header>
+    <div class="grid">
+      <section class="stage">
+        <div class="planetwrap">
+          <canvas id="planet" width="440" height="440" aria-label="The planet you are terraforming. Click or press Space to gather energy."></canvas>
+          <div class="floaters" id="floaters"></div>
+          <div class="eventlayer" id="eventLayer"></div>
+          <div class="clickhint" id="clickhint">Tap or press Space to draw energy</div>
+        </div>
+        <div class="gauge">
+          <div class="lab"><span>Terraform Index</span><span id="stageName">Dead Rock</span></div>
+          <div class="big"><span id="tfPct">0.0</span><small>%</small></div>
+          <div class="track" style="margin-top:8px"><i id="tfBar"></i></div>
+        </div>
+        <div class="stat4" id="stat4">
+          <div class="stat heat" id="st_heat"><div class="name">Heat</div><div class="val" id="vHeat">0</div><div class="mini"><i id="bHeat"></i></div><div class="goal" id="g_heat"></div></div>
+          <div class="stat atmo" id="st_atmo"><div class="name">Atmos</div><div class="val" id="vAtmo">0</div><div class="mini"><i id="bAtmo"></i></div><div class="goal" id="g_atmo"></div></div>
+          <div class="stat water" id="st_water"><div class="name">Water</div><div class="val" id="vWater">0</div><div class="mini"><i id="bWater"></i></div><div class="goal" id="g_water"></div></div>
+          <div class="stat bio" id="st_bio"><div class="name">Biome</div><div class="val" id="vBio">0</div><div class="mini"><i id="bBio"></i></div><div class="goal" id="g_bio"></div></div>
+        </div>
+        <div class="log"><h4>Mission Log</h4><div id="logFeed"></div></div>
+      </section>
+      <section>
+        <div class="energybar">
+          <div><div class="ecount" id="energy">0</div><div class="elabel">Energy</div></div>
+          <div class="erate"><div><b id="eps">0</b> / sec</div><div style="margin-top:4px;color:var(--ink-faint)">+<b id="perclick" style="color:var(--energy)">1</b> / tap</div></div>
+        </div>
+        <div class="sectitle">Structures</div>
+        <div class="shop" id="shop"></div>
+        <div class="sectitle">Upgrades</div>
+        <div class="shop" id="upgrades"></div>
+      </section>
+    </div>
+  </section>
+
+</div>
+
+<button class="musicbtn" id="musicToggle" title="Toggle ambient music" aria-pressed="false">♪ Music: Off</button>
+
+<!-- ===== MODALS ===== -->
+<div class="toastlayer" id="toastLayer"></div>
+
+<div class="modal" id="awardsModal"><div class="card">
+  <h3 style="text-align:center">Awards</h3>
+  <p style="text-align:center">Complete challenges to earn <b id="awardsDust">0</b> ✦ stardust. <span id="awardsCount"></span> unlocked.</p>
+  <div id="awardsList"></div>
+  <div class="row"><button class="ghost" id="awardsClose">Close</button></div>
+</div></div>
+
+<div class="modal" id="typeModal"><div class="card center">
+  <h3 id="typeChooseTitle">Choose a world to build</h3>
+  <p>Pick the kind of planet you want to create. Your terraforming goal is tailored to it — you only build what that world needs, and it finishes as that type.</p>
+  <div class="types" id="chooseTypes"></div>
+  <div class="goalbar" id="chooseGoals"></div>
+  <div class="row"><button class="ghost" id="typeCancel">Cancel</button><button class="primary" id="typeBegin">Begin terraforming</button></div>
+</div></div>
+
+<div class="modal" id="storeModal"><div class="card">
+  <h3 style="text-align:center">Stardust Store</h3>
+  <p style="text-align:center">You have <b id="storeDust">0</b> ✦ stardust. Earn more by completing worlds. These upgrades are permanent and apply to every planet you terraform.</p>
+  <div id="storeList"></div>
+  <div style="margin-top:10px;padding:11px 13px;border:1px dashed rgba(120,150,200,.35);border-radius:12px;background:rgba(120,150,200,.05)">
+    <div style="font-size:10px;letter-spacing:.16em;text-transform:uppercase;color:var(--ink-faint);font-family:var(--display);margin-bottom:7px">🛠 Testing — grant stardust</div>
+    <div style="display:flex;gap:8px">
+      <input id="devDustAmt" type="number" min="0" placeholder="amount" style="flex:1;background:var(--panel-solid);border:1px solid var(--line);border-radius:9px;padding:9px 11px;color:var(--ink);font-size:14px;font-family:var(--body);outline:none">
+      <button class="primary" id="devDustAdd" style="padding:9px 16px">Add ✦</button>
+    </div>
+  </div>
+  <div class="row"><button class="ghost" id="storeClose">Close</button></div>
+</div></div>
+
+<div class="modal" id="newSysModal"><div class="card center">
+  <h3>Forge a new star</h3>
+  <div class="preview"><canvas id="starPreview" width="160" height="160"></canvas></div>
+  <p>Every system begins with a star. Name it — your worlds will orbit it.</p>
+  <div class="field"><label>Star name</label><input id="starName" maxlength="22" placeholder="e.g. Helios"></div>
+  <p id="starSpaceCost" style="font-size:13px;color:var(--energy);font-family:var(--display);min-height:18px"></p>
+  <div class="row"><button class="ghost" id="newSysCancel">Cancel</button><button class="primary" id="newSysCreate">Ignite star</button></div>
+</div></div>
+
+<div class="modal" id="completeModal"><div class="card center">
+  <h3>World complete</h3>
+  <div class="preview"><canvas id="completePreview" width="160" height="160"></canvas></div>
+  <p>You successfully terraformed this planet! What would you like to name it?</p>
+  <p id="completeReward" style="color:var(--energy);font-family:var(--display);margin-top:-8px"></p>
+  <div class="field"><label>Planet name</label><input id="completeName" maxlength="22" placeholder="e.g. Aurelia"></div>
+  <button class="primary" id="completeSave" style="width:100%">Add to my system</button>
+</div></div>
+
+<div class="modal" id="editStarModal"><div class="card center">
+  <h3>Customize star</h3>
+  <div class="preview"><canvas id="editStarPreview" width="160" height="160"></canvas></div>
+  <div class="field" style="text-align:left"><label>Star name</label><input id="editStarName" maxlength="22"></div>
+  <div class="slider"><label>Temperature <span id="starTempLab"></span></label><input type="range" id="starTemp" min="0" max="100"></div>
+  <div class="slider"><label>Size <span id="starSizeLab"></span></label><input type="range" id="starSize" min="40" max="95"></div>
+  <p class="hint" id="starSizeHint"></p>
+  <div class="sectitle" style="margin:14px 2px 6px">Tint</div>
+  <div class="swatches" id="starSwatches"></div>
+  <div class="row"><button class="ghost" id="editStarClose">Done</button></div>
+</div></div>
+
+<div class="modal" id="editPlanetModal"><div class="card center">
+  <h3>Customize world</h3>
+  <div class="preview"><canvas id="editPlanetPreview" width="160" height="160"></canvas></div>
+  <div class="field" style="text-align:left"><label>Planet name</label><input id="editPlanetName" maxlength="22"></div>
+  <div class="sectitle" style="margin:8px 2px 2px">Type — <span id="editPlanetType" style="color:var(--ink);letter-spacing:0"></span></div>
+  <p class="hint" style="margin:2px 2px 6px">A world keeps the type you chose when you began terraforming it.</p>
+  <div id="planetRating" style="font-size:12.5px;font-family:var(--display);margin:0 2px 8px;line-height:1.5"></div>
+  <div class="slider"><label>Heat <span id="planetHeatLab"></span></label><input type="range" id="planetHeat" min="0" max="100"></div>
+  <div class="slider"><label>Size <span id="planetSizeLab"></span></label><input type="range" id="planetSize" min="14" max="80"></div>
+  <p class="hint" id="planetSizeHint"></p>
+  <div class="sectitle" style="margin:14px 2px 6px">Tint</div>
+  <div class="swatches" id="planetSwatches"></div>
+  <div class="sectitle" style="margin:14px 2px 6px">Moons &amp; rings <span style="color:var(--ink-faint);letter-spacing:0">— terraform moons; rings cost ✦</span></div>
+  <div class="cosmetics" id="cosmetics"></div>
+  <div class="row"><button class="ghost" id="deletePlanet" style="flex:0 0 auto;color:var(--heat);border-color:rgba(255,111,77,.3)">Delete</button><button class="primary" id="editPlanetClose">Done</button></div>
+</div></div>
+
+<div class="modal" id="moonEditModal"><div class="card center">
+  <h3>Customize moon</h3>
+  <div class="preview"><canvas id="moonPreview" width="160" height="160"></canvas></div>
+  <div class="field" style="text-align:left"><label>Moon name</label><input id="moonName" maxlength="22"></div>
+  <div class="sectitle" style="margin:8px 2px 2px">Type — <span id="moonEditType" style="color:var(--ink);letter-spacing:0"></span></div>
+  <p class="hint" style="margin:2px 2px 8px">A moon keeps the type you chose when you terraformed it.</p>
+  <div class="sectitle" style="margin:14px 2px 6px">Tint</div>
+  <div class="swatches" id="moonSwatches"></div>
+  <div class="row"><button class="ghost" id="moonDelete" style="flex:0 0 auto;color:var(--heat);border-color:rgba(255,111,77,.3)">Delete</button><button class="primary" id="moonEditClose">Done</button></div>
+</div></div>
+
+<script src="/shared/gamecenter.js"></script>
+<script>
+"use strict";
+/* ============================================================
+   GENESIS — Solar System Creator
+   ============================================================ */
+
+/* ---------- number / format ---------- */
+const SUF=['','K','M','B','T','Qa','Qi','Sx','Sp','Oc'];
+function fmt(n){ if(n<1000) return (n<10&&n%1!==0)?n.toFixed(1):Math.floor(n).toString();
+  let t=0; while(n>=1000&&t<SUF.length-1){n/=1000;t++;} return n.toFixed(n<10?2:n<100?1:0)+SUF[t]; }
+function fmtStat(n){ return n.toFixed(n>=99.95?0:1); }
+const $=id=>document.getElementById(id);
+
+/* ---------- tint palette ---------- */
+const TINTS=[
+  {id:'none', col:null, css:'#7d8aa6'},
+  {id:'warm', col:[255,150,70], css:'#ff9646'},
+  {id:'gold', col:[255,210,110], css:'#ffd26e'},
+  {id:'crimson', col:[235,70,80], css:'#eb4650'},
+  {id:'violet', col:[170,110,255], css:'#aa6eff'},
+  {id:'cool', col:[90,160,255], css:'#5aa0ff'},
+  {id:'cyan', col:[70,225,210], css:'#46e1d2'},
+  {id:'emerald', col:[80,220,120], css:'#50dc78'},
+];
+function tintCol(id){ const t=TINTS.find(x=>x.id===id); return t?t.col:null; }
+
+/* ---------- planet types ---------- */
+const TYPES=[
+  {id:'livable', name:'Livable', em:'🌍', preset:null, gas:false},
+  {id:'ocean',   name:'Ocean',   em:'🌊', preset:{heat:35,atmo:62,water:94,bio:42}, gas:false},
+  {id:'desert',  name:'Desert',  em:'🏜', preset:{heat:58,atmo:24,water:5,bio:4},  gas:false},
+  {id:'ice',     name:'Ice',     em:'❄', preset:{heat:2,atmo:30,water:90,bio:4},  gas:false},
+  {id:'heat',    name:'Lava',    em:'🌋', preset:{heat:96,atmo:14,water:0,bio:0},  gas:false},
+  {id:'barren',  name:'Barren',  em:'🪨', preset:{heat:10,atmo:0,water:0,bio:0},   gas:false},
+  {id:'gas',     name:'Gas',     em:'🪐', preset:{heat:30,atmo:80,water:0,bio:0},  gas:true},
+  /* moon types (moon:true) — smaller bodies, terraformed with their own goals */
+  {id:'m_rock',   name:'Rocky Moon',   em:'🌑', preset:{heat:18,atmo:0, water:0, bio:0},  gas:false, moon:true},
+  {id:'m_volcano',name:'Volcanic Moon',em:'🌋', preset:{heat:84,atmo:8, water:0, bio:0},  gas:false, moon:true},
+  {id:'m_ice',    name:'Ice Moon',     em:'🧊', preset:{heat:4, atmo:18,water:64,bio:0},  gas:false, moon:true},
+  {id:'m_toxic',  name:'Toxic Moon',   em:'☁️', preset:{heat:28,atmo:74,water:0, bio:0},  gas:false, moon:true},
+  {id:'m_garden', name:'Garden Moon',  em:'🌱', preset:{heat:34,atmo:44,water:46,bio:56}, gas:false, moon:true},
+];
+function typeDef(id){ return TYPES.find(t=>t.id===id)||TYPES[0]; }
+const PLANET_TYPES=()=>TYPES.filter(t=>!t.moon), MOON_TYPES=()=>TYPES.filter(t=>t.moon);
+const GAS_MIN=58;     // gas giants are extra large
+const STAR_GAP=8;     // star must exceed largest planet by this
+
+/* terraform goals per type — only stats with a goal>0 must be raised */
+const GOALS={
+  livable:{heat:100,atmo:100,water:100,bio:100},
+  ocean:  {heat:30,atmo:55,water:92,bio:40},
+  desert: {heat:60,atmo:30,water:0, bio:0},
+  ice:    {heat:0, atmo:32,water:90,bio:0},
+  heat:   {heat:95,atmo:15,water:0, bio:0},
+  barren: {heat:25,atmo:0, water:0, bio:0},
+  gas:    {heat:30,atmo:85,water:0, bio:0},
+  m_rock:   {heat:18,atmo:0, water:0, bio:0},
+  m_volcano:{heat:82,atmo:0, water:0, bio:0},
+  m_ice:    {heat:0, atmo:18,water:60,bio:0},
+  m_toxic:  {heat:0, atmo:70,water:0, bio:0},
+  m_garden: {heat:25,atmo:40,water:40,bio:50},
+};
+function goalsFor(t){ return GOALS[t]||GOALS.livable; }
+function goalSummary(t){ const g=goalsFor(t); const lab={heat:'Heat',atmo:'Atmosphere',water:'Water',bio:'Biome'};
+  const parts=[]; for(const k of ['heat','atmo','water','bio']) if(g[k]>0) parts.push(lab[k]+' →'+g[k]);
+  return parts.length?('Needs: '+parts.join(' · ')):'A bare rock — quick to make.'; }
+
+/* persistent Stardust store (applies to every future terraform) */
+const STORE=[
+  {id:'tap',  name:'Twin Tap',     icon:'✦', max:3, eff:l=>'Energy per tap ×'+Math.pow(2,l), cost:l=>[2,4,8][l-1]},
+  {id:'auto', name:'Auto-Collector',icon:'🛰', max:3, eff:l=>'Passive +'+(l*2)+' energy / sec', cost:l=>[3,6,12][l-1]},
+  {id:'build',name:'Efficient Builders',icon:'🔧',max:4, eff:l=>'Structure costs −'+(l*8)+'%', cost:l=>[3,5,8,12][l-1]},
+  {id:'accel',name:'Terraform Accelerator',icon:'⚙',max:4, eff:l=>'Terraform speed +'+(l*20)+'%', cost:l=>[4,7,11,16][l-1]},
+  {id:'kick', name:'Kickstart Reserves',icon:'🔋',max:3, eff:l=>'Start each world with '+[50,250,1500][l-1]+' energy', cost:l=>[2,4,8][l-1]},
+];
+/* the first two systems are free; each additional "star space" is bought with stardust */
+const FREE_SYSTEMS=2, MAX_SYSTEMS=6, STARSPACE_COST=[8,14,22,32];
+function maxSystems(){ return MAX_SYSTEMS; }
+function starSpaceCost(count){ return count<FREE_SYSTEMS ? 0 : (STARSPACE_COST[count-FREE_SYSTEMS]||0); }
+/* ============================================================
+   SHARED WALLET ADAPTER  (stardust == the hub's one coin wallet)
+   Balance & purchases live in the hub account; the galaxy itself
+   (systems, planets, missions) is saved per-account in localStorage.
+   ============================================================ */
+let WALLET=null;          // last /api/me user  {coins, items, ...}
+let pendingDust=0;        // colony/achievement earnings not yet banked to the wallet
+let dustFlushAt=0;
+function walletCoins(){ return WALLET ? (WALLET.coins||0) : 0; }
+function dustBalance(){ return Math.floor(walletCoins() + pendingDust); }   // optimistic display
+function itemQty(key){ return (WALLET && WALLET.items && WALLET.items[key]) || 0; }
+// leveled upgrade id -> the ordered backend item keys (one per level)
+const GEN_UP={ tap:['gen_tap1','gen_tap2','gen_tap3'], auto:['gen_auto1','gen_auto2','gen_auto3'],
+  build:['gen_build1','gen_build2','gen_build3','gen_build4'], accel:['gen_accel1','gen_accel2','gen_accel3','gen_accel4'],
+  kick:['gen_kick1','gen_kick2','gen_kick3'] };
+const GEN_SPACE=['gen_space3','gen_space4','gen_space5','gen_space6'];
+function ownedLevel(keys){ let n=0; for(const k of keys){ if(itemQty(k)>0)n++; else break; } return n; }
+function storeLv(id){ return GEN_UP[id] ? ownedLevel(GEN_UP[id]) : 0; }
+
+async function refreshWallet(){ if(!(window.GameCenter&&GameCenter.me)) return null;
+  try{ const r=await GameCenter.me(); if(r&&r.ok){ WALLET=r.data; return WALLET; } }catch(e){} return null; }
+function earnDust(amt){ if(amt>0){ pendingDust+=amt; updateDustUI(); } }
+// Bank earnings to the wallet in batches (score submitted = livable worlds terraformed).
+async function flushDust(force){
+  if(pendingDust<1) return;
+  const now=Date.now(); if(!force && now-dustFlushAt<8000) return;
+  dustFlushAt=now;
+  const gain=Math.min(Math.floor(pendingDust),1000);
+  if(window.GameCenter&&GameCenter.submitScore){
+    try{ const r=await GameCenter.submitScore('genesis', livableWorlds().length, gain);
+      if(r&&r.ok&&r.data&&r.data.wallet){ WALLET=r.data.wallet; pendingDust-=gain; updateDustUI(); } }catch(e){}
+  }
+}
+// Spend on a backend item key (the server deducts from the one wallet). Returns success.
+async function walletBuy(key){
+  await flushDust(true);                    // bank pending first so the server balance is current
+  if(!(window.GameCenter&&GameCenter.buy)) return false;
+  try{ const r=await GameCenter.buy('item', key); if(r&&r.ok){ WALLET=r.data; updateDustUI(); return true; } }catch(e){}
+  return false;
+}
+
+function ensureMeta(p){ if(!p) return; if(!Array.isArray(p.systems))p.systems=[];
+  if(!p.achievements)p.achievements={}; if(!Array.isArray(p.missions))p.missions=[];
+  for(const s of p.systems) for(const pl of s.planets) if(pl.type==='livable' && pl.pop==null) pl.pop=0; }
+
+/* ============================================================
+   STORAGE  (the galaxy is saved per hub account; balance/upgrades are server-side)
+   ============================================================ */
+const SKEY=name=>'genesis_save_'+name;
+function loadGalaxy(name){ try{ const raw=localStorage.getItem(SKEY(name)); if(raw) return JSON.parse(raw); }catch(e){} return {systems:[]}; }
+let saveTimer=null;
+async function dbSave(){ if(!CUR||!CURNAME) return; try{ CUR.lastSeen=Date.now();
+  localStorage.setItem(SKEY(CURNAME), JSON.stringify(CUR)); }catch(e){} }
+function scheduleSave(){ clearTimeout(saveTimer); saveTimer=setTimeout(dbSave,600); }
+
+/* ---------- session ---------- */
+let CUR=null;          // current galaxy (systems, missions, achievements)
+let CURNAME=null;      // hub username
+let SYS=null;          // current system being viewed
+let WORK=null;         // terraforming work-state
+function newStar(name){ return {name:name||'Star', temp:62, size:64, tint:'gold'}; }
+function newSystem(starName){ return {id:'s'+Date.now()+Math.floor(Math.random()*999), star:newStar(starName), planets:[]}; }
+
+/* ============================================================
+   SHARED SPHERE RENDERER  (planets, stars, previews, exhibition)
+   ============================================================ */
+function hashi(x){ x=(x^61)^(x>>>16); x+=x<<3; x^=x>>>4; x=Math.imul(x,0x27d4eb2d); x^=x>>>15; return (x>>>0)/4294967296; }
+function vnoise3(x,y,z){
+  const xi=Math.floor(x),yi=Math.floor(y),zi=Math.floor(z);
+  const xf=x-xi,yf=y-yi,zf=z-zi;
+  const u=xf*xf*(3-2*xf),v=yf*yf*(3-2*yf),w=zf*zf*(3-2*zf);
+  function g(a,b,c){ return hashi(a*374761393+b*668265263+c*2147483647|0); }
+  const c000=g(xi,yi,zi),c100=g(xi+1,yi,zi),c010=g(xi,yi+1,zi),c110=g(xi+1,yi+1,zi);
+  const c001=g(xi,yi,zi+1),c101=g(xi+1,yi,zi+1),c011=g(xi,yi+1,zi+1),c111=g(xi+1,yi+1,zi+1);
+  const x00=c000+(c100-c000)*u,x10=c010+(c110-c010)*u,x01=c001+(c101-c001)*u,x11=c011+(c111-c011)*u;
+  const y0=x00+(x10-x00)*v,y1=x01+(x11-x01)*v; return y0+(y1-y0)*w;
+}
+function fbm(x,y,z,oct){ let f=1,a=0.5,s=0,n=0; for(let i=0;i<oct;i++){s+=a*vnoise3(x*f,y*f,z*f);n+=a;f*=2.03;a*=0.5;} return s/n; }
+
+const TW=360,TH=180;
+const elev=new Float32Array(TW*TH), cloud=new Float32Array(TW*TH);
+(function(){ for(let j=0;j<TH;j++){ const lat=(j/TH)*Math.PI-Math.PI/2,cl=Math.cos(lat),sl=Math.sin(lat);
+  for(let i=0;i<TW;i++){ const lon=(i/TW)*Math.PI*2; const x=cl*Math.cos(lon),y=sl,z=cl*Math.sin(lon);
+    let e=Math.pow(fbm(x*1.7+10,y*1.7+10,z*1.7+10,5),1.35); elev[j*TW+i]=e;
+    cloud[j*TW+i]=fbm(x*2.3+50,y*2.3+50,z*2.3+50,4); } } })();
+
+const TILT=0.36, cosT=Math.cos(TILT), sinT=Math.sin(TILT);
+function mix(a,b,t){ return a+(b-a)*t; }
+
+const STAR_GRAD=[[255,90,40],[255,150,55],[255,205,110],[255,244,224],[205,224,255]];
+function starColor(t){ const p=Math.max(0,Math.min(0.999,t))*(STAR_GRAD.length-1);
+  const i=Math.floor(p),f=p-i,a=STAR_GRAD[i],b=STAR_GRAD[Math.min(i+1,STAR_GRAD.length-1)];
+  return [mix(a[0],b[0],f),mix(a[1],b[1],f),mix(a[2],b[2],f)]; }
+/* temperature colour shifted toward the chosen tint (so star tint is actually visible) */
+function starRGB(t, tint){ const c=starColor(t);
+  if(tint) return [mix(c[0],tint[0],0.5), mix(c[1],tint[1],0.5), mix(c[2],tint[2],0.5)];
+  return c; }
+
+/* render a single sphere into an ImageData buffer (size 2R x 2R) */
+function renderSphere(data, R, opts){
+  const {spin=0, isStar=false, isGas=false, stats={heat:0,atmo:0,water:0,bio:0}, tint=null,
+         light=[-0.5,0.55,0.66], lights=0} = opts;
+  const D=2*R;
+  const cs=Math.cos(spin), sn=Math.sin(spin);
+  let lx=light[0],ly=light[1],lz=light[2]; const L=Math.hypot(lx,ly,lz)||1; lx/=L;ly/=L;lz/=L;
+  const hw=stats.heat/100, aw=stats.atmo/100, ww=stats.water/100, bw=stats.bio/100;
+  const idx=(stats.heat+stats.atmo+stats.water+stats.bio)/400;
+  const seaLevel=ww*0.52;
+  const capSize=(ww>0.04)?Math.max(0,(1-hw)*0.44+0.05):0;   // colder worlds → much larger ice caps
+  const cloudDrift=spin*1.6;
+  const sc=isStar?starRGB((opts.temp??60)/100, tint):null;
+  for(let py=0;py<D;py++){ const ny=(py-R)/R;
+    for(let px=0;px<D;px++){ const o=(py*D+px)*4; const nx=(px-R)/R; const r2=nx*nx+ny*ny;
+      if(r2>1){ data[o+3]=0; continue; }
+      const nz=Math.sqrt(1-r2);
+      let X=nx*cs+nz*sn, Z=-nx*sn+nz*cs, Y=ny;
+      const Y2=Y*cosT-Z*sinT, Z2=Y*sinT+Z*cosT; Y=Y2; Z=Z2;
+      const lum=Math.max(0, nx*lx+ny*ly+nz*lz);
+      const lat=Math.asin(Math.max(-1,Math.min(1,Y))); const lon=Math.atan2(Z,X);
+      const latN=lat/(Math.PI/2);
+      let ti=((lon/(Math.PI*2))%1+1)%1*TW|0; if(ti>=TW)ti=TW-1;
+      let tj=((lat+Math.PI/2)/Math.PI)*TH|0; if(tj>=TH)tj=TH-1; if(tj<0)tj=0;
+      let r,g,b;
+
+      if(isStar){
+        const gran=cloud[tj*TW+ti]*0.5+fbm(X*4,Y*4,Z*4,2)*0.5;
+        const bright=0.78+gran*0.5;
+        const limb=0.55+0.45*nz;          // limb darkening
+        r=sc[0]*bright*limb; g=sc[1]*bright*limb; b=sc[2]*bright*limb;
+      } else if(isGas){
+        const band=Math.sin(latN*8 + cloud[tj*TW+ti]*2.2 + spin*0.2);
+        const t=(band*0.5+0.5);
+        // banded palette derived from tint or default warm gas
+        const base=tint||[210,180,140];
+        const dark=[base[0]*0.55,base[1]*0.55,base[2]*0.6];
+        const lite=[Math.min(255,base[0]*1.15+30),Math.min(255,base[1]*1.15+30),Math.min(255,base[2]*1.1+35)];
+        r=mix(dark[0],lite[0],t); g=mix(dark[1],lite[1],t); b=mix(dark[2],lite[2],t);
+        const light2=0.18+0.82*lum; r*=light2; g*=light2; b*=light2;
+        data[o]=r;data[o+1]=g;data[o+2]=b;data[o+3]=255; continue;
+      } else {
+        const e=elev[tj*TW+ti];
+        const isIce=capSize>0 && Math.abs(latN)>(1-capSize);
+        if(isIce){ r=232;g=240;b=250; }
+        else if(e<seaLevel){ const depth=(seaLevel-e)/Math.max(0.001,seaLevel);
+          r=mix(34,12,depth); g=mix(120,46,depth); b=mix(180,96,depth);
+          // frozen worlds grow glaciers/pack-ice on the shallows; deep ocean stays open & blue
+          const cold=Math.max(0,(0.26-hw)/0.26);
+          if(cold>0){ const crack=cloud[tj*TW+ti];
+            const shelf=Math.min(1, cold*(1.25-depth*1.05)) * (crack>0.4?1:0.5);
+            r=mix(r,232,shelf);g=mix(g,241,shelf);b=mix(b,249,shelf); } }
+        else {
+          let veg=0; if(e<0.74){ const moist=Math.max(0,1-(e-seaLevel)/0.5); veg=Math.min(1,bw*1.15*moist); }
+          r=mix(104,58,veg); g=mix(92,142,veg); b=mix(82,66,veg);
+          // hot + dry land turns sandy/tan — makes deserts read as sand, not grey barren rock
+          const arid=Math.max(0,(0.4-ww)*2.2)*Math.min(1,Math.max(0,hw-0.25)*2)*(1-veg);
+          if(arid>0){ const a=Math.min(0.82,arid); r=mix(r,208,a);g=mix(g,170,a);b=mix(b,108,a); }
+          // snow line drops as a world gets colder, so cold worlds freeze over white (needs water for frost)
+          const snowLine=mix(0.28,0.95,hw);
+          if(ww>0.05 && e>snowLine){ const snow=Math.min(1,(e-snowLine)/0.14); r=mix(r,235,snow);g=mix(g,238,snow);b=mix(b,244,snow); }
+          // molten only on genuinely scorching worlds, so deserts stay sandy and lava reads as lava
+          const molten=Math.max(0,(hw-0.72)*3.4-aw*1.4-ww*2.0)*Math.max(0,1-(e-seaLevel)*1.6);
+          if(molten>0){ const m=Math.min(1,molten); r=mix(r,255,m);g=mix(g,96,m);b=mix(b,30,m*0.7); }
+        }
+        if(aw>0.08){ let ci=((lon/(Math.PI*2)+cloudDrift/6.28)%1+1)%1*TW|0; if(ci>=TW)ci=TW-1;
+          const cval=cloud[tj*TW+ci]; let ca=Math.max(0,(cval-0.52)*3)*Math.min(1,aw*1.4)*(0.45+0.55*ww);
+          if(ca>0){ ca=Math.min(0.85,ca); r=mix(r,236,ca);g=mix(g,242,ca);b=mix(b,250,ca); } }
+        let light2=0.12+0.88*lum;
+        if(aw>0.05){ const limb=Math.pow(1-nz,2.2); const scat=limb*aw*0.9*(0.4+0.6*lum);
+          r=mix(r,120,scat);g=mix(g,180,scat);b=mix(b,255,scat); }
+        r*=light2; g*=light2; b*=light2;
+        // city lights on the night side — intensity driven by colony population
+        if(lights>0 && lum<0.17 && !isIce && e>=seaLevel && e<0.82){ const h=hashi((ti*131+tj*977)|0);
+          if(h>0.987-lights*0.02){ const li=lights*(1-lum/0.17); r+=225*li;g+=185*li;b+=95*li; } }
+      }
+      // tint blend (for terran-family)
+      if(tint && !isStar){ const s=0.32; r=mix(r,tint[0],s*lum+0.06); g=mix(g,tint[1],s*lum+0.06); b=mix(b,tint[2],s*lum+0.06); }
+      data[o]=r<0?0:r>255?255:r; data[o+1]=g<0?0:g>255?255:g; data[o+2]=b<0?0:b>255?255:b; data[o+3]=255;
+    }
+  }
+}
+
+/* draw a sphere (with optional glow) directly onto a 2D ctx centered at cx,cy */
+function drawSphereOnto(ctx, cx, cy, R, opts){
+  R=Math.round(R);
+  const buf=document.createElement('canvas'); buf.width=2*R; buf.height=2*R;
+  const bctx=buf.getContext('2d'); const img=bctx.createImageData(2*R,2*R);
+  renderSphere(img.data, R, opts); bctx.putImageData(img,0,0);
+  if(opts.isStar){
+    const g=ctx.createRadialGradient(cx,cy,R*0.7,cx,cy,R*2.2);
+    const sc=starRGB((opts.temp??60)/100, opts.tint);
+    g.addColorStop(0,`rgba(${sc[0]},${sc[1]},${sc[2]},0.55)`);
+    g.addColorStop(0.4,`rgba(${sc[0]},${sc[1]},${sc[2]},0.18)`);
+    g.addColorStop(1,'rgba(0,0,0,0)');
+    ctx.fillStyle=g; ctx.beginPath(); ctx.arc(cx,cy,R*2.2,0,Math.PI*2); ctx.fill();
+  } else if(opts.stats && opts.stats.atmo>5){
+    const aw=opts.stats.atmo/100;
+    const g=ctx.createRadialGradient(cx,cy,R*0.92,cx,cy,R*1.3);
+    g.addColorStop(0,`rgba(120,180,255,${0.05+aw*0.4})`); g.addColorStop(1,'rgba(80,140,220,0)');
+    ctx.fillStyle=g; ctx.beginPath(); ctx.arc(cx,cy,R*1.3,0,Math.PI*2); ctx.fill();
+  }
+  ctx.drawImage(buf,cx-R,cy-R);
+}
+
+/* ---------- cached sphere bitmaps ----------
+   The exhibition redraws every body each frame. The bitmap only depends on a
+   body's appearance (type/stats/tint/temp), not its orbit position, so we render
+   each appearance once and reuse it — only position + glow are recomputed per frame. */
+const _sphereCache=new Map();
+function sphereBitmap(R, opts){
+  R=Math.round(R);
+  const key=R+'|'+(opts.isStar?1:0)+'|'+(opts.isGas?1:0)+'|'+Math.round(opts.temp??60)+'|'+
+    (opts.tint?opts.tint.join(','):'-')+'|'+
+    (opts.stats?['heat','atmo','water','bio'].map(k=>Math.round(opts.stats[k])).join(','):'-')+'|'+
+    (opts.spin||0)+'|'+Math.round((opts.lights||0)*10);
+  let c=_sphereCache.get(key);
+  if(!c){ c=document.createElement('canvas'); c.width=2*R; c.height=2*R;
+    const cx=c.getContext('2d'); const img=cx.createImageData(2*R,2*R);
+    renderSphere(img.data, R, opts); cx.putImageData(img,0,0);
+    if(_sphereCache.size>120) _sphereCache.clear();   // bound memory
+    _sphereCache.set(key,c); }
+  return c;
+}
+/* like drawSphereOnto but uses the cache and scales the bitmap to destR (for orbit depth) */
+function drawCachedSphere(ctx, cx, cy, destR, opts){
+  const baseR=Math.max(7, Math.round(destR*1.12));   // render a touch larger; downscale stays crisp
+  const bmp=sphereBitmap(baseR, opts);
+  if(opts.isStar){
+    const g=ctx.createRadialGradient(cx,cy,destR*0.7,cx,cy,destR*2.2);
+    const sc=starRGB((opts.temp??60)/100, opts.tint);
+    g.addColorStop(0,`rgba(${sc[0]},${sc[1]},${sc[2]},0.55)`);
+    g.addColorStop(0.4,`rgba(${sc[0]},${sc[1]},${sc[2]},0.18)`);
+    g.addColorStop(1,'rgba(0,0,0,0)');
+    ctx.fillStyle=g; ctx.beginPath(); ctx.arc(cx,cy,destR*2.2,0,Math.PI*2); ctx.fill();
+  } else if(opts.stats && opts.stats.atmo>5){
+    const aw=opts.stats.atmo/100;
+    const g=ctx.createRadialGradient(cx,cy,destR*0.92,cx,cy,destR*1.3);
+    g.addColorStop(0,`rgba(120,180,255,${0.05+aw*0.4})`); g.addColorStop(1,'rgba(80,140,220,0)');
+    ctx.fillStyle=g; ctx.beginPath(); ctx.arc(cx,cy,destR*1.3,0,Math.PI*2); ctx.fill();
+  }
+  ctx.drawImage(bmp, cx-destR, cy-destR, destR*2, destR*2);
+}
+
+/* ---------- adornments: rings + moons ---------- */
+const MOON_MAX=2, RING_PRICE=6;
+/* moons are objects {name,type,stats,tint}. Migrate legacy numeric counts in place. */
+function moonList(p){ if(!p) return [];
+  if(typeof p.moons==='number'){ const n=p.moons; p.moons=[];
+    for(let i=0;i<n;i++) p.moons.push({name:'Moon '+(i+1), type:'m_rock', stats:Object.assign({},typeDef('m_rock').preset), tint:'none'}); }
+  if(!Array.isArray(p.moons)) p.moons=[]; return p.moons; }
+function moonStats(mn){ const td=typeDef(mn.type); return Object.assign({}, mn.stats || td.preset); }
+/* a tilted ring drawn as two halves so the planet can sit between them */
+/* concentric ring bands (with a gap), brighter at the ansae — reads as real rings, not a hoop */
+const RING_BANDS=[
+  {r0:1.24, r1:1.36, col:[164,132,96],  a:0.48},   // dusty tan inner
+  {r0:1.38, r1:1.55, col:[238,224,188], a:0.70},   // bright cream
+  {r0:1.57, r1:1.64, col:[86,92,120],   a:0.14},   // dark gap
+  {r0:1.66, r1:1.84, col:[142,196,224], a:0.56},   // icy blue band
+  {r0:1.86, r1:1.98, col:[214,176,140], a:0.42},   // sandy gold band
+  {r0:2.00, r1:2.05, col:[80,86,112],   a:0.12},   // thin gap
+  {r0:2.07, r1:2.26, col:[224,212,236], a:0.46},   // pale violet-white outer
+];
+function drawRing(ctx, cx, cy, R, half){
+  const ry=0.20;                                    // flatter — closer to edge-on
+  const start=half==='front'?0:Math.PI, end=half==='front'?Math.PI:Math.PI*2;
+  ctx.save(); ctx.lineCap='butt';
+  for(const b of RING_BANDS){
+    const rMid=R*(b.r0+b.r1)/2, w=R*(b.r1-b.r0);
+    ctx.lineWidth=Math.max(1,w);
+    const c=b.col.join(',');
+    const g=ctx.createLinearGradient(cx-rMid,cy,cx+rMid,cy);   // bright at the tips, thin across front/back
+    g.addColorStop(0,   `rgba(${c},${b.a})`);
+    g.addColorStop(0.5, `rgba(${c},${b.a*0.4})`);
+    g.addColorStop(1,   `rgba(${c},${b.a})`);
+    ctx.strokeStyle=g;
+    ctx.beginPath(); ctx.ellipse(cx,cy,rMid,rMid*ry,0,start,end); ctx.stroke();
+  }
+  ctx.restore();
+}
+/* moons orbit the planet; `half` selects the ones in front of / behind the planet for depth */
+function drawMoons(ctx, cx, cy, R, p, spin, half){
+  const list=moonList(p);
+  list.forEach((mn,i)=>{ const a=spin*(1.3+i*0.45)+i*2.3; const behind=Math.sin(a)<0;
+    if((behind?'back':'front')!==half) return;
+    const orbit=R*(1.55+i*0.5), mx=cx+Math.cos(a)*orbit, my=cy+Math.sin(a)*orbit*0.42;
+    drawCachedSphere(ctx,mx,my,Math.max(3,R*0.2),{spin:i,stats:moonStats(mn),tint:tintCol(mn.tint)}); });
+}
+/* draw a planet plus its rings + moons, depth-layered, centered at cx,cy */
+function drawAdornedPlanet(ctx, cx, cy, R, p, bodySpin, time){
+  const td=typeDef(p.type);
+  if(p.rings) drawRing(ctx,cx,cy,R,'back');
+  drawMoons(ctx,cx,cy,R,p,time,'back');
+  drawCachedSphere(ctx,cx,cy,R,{spin:bodySpin,stats:planetStats(p),isGas:td.gas,tint:tintCol(p.tint),lights:popLights(p)});
+  drawMoons(ctx,cx,cy,R,p,time,'front');
+  if(p.rings) drawRing(ctx,cx,cy,R,'front');
+}
+function popLights(p){ return p&&p.type==='livable'? Math.min(1,(p.pop||0)/100) : 0; }
+
+/* rate a finished world on habitability / beauty / rarity → overall grade */
+const RARE_TYPE={livable:30,gas:24,ice:18,heat:18,ocean:14,desert:11,barren:6};
+function worldRating(p){ const st=planetStats(p); const moons=moonList(p).length, rings=p.rings?1:0;
+  let hab = p.type==='livable' ? 82+st.bio*0.18 : (st.bio*0.55 + Math.min(st.water,70)*0.4 + Math.min(st.atmo,60)*0.15);
+  let beauty = 34 + moons*13 + rings*17 + (p.tint&&p.tint!=='none'?9:0) + st.water*0.11 + st.bio*0.08 + (p.pop||0)*0.06;
+  let rarity = (RARE_TYPE[p.type]||10) + moons*11 + rings*13;
+  hab=Math.max(0,Math.min(100,hab)); beauty=Math.min(100,beauty); rarity=Math.min(100,rarity);
+  const overall=Math.round(hab*0.4+beauty*0.35+rarity*0.25);
+  const grade = overall>=88?'S':overall>=76?'A':overall>=62?'B':overall>=45?'C':'D';
+  return {hab:Math.round(hab),beauty:Math.round(beauty),rarity:Math.round(rarity),overall,grade}; }
+
+/* derive render stats for a planet object */
+function planetStats(p){
+  const td=typeDef(p.type);
+  // Honor the planet's own stats for every type so each finished world is unique;
+  // fall back to the type preset for older saves that lack stored stats.
+  const base = Object.assign({}, p.stats || td.preset);
+  if(p.heatOverride!=null) base.heat=p.heatOverride;
+  return base;
+}
+
+/* ============================================================
+   STARFIELD (shared decorative)
+   ============================================================ */
+function paintStars(ctx,w,h,avoid){
+  for(let i=0;i<200;i++){ let x=hashi(i*3+1)*w; const y=hashi(i*7+5)*h;
+    if(avoid){ for(const a of avoid){ if(Math.hypot(x-a.x,y-a.y)<a.r+6){x=-99;break;} } }
+    if(x<0)continue;
+    const r=hashi(i*11+2)*1.2+0.2,al=hashi(i*13+9)*0.6+0.12;
+    ctx.fillStyle='rgba(200,220,255,'+al+')'; ctx.beginPath(); ctx.arc(x,y,r,0,Math.PI*2); ctx.fill(); }
+}
+/* ---------- shooting stars (decorative, on animated screens) ---------- */
+let shootStars=[];
+function updateShootingStars(dt,W,H){
+  if(Math.random()<dt*0.5 && shootStars.length<3){ const dir=Math.random()<0.5?1:-1;
+    shootStars.push({x:dir>0?-20:W+20, y:Math.random()*H*0.55, vx:dir*(260+Math.random()*220), vy:70+Math.random()*90, life:0, max:1.3+Math.random()*0.7}); }
+  for(const s of shootStars){ s.life+=dt; s.x+=s.vx*dt; s.y+=s.vy*dt; }
+  shootStars=shootStars.filter(s=>s.life<s.max && s.x>-60 && s.x<W+60); }
+function drawShootingStars(ctx){ for(const s of shootStars){ const a=Math.sin(Math.min(1,s.life/s.max)*Math.PI)*0.85;
+  const tx=s.x-s.vx*0.09, ty=s.y-s.vy*0.09;
+  const g=ctx.createLinearGradient(tx,ty,s.x,s.y);
+  g.addColorStop(0,'rgba(180,210,255,0)'); g.addColorStop(1,`rgba(210,228,255,${a})`);
+  ctx.strokeStyle=g; ctx.lineWidth=2; ctx.lineCap='round'; ctx.beginPath(); ctx.moveTo(tx,ty); ctx.lineTo(s.x,s.y); ctx.stroke();
+  ctx.fillStyle=`rgba(235,242,255,${a})`; ctx.beginPath(); ctx.arc(s.x,s.y,1.7,0,Math.PI*2); ctx.fill(); } }
+
+/* ============================================================
+   SCREEN MANAGER
+   ============================================================ */
+let active='auth';
+let exhibitRAF=null, terraRAF=null, terraSim=null;
+function show(name){
+  active=name;
+  for(const s of document.querySelectorAll('.screen')) s.classList.remove('on');
+  $('screen-'+name).classList.add('on');
+  stopExhibit(); stopTerra(); stopGalaxy(); stopLineup();
+  if(name==='system'){ startExhibit(); }
+  if(name==='terraform'){ startTerra(); }
+  if(name==='galaxy'){ startGalaxy(); }
+  if(name==='lineup'){ startLineup(); }
+  if(name==='home'){ renderHome(); }
+}
+
+/* ============================================================
+   AUTH
+   ============================================================ */
+let authMode='login';   // or 'create'
+function showSignInGate(){
+  // Genesis needs the hub account: the stardust wallet + saved galaxies live there.
+  const t=$('authTitle'); if(t)t.textContent='Sign in to play Genesis';
+  const l=$('authLede'); if(l)l.textContent='Genesis uses your hub account — your stardust wallet and saved galaxies live there.';
+  const pf=$('profilePicker'); if(pf)pf.innerHTML='';
+  const uf=$('authForm'); if(uf)uf.innerHTML='<button class="primary" id="toHub">Go to the hub to sign in</button>';
+  const note=document.querySelector('#screen-auth .note'); if(note)note.style.display='none';
+  const b=$('toHub'); if(b)b.onclick=()=>{ location.href='/'; };
+  show('auth');
+}
+let loginTarget=null;
+function selectLogin(n){ loginTarget=n; }
+function escapeHtml(s){ return s.replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c])); }
+
+function enter(name){ CURNAME=name; CUR=loadGalaxy(name); ensureMeta(CUR);
+  applyOffline();                       // credit colony earnings from time away (reads old lastSeen)
+  $('whoName').textContent=name; updateDustUI(); checkAchievements(); ensureMissions(); startColonyTick(); scheduleSave(); flushDust(true); show('home'); }
+$('logoutBtn').onclick=()=>{ dbSave(); flushDust(true);
+  if(window.GameCenter&&GameCenter.logout){ GameCenter.logout().finally(()=>{ location.href='/'; }); } else { location.href='/'; } };
+
+/* ============================================================
+   HOME — SYSTEMS LIST
+   ============================================================ */
+function renderHome(){ updateDustUI(); renderMissions();
+  const wrap=$('sysCards'); wrap.innerHTML='';
+  const sys=CUR.systems||[]; $('sysCount').textContent=sys.length;
+  const cap=maxSystems(); $('sysMax').textContent=cap;
+  sys.forEach((s,i)=>{
+    const c=document.createElement('div'); c.className='syscard';
+    c.innerHTML=`<canvas width="520" height="300"></canvas>
+      <div class="body"><h3>${escapeHtml(s.star.name)} System</h3>
+      <div class="meta">${s.planets.length} planet${s.planets.length===1?'':'s'} orbiting</div></div>`;
+    c.onclick=()=>{ SYS=s; openSystem(); };
+    wrap.appendChild(c);
+    paintSystemThumb(c.querySelector('canvas'), s);
+  });
+  if(sys.length<cap){ const a=document.createElement('div'); a.className='syscard add';
+    const cost=starSpaceCost(sys.length);
+    a.innerHTML=`<div class="plus">+</div><div class="lab">New solar system${cost?` · ✦ ${cost}`:''}</div>`;
+    a.onclick=openNewSystem; wrap.appendChild(a); }
+}
+function paintSystemThumb(cv,s){
+  const ctx=cv.getContext('2d'); const W=cv.width,H=cv.height;
+  ctx.clearRect(0,0,W,H); paintStars(ctx,W,H);
+  const cx=W*0.32, cy=H*0.5;
+  s.planets.slice(0,5).forEach((p,i)=>{ const rad=70+i*46; const ang=i*1.7+1;
+    const px=cx+Math.cos(ang)*rad, py=cy+Math.sin(ang)*rad*0.5;
+    drawAdornedPlanet(ctx,px,py,Math.max(8,p.size*0.5),p,i,i*2.0); });
+  drawSphereOnto(ctx,cx,cy,s.star.size*0.55,{isStar:true,temp:s.star.temp,tint:tintCol(s.star.tint)});
+}
+
+/* ---- new system / star ---- */
+function openNewSystem(){ $('starName').value=''; drawStarPreview($('starPreview'),newStar(''));
+  const _si=CUR.systems.length-FREE_SYSTEMS, _sk=GEN_SPACE[_si];
+  const _owned = _sk && itemQty(_sk)>0;
+  const cost=_owned?0:starSpaceCost(CUR.systems.length), dust=dustBalance(), lab=$('starSpaceCost'), btn=$('newSysCreate');
+  if(cost>0){ const ok=dust>=cost;
+    lab.innerHTML = ok ? `This star space costs <b>✦ ${cost}</b> · you have ✦ ${dust}`
+                       : `Needs <b>✦ ${cost}</b> stardust — you have only ✦ ${dust}. Complete more worlds to earn it.`;
+    lab.style.color = ok ? 'var(--energy)' : 'var(--heat)';
+    btn.disabled=!ok; btn.textContent= ok ? `Ignite star (✦ ${cost})` : 'Not enough ✦';
+  } else { lab.textContent=''; btn.disabled=false; btn.textContent='Ignite star'; }
+  $('newSysModal').classList.add('on'); $('starName').focus(); }
+$('newSysCancel').onclick=()=>$('newSysModal').classList.remove('on');
+$('newSysCreate').onclick=async()=>{
+  const nm=$('starName').value.trim()||'Sol';
+  if(CUR.systems.length>=maxSystems()){ $('newSysModal').classList.remove('on'); return; }
+  const idx=CUR.systems.length-FREE_SYSTEMS, spaceKey=GEN_SPACE[idx];
+  const cost=starSpaceCost(CUR.systems.length);
+  if(cost>0 && !(spaceKey&&itemQty(spaceKey)>0)){
+    if(dustBalance()<cost) return;
+    const ok=await walletBuy(spaceKey); if(!ok) return;   // deduct the star space from the shared wallet
+  }
+  const s=newSystem(nm); CUR.systems.push(s); checkAchievements(); checkMissions(); await dbSave();
+  $('newSysModal').classList.remove('on'); SYS=s; openSystem();
+};
+function drawStarPreview(cv,star){ const ctx=cv.getContext('2d'); ctx.clearRect(0,0,160,160);
+  paintStars(ctx,160,160,[{x:80,y:80,r:50}]);
+  drawSphereOnto(ctx,80,80,42,{isStar:true,temp:star.temp,tint:tintCol(star.tint)}); }
+
+/* ============================================================
+   SYSTEM / EXHIBITION
+   ============================================================ */
+function openSystem(){ $('sysTitle').textContent=SYS.star.name+' System'; show('system'); renderPlanetStrip(); }
+$('backHome').onclick=()=>show('home');
+
+function renderPlanetStrip(){
+  const strip=$('planetStrip'); strip.innerHTML='';
+  $('planetCountLab').textContent=SYS.planets.length+' world'+(SYS.planets.length===1?'':'s');
+  $('noPlanets').style.display = SYS.planets.length?'none':'block';
+  SYS.planets.forEach((p,i)=>{ const chip=document.createElement('div'); chip.className='pchip';
+    chip.innerHTML=`<div class="pn">${escapeHtml(p.name)}</div><div class="pt">${typeDef(p.type).name} world</div>`;
+    chip.onclick=()=>openEditPlanet(i); strip.appendChild(chip); });
+}
+
+let exSpin=0;
+function startExhibit(){ stopExhibit(); let last=performance.now();
+  const cv=$('exCanvas'), ctx=cv.getContext('2d'), W=cv.width, H=cv.height;
+  function loop(){ const now=performance.now(); let dt=(now-last)/1000; last=now; if(dt>0.1)dt=0.1; exSpin+=dt;
+    ctx.clearRect(0,0,W,H); paintStars(ctx,W,H); updateShootingStars(dt,W,H); drawShootingStars(ctx);
+    const cx=W/2, cy=H/2+10;
+    // orbit rings
+    SYS.planets.forEach((p,i)=>{ const rad=orbitRadius(i);
+      ctx.strokeStyle='rgba(120,150,200,0.10)'; ctx.lineWidth=1; ctx.beginPath();
+      ctx.ellipse(cx,cy,rad,rad*0.42,0,0,Math.PI*2); ctx.stroke(); });
+    // depth sort: planets behind (top, smaller py) drawn before star
+    const items=SYS.planets.map((p,i)=>{ const rad=orbitRadius(i);
+      const ang=exSpin*(0.25+0.12/(i+1))+i*1.3;
+      const px=cx+Math.cos(ang)*rad, py=cy+Math.sin(ang)*rad*0.42;
+      const depth=Math.sin(ang); // <0 behind
+      return {p,i,px,py,depth,rad}; });
+    items.filter(it=>it.depth<0).forEach(it=>drawOrbiter(ctx,it,cx,cy));
+    drawCachedSphere(ctx,cx,cy,SYS.star.size,{isStar:true,temp:SYS.star.temp,tint:tintCol(SYS.star.tint)});
+    items.filter(it=>it.depth>=0).forEach(it=>drawOrbiter(ctx,it,cx,cy));
+    exhibitRAF=requestAnimationFrame(loop);
+  } loop();
+}
+function drawOrbiter(ctx,it,cx,cy){ const scale=0.85+0.25*((it.py-cy)/(it.rad*0.42)+1)/2;
+  // fixed per-planet body spin keeps the bitmap cache hitting; exSpin animates the moons
+  drawAdornedPlanet(ctx,it.px,it.py,Math.max(7,it.p.size*0.55*scale),it.p,it.i*0.7,exSpin); }
+function orbitRadius(i){ return 130+i*78; }
+function stopExhibit(){ if(exhibitRAF){cancelAnimationFrame(exhibitRAF);exhibitRAF=null;} }
+
+/* click a planet in exhibition to edit it */
+$('exCanvas').addEventListener('pointerdown',e=>{
+  const cv=$('exCanvas'); const rect=cv.getBoundingClientRect();
+  const sx=(e.clientX-rect.left)*(cv.width/rect.width), sy=(e.clientY-rect.top)*(cv.height/rect.height);
+  const cx=cv.width/2, cy=cv.height/2+10;
+  for(let i=0;i<SYS.planets.length;i++){ const rad=orbitRadius(i); const ang=exSpin*(0.25+0.12/(i+1))+i*1.3;
+    const px=cx+Math.cos(ang)*rad, py=cy+Math.sin(ang)*rad*0.42;
+    if(Math.hypot(sx-px,sy-py) < SYS.planets[i].size*0.7+10){ openEditPlanet(i); return; } }
+  if(Math.hypot(sx-cx,sy-cy) < SYS.star.size+6){ openEditStar(); }
+});
+
+/* ============================================================
+   GALAXY  (all systems at once)
+   ============================================================ */
+let galaxyRAF=null, gxSpin=0, gxLayout=[];
+function galaxyPositions(n,W,H){ const pos=[]; if(!n) return pos;
+  const cols=n<=2?n:Math.ceil(Math.sqrt(n)), rows=Math.ceil(n/cols);
+  // pack systems into a centered cluster (capped spacing) instead of spreading across the whole canvas
+  const gapX=Math.min(W/cols, 320), gapY=Math.min(H/rows, 280);
+  const cell=Math.min(gapX,gapY);
+  const x0=W/2-gapX*(cols-1)/2, y0=H/2-gapY*(rows-1)/2;
+  for(let i=0;i<n;i++){ const r=Math.floor(i/cols), c=i%cols;
+    pos.push({x:x0+gapX*c, y:y0+gapY*r, cell}); }
+  return pos; }
+function startGalaxy(){ stopGalaxy(); const cv=$('galaxyCanvas'),ctx=cv.getContext('2d'),W=cv.width,H=cv.height;
+  const sysArr=CUR.systems||[];
+  $('galaxyHint').textContent = sysArr.length? 'Click a system to enter it.' : 'No systems yet — create one from Home.';
+  let last=performance.now();
+  function loop(){ const now=performance.now(); let dt=(now-last)/1000; last=now; if(dt>0.1)dt=0.1; gxSpin+=dt;
+    ctx.clearRect(0,0,W,H); paintStars(ctx,W,H); updateShootingStars(dt,W,H); drawShootingStars(ctx);
+    gxLayout=galaxyPositions(sysArr.length,W,H);
+    sysArr.forEach((s,si)=>{ const pos=gxLayout[si]; const scl=Math.min(1.5,pos.cell/300);
+      const starR=Math.max(9,s.star.size*0.32*scl+5);
+      const orbitR=i=>starR+26+i*34;                     // wider, well-separated orbits
+      // faint orbit rings so the spread reads clearly
+      s.planets.slice(0,5).forEach((p,i)=>{ const r=orbitR(i);
+        ctx.strokeStyle='rgba(120,150,200,0.10)'; ctx.lineWidth=1; ctx.beginPath();
+        ctx.ellipse(pos.x,pos.y,r,r*0.5,0,0,Math.PI*2); ctx.stroke(); });
+      s.planets.slice(0,5).forEach((p,i)=>{ const rad=orbitR(i); const ang=gxSpin*(0.3+0.1/(i+1))+i*1.4+si;
+        const px=pos.x+Math.cos(ang)*rad, py=pos.y+Math.sin(ang)*rad*0.5;
+        drawAdornedPlanet(ctx,px,py,Math.max(3,p.size*0.22*scl+2),p,i*0.7,gxSpin); });
+      drawCachedSphere(ctx,pos.x,pos.y,starR,{isStar:true,temp:s.star.temp,tint:tintCol(s.star.tint)});
+      ctx.textAlign='center';
+      ctx.fillStyle='rgba(230,237,251,0.92)'; ctx.font='600 15px "Space Grotesk",sans-serif';
+      ctx.fillText(s.star.name+' System', pos.x, pos.y+pos.cell*0.4);
+      const np=s.planets.length; ctx.fillStyle='rgba(128,144,173,0.85)'; ctx.font='12px Inter,sans-serif';
+      ctx.fillText(np+' world'+(np===1?'':'s'), pos.x, pos.y+pos.cell*0.4+18); });
+    galaxyRAF=requestAnimationFrame(loop);
+  } loop();
+}
+function stopGalaxy(){ if(galaxyRAF){cancelAnimationFrame(galaxyRAF);galaxyRAF=null;} }
+$('galaxyCanvas').addEventListener('pointerdown',e=>{
+  const cv=$('galaxyCanvas'); const rect=cv.getBoundingClientRect();
+  const sx=(e.clientX-rect.left)*(cv.width/rect.width), sy=(e.clientY-rect.top)*(cv.height/rect.height);
+  const sysArr=CUR.systems||[];
+  for(let i=0;i<gxLayout.length;i++){ const pos=gxLayout[i];
+    if(Math.hypot(sx-pos.x,sy-pos.y) < pos.cell*0.46){ SYS=sysArr[i]; openSystem(); return; } }
+});
+$('galaxyBtn').onclick=()=>show('galaxy');
+$('galaxyBack').onclick=()=>show('home');
+
+/* ============================================================
+   LINEUP VIEW  (star at left, planets in terraform order)
+   ============================================================ */
+let lineupRAF=null, luSpin=0, luLayout=[];
+function startLineup(){ stopLineup(); const cv=$('lineupCanvas'),ctx=cv.getContext('2d'),W=cv.width,H=cv.height;
+  $('lineupTitle').textContent=SYS.star.name+' — Lineup';
+  let last=performance.now();
+  function loop(){ const now=performance.now(); let dt=(now-last)/1000; last=now; if(dt>0.1)dt=0.1; luSpin+=dt;
+    ctx.clearRect(0,0,W,H); paintStars(ctx,W,H); updateShootingStars(dt,W,H); drawShootingStars(ctx);
+    const cy=H*0.5;
+    const starR=Math.max(28,Math.min(82,SYS.star.size*0.85)), starX=starR+44;
+    const planets=SYS.planets; luLayout=[];
+    const startX=starX+starR+60, endX=W-50, slot=(endX-startX)/Math.max(1,planets.length);
+    drawCachedSphere(ctx,starX,cy,starR,{isStar:true,temp:SYS.star.temp,tint:tintCol(SYS.star.tint)});
+    ctx.textAlign='center'; ctx.fillStyle='rgba(230,237,251,0.95)'; ctx.font='600 15px "Space Grotesk",sans-serif';
+    ctx.fillText(SYS.star.name, starX, cy+starR+30);
+    planets.forEach((p,i)=>{ const px=startX+slot*(i+0.5), pr=Math.max(10,Math.min(slot*0.4, p.size*0.72));
+      drawAdornedPlanet(ctx,px,cy,pr,p,i*0.7,luSpin); luLayout.push({x:px,y:cy,r:pr,i});
+      ctx.textAlign='center'; ctx.fillStyle='rgba(230,237,251,0.92)'; ctx.font='600 14px "Space Grotesk",sans-serif';
+      ctx.fillText(p.name, px, cy+pr+26);
+      ctx.fillStyle='rgba(128,144,173,0.85)'; ctx.font='11px Inter,sans-serif';
+      ctx.fillText('#'+(i+1)+' · '+typeDef(p.type).name, px, cy+pr+42);
+      const rt=worldRating(p); const gc={S:'#ffd26e',A:'#5ad96f',B:'#46e1d2',C:'#8090ad',D:'#8090ad'}[rt.grade];
+      ctx.fillStyle=gc; ctx.font='700 13px "Space Grotesk",sans-serif';
+      ctx.fillText('Rating '+rt.grade+' · '+rt.overall, px, cy+pr+60); });
+    if(!planets.length){ ctx.textAlign='center'; ctx.fillStyle='rgba(128,144,173,0.85)'; ctx.font='13px Inter,sans-serif';
+      ctx.fillText('No worlds yet — terraform one to line it up here.', (startX+endX)/2, cy); }
+    lineupRAF=requestAnimationFrame(loop);
+  } loop();
+}
+function stopLineup(){ if(lineupRAF){cancelAnimationFrame(lineupRAF);lineupRAF=null;} }
+$('lineupCanvas').addEventListener('pointerdown',e=>{ const cv=$('lineupCanvas'); const rect=cv.getBoundingClientRect();
+  const sx=(e.clientX-rect.left)*(cv.width/rect.width), sy=(e.clientY-rect.top)*(cv.height/rect.height);
+  for(const it of luLayout){ if(Math.hypot(sx-it.x,sy-it.y)<it.r+14){ openEditPlanet(it.i); return; } } });
+$('lineupBtn').onclick=()=>show('lineup');
+$('lineupBack').onclick=()=>show('system');
+
+/* ============================================================
+   TERRAFORMING GAME
+   ============================================================ */
+const STRUCTURES=[
+  {id:'solar',name:'Solar Array',icon:'☀',base:15,amt:0.6,desc:'Harvests starlight. +energy.'},
+  {id:'magma',name:'Magma Tap',icon:'🌋',base:70,desc:'Cracks the crust to bleed heat to the surface.',unlock:()=>true},
+  {id:'atmo',name:'Atmosphere Processor',icon:'🌫',base:260,desc:'Outgasses CO₂ and nitrogen to thicken the sky.',unlock:s=>s.stats.heat>=12},
+  {id:'comet',name:'Comet Redirector',icon:'☄',base:900,desc:'Steers icy comets down to fill the basins.',unlock:s=>s.stats.atmo>=16},
+  {id:'algae',name:'Algae Vats',icon:'🦠',base:3000,desc:'Seeds the oceans with engineered microbes.',unlock:s=>s.stats.water>=22},
+  {id:'forest',name:'Forest Engine',icon:'🌲',base:9000,desc:'Spreads true forest across the continents.',unlock:s=>s.stats.bio>=28},
+  {id:'spire',name:'Genesis Spire',icon:'🗼',base:28000,desc:'A planetary engine nudging every system toward balance.',unlock:s=>tfProgress(s)>=55},
+];
+const UPGRADES=[
+  {id:'panels',name:'Reinforced Panels',icon:'⚡',cost:400,desc:'Solar Arrays ×2.',apply:m=>m.solar*=2,unlock:s=>s.b.solar>=5},
+  {id:'oclock',name:'Tap Overclock',icon:'✦',cost:1200,desc:'Energy per tap ×6.',apply:m=>m.click*=6,unlock:s=>s.totalClicks>=25},
+  {id:'drills',name:'Deep Drilling',icon:'🔻',cost:3200,desc:'Magma Taps ×2.5.',apply:m=>m.magma*=2.5,unlock:s=>s.b.magma>=5},
+  {id:'catalyst',name:'Atmo Catalyst',icon:'⚗',cost:8000,desc:'Atmosphere Processors ×2.5.',apply:m=>m.atmo*=2.5,unlock:s=>s.b.atmo>=5},
+  {id:'ferry',name:'Comet Swarm',icon:'❄',cost:16000,desc:'Comet Redirectors ×2.5.',apply:m=>m.comet*=2.5,unlock:s=>s.b.comet>=5},
+  {id:'bloom',name:'Engineered Bloom',icon:'🧬',cost:24000,desc:'All biome growth ×2.5.',apply:m=>{m.algae*=2.5;m.forest*=2.5;},unlock:s=>s.b.algae>=5},
+  {id:'fusion',name:'Fusion Cores',icon:'🔆',cost:40000,desc:'All energy ×3.',apply:m=>m.solar*=3,unlock:s=>tfProgress(s)>=50},
+];
+
+/* which terraform stat each structure / upgrade serves. Used to hide everything
+   for stats this world doesn't need, and to chain unlocks only through the stats
+   that actually matter for the chosen type (so e.g. an ice world goes straight to
+   atmosphere + water with no heat or biome buildings). */
+const STRUCT_STAT={magma:'heat',atmo:'atmo',comet:'water',algae:'bio',forest:'bio'};
+const UP_NEED={drills:'heat',catalyst:'atmo',ferry:'water',bloom:'bio'};
+function neededStats(){ const g=goalsFor(WORK.type); return ['heat','atmo','water','bio'].filter(k=>g[k]>0); }
+function relevantChain(){ const need=neededStats();
+  return STRUCTURES.filter(d=>STRUCT_STAT[d.id] && need.includes(STRUCT_STAT[d.id])).map(d=>d.id); }
+const CHAIN_THRESH=[0,12,16,22,28,34];
+function structUnlocked(d){
+  if(d.id==='solar') return true;                  // energy — always available
+  if(d.id==='spire') return tfProgress(WORK)>=60;  // endgame all-rounder
+  const chain=relevantChain(), pos=chain.indexOf(d.id);
+  if(pos<0) return false;                           // serves a stat this world doesn't need
+  if(pos===0) return true;
+  return WORK.stats[STRUCT_STAT[chain[pos-1]]] >= (CHAIN_THRESH[pos]||30);
+}
+function upgradeUnlocked(u){
+  if(UP_NEED[u.id] && !neededStats().includes(UP_NEED[u.id])) return false;
+  return u.unlock?u.unlock(WORK):true;
+}
+const LOG_EVENTS=[
+  {id:'start',test:()=>true,text:'A cold, airless rock drifts in orbit. <b>Begin.</b>'},
+  {id:'heat1',test:s=>s.stats.heat>=8,text:'The crust glows. Volcanism stirs across the surface.'},
+  {id:'atmo1',test:s=>s.stats.atmo>=8,text:'A thin haze of gas begins to cling to the planet.'},
+  {id:'water1',test:s=>s.stats.water>=8,text:'<b>First liquid water</b> pools in the deepest basins.'},
+  {id:'water2',test:s=>s.stats.water>=42,text:'Oceans spread blue across the lowlands.'},
+  {id:'bio1',test:s=>s.stats.bio>=8,text:'Microbial life blooms green in the shallow seas.'},
+  {id:'bio2',test:s=>s.stats.bio>=42,text:'Forests creep over the continents. Clouds gather.'},
+  {id:'eden',test:s=>tfIndex(s)>=99.5,text:'<b>The planet breathes.</b> Welcome to a living world.'},
+];
+function freshWork(type){ const start = storeLv('kick')>0 ? [50,250,1500][storeLv('kick')-1] : 0;
+  return {type:type||'livable',energy:start,totalEnergy:start,totalClicks:0,stats:{heat:0,atmo:0,water:0,bio:0},
+  b:{solar:0,magma:0,atmo:0,comet:0,algae:0,forest:0,spire:0},up:{},logs:{},done:false}; }
+function costOf(d,o){ return Math.ceil(d.base*Math.pow(1.15,o)*(1-0.08*storeLv('build'))); }
+function multipliers(){ const m={solar:1,magma:1,atmo:1,comet:1,algae:1,forest:1,click:1};
+  for(const u of UPGRADES){ if(WORK.up[u.id]) u.apply(m); } return m; }
+/* the system's star colours terraforming: hot blue stars pour out heat & energy but
+   fight water/ice; cool red stars are gentle and favour water. */
+function starMods(){ const t=((SYS&&SYS.star?SYS.star.temp:60)/100);   // 0 cool … 1 hot
+  return { heat:0.65+t*0.8, water:1.4-t*0.85, atmo:0.9+t*0.2, bio:1.1-Math.abs(t-0.5)*0.5, energy:0.8+t*0.55 }; }
+function starBlurb(){ const t=(SYS&&SYS.star?SYS.star.temp:60); const nm=SYS&&SYS.star?SYS.star.name:'the star';
+  if(t>=80) return `Under the blazing light of <b>${escapeHtml(nm)}</b>, heat and energy surge — but water is stubborn.`;
+  if(t>=55) return `<b>${escapeHtml(nm)}</b> shines warm and balanced over this world.`;
+  return `<b>${escapeHtml(nm)}</b> burns cool and red — water comes easily, heat is a struggle.`; }
+function energyPerSec(){ const m=multipliers(); return (WORK.b.solar*0.6*m.solar + WORK.b.spire*2*m.solar + storeLv('auto')*2) * starMods().energy; }
+function clickPower(){ return Math.pow(2,storeLv('tap')) * multipliers().click; }
+function totalPlanets(){ let n=0; if(CUR&&CUR.systems) for(const s of CUR.systems) n+=s.planets.length; return n; }
+/* terraforming gets slower the more worlds you've already finished — the first few are quick */
+function terraformSpeed(){ return Math.max(0.12, Math.pow(0.85, totalPlanets())); }
+function statRates(){ const m=multipliers(); const accel=(1+0.2*storeLv('accel'))*terraformSpeed(); const sm=starMods(); const r={heat:0,atmo:0,water:0,bio:0};
+  r.heat+=WORK.b.magma*0.09*m.magma; r.atmo+=WORK.b.atmo*0.08*m.atmo; r.water+=WORK.b.comet*0.07*m.comet;
+  r.bio+=WORK.b.algae*0.06*m.algae+WORK.b.forest*0.18*m.forest;
+  const sp=WORK.b.spire*0.06; r.heat+=sp;r.atmo+=sp;r.water+=sp;r.bio+=sp;
+  r.heat*=accel*sm.heat; r.atmo*=accel*sm.atmo; r.water*=accel*sm.water; r.bio*=accel*sm.bio; return r; }
+function tfIndex(s){ const st=s.stats; return (st.heat+st.atmo+st.water+st.bio)/4; }
+function tfProgress(w){ const g=goalsFor(w.type); let s=0,c=0;
+  for(const k of ['heat','atmo','water','bio']){ if(g[k]>0){ s+=Math.min(1,w.stats[k]/g[k]); c++; } }
+  return c? s/c*100 : 100; }
+const STAGE_NAMES=[[0,'Dead Rock'],[6,'Molten World'],[16,'Forming Skies'],[30,'First Seas'],[48,'Living Shores'],[66,'Green World'],[85,'Garden Planet'],[99.5,'Living World']];
+function stageName(idx){ let n='Dead Rock'; for(const[t,name]of STAGE_NAMES){if(idx>=t)n=name;} return n; }
+const MILE_LABEL={heat:'Heat',atmo:'Atmosphere',water:'Water',bio:'Biome'};
+function tStep(dt){ const eps=energyPerSec(),er=statRates();
+  WORK.energy+=eps*dt; WORK.totalEnergy+=eps*dt;
+  for(const k in er){ const before=WORK.stats[k]; WORK.stats[k]=Math.min(100,before+er[k]*dt);
+    for(const m of [25,50,75,100]){ if(before<m && WORK.stats[k]>=m && (goalsFor(WORK.type)[k]>0)) milestone(k,m); } }
+  checkLogs();
+  if(!WORK.done){ eventCooldown-=dt; if(eventCooldown<=0 && !activeEvent){ spawnEvent(); eventCooldown=20+Math.random()*22; } }
+  if(!WORK.done && tfProgress(WORK)>=99.5){ WORK.done=true; clearEvent(); onComplete(); } }
+function milestone(stat,pct){ if(!WORK.mile)WORK.mile={}; const key=stat+pct; if(WORK.mile[key])return; WORK.mile[key]=true;
+  const col={heat:[255,111,77],atmo:[143,217,255],water:[74,155,255],bio:[90,217,111]}[stat];
+  burst(col); addLog(`<b>${MILE_LABEL[stat]} ${pct}%</b> — ${pct>=100?'complete!':'milestone reached.'}`);
+  if(music) chime(music.master, [523.25,659.25,783.99,1046.5][[25,50,75,100].indexOf(pct)]); }
+function burst(col){ const layer=$('floaters'); const c=col?`rgb(${col[0]},${col[1]},${col[2]})`:'var(--energy)';
+  for(let i=0;i<12;i++){ const p=document.createElement('div'); p.className='burstp';
+    const ang=(i/12)*Math.PI*2, d=30+Math.random()*34;
+    p.style.cssText=`left:50%;top:46%;background:${c};--dx:${Math.cos(ang)*d}px;--dy:${Math.sin(ang)*d}px`;
+    layer.appendChild(p); setTimeout(()=>p.remove(),760); } }
+
+/* ---------- random events ---------- */
+let activeEvent=null, eventCooldown=14;
+function pickEvent(){ const need=neededStats(); const pool=[];
+  if(need.includes('water')) pool.push({em:'☄️',short:'A comet streaks past',label:'Comet — tap for water!',kind:'gift',stat:'water',amt:12});
+  if(need.includes('heat'))  pool.push({em:'🌋',short:'A fissure opens',label:'Eruption — tap for heat!',kind:'gift',stat:'heat',amt:12});
+  if(need.includes('atmo'))  pool.push({em:'🌫️',short:'A gas cloud drifts in',label:'Gas cloud — tap for air!',kind:'gift',stat:'atmo',amt:12});
+  if(need.includes('bio'))   pool.push({em:'🦠',short:'Spores blow in',label:'Spore bloom — tap for life!',kind:'gift',stat:'bio',amt:10});
+  pool.push({em:'☀️',short:'A solar flare erupts',label:'Solar flare — tap for energy!',kind:'energy'});
+  pool.push({em:'💥',short:'A meteor is inbound',label:'Meteor — tap to deflect!',kind:'threat'});
+  return pool[Math.floor(Math.random()*pool.length)]; }
+function spawnEvent(){ if(activeEvent||active!=='terraform'||!WORK||WORK.done) return;
+  const ev=pickEvent(); activeEvent=ev;
+  const b=document.createElement('button'); b.className='eventbtn'+(ev.kind==='threat'?' threat':'');
+  b.innerHTML=`<span class="ee">${ev.em}</span><span class="el">${ev.label}</span>`;
+  b.style.left=(14+Math.random()*52)+'%'; b.style.top=(10+Math.random()*32)+'%';
+  b.onclick=()=>resolveEvent(true); $('eventLayer').appendChild(b); ev.el=b;
+  addLog(`<b>${ev.em}</b> ${ev.short}${ev.kind==='threat'?' — tap to deflect!':'!'}`);
+  ev.timer=setTimeout(()=>resolveEvent(false), ev.kind==='threat'?5500:7000); }
+function clearEvent(){ if(activeEvent){ clearTimeout(activeEvent.timer); if(activeEvent.el)activeEvent.el.remove(); activeEvent=null; } }
+function resolveEvent(clicked){ const ev=activeEvent; if(!ev||!WORK) return; activeEvent=null; clearTimeout(ev.timer); if(ev.el)ev.el.remove();
+  if(clicked){
+    if(ev.kind==='gift'){ WORK.stats[ev.stat]=Math.min(100,WORK.stats[ev.stat]+ev.amt); addLog(`Caught it — <b>+${ev.amt} ${ev.stat}</b>!`); spawnFloater('+'+ev.amt+' '+ev.stat); }
+    else if(ev.kind==='energy'){ const g=Math.max(60,Math.round(energyPerSec()*30+clickPower()*15)); WORK.energy+=g; WORK.totalEnergy+=g; addLog(`Flare harvested — <b>+${fmt(g)} energy</b>!`); spawnFloater('+'+fmt(g)); }
+    else { const g=Math.max(40,Math.round(energyPerSec()*12)); WORK.energy+=g; WORK.totalEnergy+=g; addLog(`Meteor deflected! <b>+${fmt(g)} energy</b>.`); spawnFloater('deflected!'); }
+  } else if(ev.kind==='threat'){ const need=neededStats(); const k=need[Math.floor(Math.random()*need.length)]||'heat';
+    WORK.stats[k]=Math.max(0,WORK.stats[k]-6); addLog(`<b>Meteor impact!</b> −6 ${k}.`); spawnFloater('−6 '+k);
+  } else addLog(`The ${ev.kind==='energy'?'flare':'moment'} faded.`); }
+function checkLogs(){ for(const ev of LOG_EVENTS){ if(!WORK.logs[ev.id]&&ev.test(WORK)){ WORK.logs[ev.id]=true; addLog(ev.text); } } }
+function addLog(html){ const f=$('logFeed'); const p=document.createElement('p'); p.innerHTML=html; f.appendChild(p);
+  while(f.children.length>40) f.removeChild(f.firstChild);
+  const box=f.parentElement; box.scrollTop=box.scrollHeight; }   // newest at bottom, keep it in view
+
+/* terraform UI build */
+const itemEls={};
+function buildShop(){ const shop=$('shop'); shop.innerHTML='';
+  for(const d of STRUCTURES){ const b=document.createElement('button'); b.className='item'; b.id='it_'+d.id;
+    b.innerHTML=`<div class="ic">${d.icon}</div><div><div class="nm">${d.name} <span class="cnt" id="cnt_${d.id}">0</span></div><div class="ds">${d.desc}</div></div><div class="px"><div class="cost" id="cost_${d.id}">${fmt(d.base)}</div><div class="pl">energy</div></div>`;
+    b.onclick=()=>buy(d); shop.appendChild(b); itemEls[d.id]=b; }
+  const ups=$('upgrades'); ups.innerHTML='';
+  for(const u of UPGRADES){ const b=document.createElement('button'); b.className='item up'; b.id='up_'+u.id;
+    b.innerHTML=`<div class="ic">${u.icon}</div><div><div class="nm">${u.name}</div><div class="ds">${u.desc}</div></div><div class="px"><div class="cost" id="upc_${u.id}">${fmt(u.cost)}</div><div class="pl">energy</div></div>`;
+    b.onclick=()=>buyUp(u); ups.appendChild(b); itemEls['up_'+u.id]=b; } }
+function buy(d){ const c=costOf(d,WORK.b[d.id]); if(WORK.energy<c)return; WORK.energy-=c; WORK.b[d.id]++; checkLogs(); }
+function buyUp(u){ if(WORK.up[u.id]||WORK.energy<u.cost)return; WORK.energy-=u.cost; WORK.up[u.id]=true; }
+function renderTerra(){ const idx=tfProgress(WORK); const g=goalsFor(WORK.type);
+  $('energy').textContent=fmt(WORK.energy); $('eps').textContent=fmt(energyPerSec()); $('perclick').textContent=fmt(clickPower());
+  $('tfPct').textContent=idx.toFixed(1); $('tfBar').style.width=idx+'%';
+  $('stageName').textContent='Building: '+typeDef(WORK.type).name+' world';
+  const st=WORK.stats; $('vHeat').textContent=fmtStat(st.heat);$('bHeat').style.width=st.heat+'%';
+  $('vAtmo').textContent=fmtStat(st.atmo);$('bAtmo').style.width=st.atmo+'%';
+  $('vWater').textContent=fmtStat(st.water);$('bWater').style.width=st.water+'%';
+  $('vBio').textContent=fmtStat(st.bio);$('bBio').style.width=st.bio+'%';
+  setGoalUI('heat',st.heat,g.heat); setGoalUI('atmo',st.atmo,g.atmo);
+  setGoalUI('water',st.water,g.water); setGoalUI('bio',st.bio,g.bio);
+  // hide stat tiles this world doesn't need, and size the grid to what remains
+  let shownStats=0;
+  for(const k of ['heat','atmo','water','bio']){ const tile=$('st_'+k); if(tile){ const need=g[k]>0; tile.style.display=need?'':'none'; if(need)shownStats++; } }
+  $('stat4').style.gridTemplateColumns='repeat('+Math.max(1,shownStats)+',1fr)';
+  if(WORK.totalClicks>0){ $('clickhint').style.opacity=WORK.totalClicks>6?'0':'0.7'; }
+  for(const d of STRUCTURES){ const el=itemEls[d.id]; const un=structUnlocked(d);
+    if(!un){el.style.display='none';continue;} el.style.display=''; const c=costOf(d,WORK.b[d.id]);
+    $('cnt_'+d.id).textContent=WORK.b[d.id]; const ce=$('cost_'+d.id); ce.textContent=fmt(c);
+    const can=WORK.energy>=c; ce.classList.toggle('cant',!can); el.disabled=!can; }
+  for(const u of UPGRADES){ const el=itemEls['up_'+u.id];
+    if(WORK.up[u.id]){el.style.display='';el.classList.add('bought');el.disabled=true;$('upc_'+u.id).textContent='Owned';continue;}
+    const un=upgradeUnlocked(u); if(!un){el.style.display='none';continue;} el.style.display='';
+    const can=WORK.energy>=u.cost; $('upc_'+u.id).classList.toggle('cant',!can); el.disabled=!can; }
+}
+function setGoalUI(id,cur,goal){ const el=$('g_'+id); if(!el)return;
+  if(!goal){ el.textContent='not needed'; el.classList.remove('met'); el.classList.add('skip'); return; }
+  el.classList.remove('skip'); const met=cur>=goal-0.5;
+  el.textContent=met?('✓ '+goal):('goal '+goal); el.classList.toggle('met',met); }
+
+/* terraform planet render loop */
+const pcv=$('planet'), pctx2=pcv.getContext('2d'), PSIZE=pcv.width, PR=Math.floor(PSIZE*0.40), PCX=PSIZE/2, PCY=PSIZE/2;
+const pStars=document.createElement('canvas'); pStars.width=PSIZE; pStars.height=PSIZE;
+paintStars(pStars.getContext('2d'),PSIZE,PSIZE,[{x:PCX,y:PCY,r:PR+8}]);
+const pBuf=document.createElement('canvas'); pBuf.width=2*PR; pBuf.height=2*PR;
+const pBctx=pBuf.getContext('2d'); const pImg=pBctx.createImageData(2*PR,2*PR);
+let pSpin=0;
+function drawTerraPlanet(dt){ pSpin+=dt*0.06;
+  renderSphere(pImg.data,PR,{spin:pSpin,stats:WORK.stats}); pBctx.putImageData(pImg,0,0);
+  pctx2.clearRect(0,0,PSIZE,PSIZE); pctx2.drawImage(pStars,0,0);
+  const aw=WORK.stats.atmo/100,bw=WORK.stats.bio/100;
+  const haloR=PR*1.32; const g=pctx2.createRadialGradient(PCX,PCY,PR*0.92,PCX,PCY,haloR);
+  const a=0.05+aw*0.42, hr=Math.round(mix(90,120,bw)),hg=Math.round(mix(150,200,1));
+  g.addColorStop(0,`rgba(${hr},${hg},255,${a})`); g.addColorStop(0.5,`rgba(${hr},${hg},255,${a*0.4})`); g.addColorStop(1,'rgba(80,140,220,0)');
+  pctx2.fillStyle=g; pctx2.beginPath(); pctx2.arc(PCX,PCY,haloR,0,Math.PI*2); pctx2.fill();
+  pctx2.drawImage(pBuf,PCX-PR,PCY-PR);
+}
+function startTerra(){ stopTerra(); buildShop();
+  clearEvent(); $('eventLayer').innerHTML=''; eventCooldown=14+Math.random()*10;
+  $('logFeed').innerHTML=''; for(const ev of LOG_EVENTS){ if(WORK.logs[ev.id]) addLog(ev.text); } checkLogs(); renderTerra();
+  let lastSim=performance.now();
+  terraSim=setInterval(()=>{ const now=performance.now(); let dt=(now-lastSim)/1000; lastSim=now; if(dt>0.25)dt=0.25; tStep(dt); renderTerra(); },100);
+  let lastF=performance.now();
+  function df(){ const now=performance.now(); let dt=(now-lastF)/1000; lastF=now; if(dt>0.1)dt=0.1; drawTerraPlanet(dt); terraRAF=requestAnimationFrame(df); } terraRAF=requestAnimationFrame(df);
+}
+function stopTerra(){ if(terraRAF){cancelAnimationFrame(terraRAF);terraRAF=null;} if(terraSim){clearInterval(terraSim);terraSim=null;} clearEvent(); }
+
+/* clicks */
+function spawnFloater(text){ const f=document.createElement('div'); f.className='floater'; f.textContent=text;
+  f.style.left=(40+Math.random()*40)+'%'; f.style.top=(38+Math.random()*24)+'%'; $('floaters').appendChild(f); setTimeout(()=>f.remove(),900); }
+function tapPlanet(){ if(active!=='terraform'||!WORK)return;
+  const g=clickPower(); WORK.energy+=g; WORK.totalEnergy+=g; WORK.totalClicks++; spawnFloater('+'+fmt(g)); }
+pcv.addEventListener('pointerdown',e=>{ if(active!=='terraform')return; e.preventDefault(); tapPlanet(); });
+// keyboard accessibility: focus the planet and tap with Space / Enter
+pcv.tabIndex=0; pcv.setAttribute('role','button');
+pcv.addEventListener('keydown',e=>{ if(e.key===' '||e.key==='Enter'||e.key==='Spacebar'){ e.preventDefault(); tapPlanet(); } });
+
+let chosenType='livable', chooseMode='planet', moonTarget=null;
+function speedNote(){ const n=totalPlanets(); const pct=Math.round(terraformSpeed()*100);
+  return `<div style="font-size:11px;color:var(--ink-faint);margin-top:5px">World #${n+1} · terraforms at ${pct}% speed${n>0?' — each world you finish slows the next':' — your fastest yet'}</div>`; }
+function setChooseGoals(id){ $('chooseGoals').innerHTML=goalSummary(id)+(chooseMode==='planet'?speedNote():''); }
+function openTypeChoose(){ chooseMode='planet'; chosenType='livable';
+  $('typeChooseTitle').textContent='Choose a world to build';
+  buildTypeBtns('chooseTypes', chosenType, id=>{ chosenType=id; setChooseGoals(id); });
+  setChooseGoals(chosenType); $('typeModal').classList.add('on'); }
+function openMoonChoose(){ chooseMode='moon'; chosenType='m_rock';
+  $('typeChooseTitle').textContent='Choose a moon to terraform';
+  buildTypeBtns('chooseTypes', chosenType, id=>{ chosenType=id; setChooseGoals(id); }, MOON_TYPES());
+  setChooseGoals(chosenType); $('typeModal').classList.add('on'); }
+$('newPlanetBtn').onclick=openTypeChoose;
+$('typeCancel').onclick=()=>$('typeModal').classList.remove('on');
+$('typeBegin').onclick=()=>{ $('typeModal').classList.remove('on'); WORK=freshWork(chosenType);
+  if(chooseMode==='moon'){ WORK.isMoon=true; WORK.moonParent=moonTarget; } show('terraform'); };
+$('abandonBtn').onclick=()=>{ if(WORK && !WORK.done && tfProgress(WORK)>2){ if(!confirm('Leave this planet unfinished? Progress on it will be lost.')) return; } show('system'); };
+
+/* ---- completion ---- */
+function completionStats(){ if(WORK.type==='livable') return Object.assign({},WORK.stats);
+  // blend the type's canonical look (dominant) with how you actually played, so two
+  // worlds of the same type still come out a little different.
+  const preset=typeDef(WORK.type).preset, out={};
+  for(const k of ['heat','atmo','water','bio']) out[k]=Math.round(Math.max(0,Math.min(100, preset[k]*0.7 + WORK.stats[k]*0.3)));
+  return out; }
+function onComplete(){ stopTerra();
+  // reward scales with both how demanding the goals are and how many stats you had to raise
+  const g=goalsFor(WORK.type); const keys=['heat','atmo','water','bio'].filter(k=>g[k]>0);
+  const sum=keys.reduce((a,k)=>a+g[k],0);
+  const reward=Math.max(3,Math.round(sum/28 + keys.length*2));
+  WORK._reward=reward; earnDust(reward); flushDust(true); scheduleSave();
+  drawCompletePreview();
+  $('completeName').value='';
+  $('completeReward').textContent='+'+reward+' ✦ stardust earned';
+  document.querySelector('#completeModal h3').textContent = WORK.isMoon?'Moon complete':'World complete';
+  $('completeModal').classList.add('on'); setTimeout(()=>$('completeName').focus(),200); }
+function drawCompletePreview(){ const cv=$('completePreview'); const ctx=cv.getContext('2d'); ctx.clearRect(0,0,160,160);
+  paintStars(ctx,160,160,[{x:80,y:80,r:55}]); const td=typeDef(WORK.type);
+  drawSphereOnto(ctx,80,80,52,{spin:1.2,stats:completionStats(),isGas:td.gas}); }
+$('completeSave').onclick=async()=>{
+  const td=typeDef(WORK.type);
+  if(WORK.isMoon){
+    const moon={ name:$('completeName').value.trim()||td.name, type:WORK.type, stats:completionStats(), tint:'none' };
+    moonList(WORK.moonParent).push(moon); checkAchievements(); checkMissions(); await dbSave();
+    $('completeModal').classList.remove('on'); WORK=null; moonTarget=null;
+    openSystem(); renderPlanetStrip(); return;
+  }
+  const name=$('completeName').value.trim()||(td.name+' World');
+  const planet={ name, type:WORK.type, stats:completionStats(), heatOverride:null,
+    size: td.gas?GAS_MIN:38, tint:'none', moons:[], pop: WORK.type==='livable'?0:undefined };
+  SYS.planets.push(planet); clampSystem(SYS); checkAchievements(); checkMissions(); await dbSave();
+  $('completeModal').classList.remove('on'); WORK=null;
+  openSystem(); renderPlanetStrip();
+  openEditPlanet(SYS.planets.length-1);
+};
+
+/* ============================================================
+   SIZE CONSTRAINTS
+   ============================================================ */
+function maxPlanetSize(sys){ let m=0; for(const p of sys.planets) m=Math.max(m,p.size); return m; }
+function clampSystem(sys){
+  // gas planets pushed to extra-large
+  for(const p of sys.planets){ if(typeDef(p.type).gas && p.size<GAS_MIN) p.size=GAS_MIN; }
+  // star must be larger than every planet
+  const mp=maxPlanetSize(sys); if(sys.star.size < mp+STAR_GAP) sys.star.size=Math.min(95, mp+STAR_GAP);
+  // planets must stay below star
+  for(const p of sys.planets){ const cap=sys.star.size-STAR_GAP; if(p.size>cap) p.size=Math.max(14,cap); }
+}
+
+/* ============================================================
+   EDIT STAR
+   ============================================================ */
+let starPrevSpin=0, starPrevRAF=null;
+function openEditStar(){ const s=SYS.star;
+  $('editStarName').value=s.name; $('starTemp').value=s.temp; $('starSize').value=s.size;
+  buildSwatches('starSwatches', s.tint, id=>{ s.tint=id; refreshStar(); });
+  refreshStar(); $('editStarModal').classList.add('on');
+  starPrevSpin=0; if(starPrevRAF)cancelAnimationFrame(starPrevRAF);
+  (function loop(){ starPrevSpin+=0.01; drawEditStarPreview(); starPrevRAF=requestAnimationFrame(loop); })();
+}
+function refreshStar(){ const s=SYS.star;
+  s.temp=+$('starTemp').value; const minS=maxPlanetSize(SYS)+STAR_GAP;
+  $('starSize').min=Math.max(40,Math.round(minS));
+  if(+$('starSize').value<minS){ $('starSize').value=Math.round(minS); }
+  s.size=+$('starSize').value; clampSystem(SYS);
+  $('starTempLab').textContent=s.temp<25?'cool red':s.temp<50?'orange':s.temp<70?'yellow':s.temp<88?'white':'blue-hot';
+  $('starSizeLab').textContent=Math.round(s.size);
+  $('starSizeHint').textContent = SYS.planets.length? 'A star can’t be smaller than its planets — minimum is set by your largest world.' : 'Make planets and the star will always stay the largest body.';
+  scheduleSave();
+}
+$('starTemp').oninput=refreshStar; $('starSize').oninput=refreshStar;
+$('editStarName').oninput=()=>{ SYS.star.name=$('editStarName').value.trim()||'Star'; $('sysTitle').textContent=SYS.star.name+' System'; scheduleSave(); };
+function drawEditStarPreview(){ const ctx=$('editStarPreview').getContext('2d'); ctx.clearRect(0,0,160,160);
+  paintStars(ctx,160,160,[{x:80,y:80,r:60}]);
+  drawSphereOnto(ctx,80,80,Math.min(56,SYS.star.size*0.6),{isStar:true,spin:starPrevSpin,temp:SYS.star.temp,tint:tintCol(SYS.star.tint)}); }
+$('editStarClose').onclick=async()=>{ if(starPrevRAF)cancelAnimationFrame(starPrevRAF); $('editStarModal').classList.remove('on'); await dbSave(); };
+$('editStarBtn').onclick=openEditStar;
+
+/* ============================================================
+   EDIT PLANET
+   ============================================================ */
+let editIdx=-1, planetPrevSpin=0, planetPrevRAF=null;
+function openEditPlanet(i){ editIdx=i; const p=SYS.planets[i];
+  if(p.heatOverride==null) p.heatOverride=planetStats(p).heat;
+  $('editPlanetName').value=p.name;
+  $('editPlanetType').textContent=typeDef(p.type).name+(typeDef(p.type).gas?' giant':' world');
+  $('planetHeat').value=p.heatOverride; $('planetSize').value=p.size;
+  buildSwatches('planetSwatches', p.tint, id=>{ p.tint=id; refreshPlanet(); });
+  refreshPlanet(); renderCosmetics(); $('editPlanetModal').classList.add('on');
+  planetPrevSpin=0; if(planetPrevRAF)cancelAnimationFrame(planetPrevRAF);
+  (function loop(){ planetPrevSpin+=0.012; drawEditPlanetPreview(); planetPrevRAF=requestAnimationFrame(loop); })();
+}
+function refreshPlanet(){ const p=SYS.planets[editIdx];
+  p.heatOverride=+$('planetHeat').value;
+  if(p.type==='livable') p.stats.heat=p.heatOverride;
+  // size clamp: below star, gas extra-large
+  const cap=SYS.star.size-STAR_GAP;
+  const td=typeDef(p.type);
+  let smin=td.gas?GAS_MIN:14; $('planetSize').min=smin;
+  let sval=+$('planetSize').value; if(sval<smin)sval=smin;
+  p.size=sval; clampSystem(SYS);
+  // if gas forced star bigger, cap may have risen; reflect final size
+  $('planetSize').value=p.size;
+  $('planetHeatLab').textContent=Math.round(p.heatOverride);
+  $('planetSizeLab').textContent=Math.round(p.size);
+  $('planetSizeHint').textContent = td.gas
+    ? 'Gas giants are extra large — your star grows to stay bigger than them.'
+    : 'A planet can’t grow larger than its star.';
+  $('editPlanetName').value!==undefined && (p.name=$('editPlanetName').value.trim()||p.name);
+  updateEditRating(p); scheduleSave();
+}
+function updateEditRating(p){ const el=$('planetRating'); if(!el)return; const rt=worldRating(p);
+  const gc={S:'#ffd26e',A:'#5ad96f',B:'#46e1d2',C:'#8090ad',D:'#8090ad'}[rt.grade];
+  const pop = p.type==='livable' ? ` · <span style="color:var(--bio)">Population ${Math.round(p.pop||0)}%</span>` : '';
+  el.innerHTML=`<span style="color:${gc}">Rating ${rt.grade} (${rt.overall})</span> <span style="color:var(--ink-faint)">— Habitability ${rt.hab} · Beauty ${rt.beauty} · Rarity ${rt.rarity}</span>${pop}`; }
+$('planetHeat').oninput=refreshPlanet; $('planetSize').oninput=refreshPlanet;
+$('editPlanetName').oninput=()=>{ SYS.planets[editIdx].name=$('editPlanetName').value.trim()||'World'; scheduleSave(); };
+function drawEditPlanetPreview(){ const p=SYS.planets[editIdx]; const ctx=$('editPlanetPreview').getContext('2d'); ctx.clearRect(0,0,160,160);
+  paintStars(ctx,160,160,[{x:80,y:80,r:58}]);
+  const td=typeDef(p.type), R=50, t=planetPrevSpin*4;
+  if(p.rings) drawRing(ctx,80,80,R,'back');
+  drawMoons(ctx,80,80,R,p,t,'back');
+  drawSphereOnto(ctx,80,80,R,{spin:planetPrevSpin,stats:planetStats(p),isGas:td.gas,tint:tintCol(p.tint)}); // body uncached for smooth spin
+  drawMoons(ctx,80,80,R,p,t,'front');
+  if(p.rings) drawRing(ctx,80,80,R,'front'); }
+$('editPlanetClose').onclick=async()=>{ if(planetPrevRAF)cancelAnimationFrame(planetPrevRAF);
+  $('editPlanetModal').classList.remove('on'); await dbSave(); renderPlanetStrip(); };
+$('deletePlanet').onclick=async()=>{ if(!confirm('Delete this world?'))return; if(planetPrevRAF)cancelAnimationFrame(planetPrevRAF);
+  SYS.planets.splice(editIdx,1); clampSystem(SYS); await dbSave();
+  $('editPlanetModal').classList.remove('on'); renderPlanetStrip(); };
+
+/* ---- adornments: moons (terraformed + customizable) and ring (stardust) ---- */
+function renderCosmetics(){ const p=SYS.planets[editIdx]; const wrap=$('cosmetics'); if(!wrap)return; wrap.innerHTML='';
+  const dust=dustBalance(); const moons=moonList(p);
+  // existing moons — click to customize
+  moons.forEach((mn,i)=>{ const b=document.createElement('button'); b.className='cosmetic owned';
+    b.innerHTML=`<span class="cn">${typeDef(mn.type).em} ${escapeHtml(mn.name)}</span><span class="cc">customize ✎</span>`;
+    b.onclick=()=>openMoonEdit(p,i); wrap.appendChild(b); });
+  // add a moon (you terraform it)
+  if(moons.length<MOON_MAX){ const mb=document.createElement('button'); mb.className='cosmetic';
+    mb.innerHTML=`<span class="cn">🌙 Add a moon</span><span class="cc">terraform it →</span>`;
+    mb.onclick=()=>startMoonTerraform(p); wrap.appendChild(mb); }
+  // ring (stardust cosmetic)
+  const rb=document.createElement('button'); rb.className='cosmetic'+(p.rings?' owned':'');
+  if(p.rings){ rb.disabled=true; rb.innerHTML=`<span class="cn">💫 Ring</span><span class="cc">Owned ✓</span>`; }
+  else { rb.disabled=dust<RING_PRICE; rb.innerHTML=`<span class="cn">💫 Add ring</span><span class="cc">✦ ${RING_PRICE}</span>`;
+    rb.onclick=async()=>{ if(dustBalance()<RING_PRICE)return; const ok=await walletBuy('gen_ring'); if(!ok)return;
+      if(window.GameCenter&&GameCenter.use) GameCenter.use('gen_ring').then(r=>{ if(r&&r.ok){ WALLET=r.data; updateDustUI(); } });
+      p.rings=true; afterCosmetic(); }; }
+  wrap.appendChild(rb);
+}
+function afterCosmetic(){ updateDustUI(); scheduleSave(); renderCosmetics(); if(editIdx>=0&&SYS.planets[editIdx])updateEditRating(SYS.planets[editIdx]); }
+/* leave the planet editor and start terraforming a new moon for this planet */
+function startMoonTerraform(planet){ if(planetPrevRAF)cancelAnimationFrame(planetPrevRAF);
+  $('editPlanetModal').classList.remove('on'); moonTarget=planet; openMoonChoose(); }
+
+/* ---- moon editor ---- */
+let moonEditCtx=null, moonPrevSpin=0, moonPrevRAF=null;
+function openMoonEdit(planet, idx){ moonEditCtx={planet,idx}; const mn=moonList(planet)[idx];
+  $('moonName').value=mn.name;
+  $('moonEditType').textContent=typeDef(mn.type).name;
+  buildSwatches('moonSwatches', mn.tint, id=>{ mn.tint=id; scheduleSave(); });
+  $('moonEditModal').classList.add('on');
+  moonPrevSpin=0; if(moonPrevRAF)cancelAnimationFrame(moonPrevRAF);
+  (function loop(){ moonPrevSpin+=0.02; drawMoonPreview(); moonPrevRAF=requestAnimationFrame(loop); })();
+}
+function drawMoonPreview(){ if(!moonEditCtx)return; const mn=moonList(moonEditCtx.planet)[moonEditCtx.idx]; if(!mn)return;
+  const ctx=$('moonPreview').getContext('2d'); ctx.clearRect(0,0,160,160); paintStars(ctx,160,160,[{x:80,y:80,r:52}]);
+  drawSphereOnto(ctx,80,80,46,{spin:moonPrevSpin,stats:moonStats(mn),tint:tintCol(mn.tint)}); }
+$('moonName').oninput=()=>{ if(!moonEditCtx)return; moonList(moonEditCtx.planet)[moonEditCtx.idx].name=$('moonName').value.trim()||'Moon'; scheduleSave(); };
+$('moonEditClose').onclick=async()=>{ if(moonPrevRAF)cancelAnimationFrame(moonPrevRAF); $('moonEditModal').classList.remove('on'); await dbSave();
+  if(editIdx>=0 && $('editPlanetModal').classList.contains('on')) renderCosmetics(); };
+$('moonDelete').onclick=async()=>{ if(!moonEditCtx)return; if(!confirm('Remove this moon?'))return;
+  moonList(moonEditCtx.planet).splice(moonEditCtx.idx,1); if(moonPrevRAF)cancelAnimationFrame(moonPrevRAF);
+  $('moonEditModal').classList.remove('on'); await dbSave(); if($('editPlanetModal').classList.contains('on')) renderCosmetics(); };
+
+function buildTypeBtns(containerId, sel, cb, pool){ const wrap=$(containerId); wrap.innerHTML='';
+  for(const t of (pool||PLANET_TYPES())){ const b=document.createElement('div'); b.className='typebtn'+(t.id===sel?' sel':'');
+    b.innerHTML=`<span class="em">${t.em}</span><span class="tn">${t.name}</span>`;
+    b.onclick=()=>{ for(const c of wrap.children)c.classList.remove('sel'); b.classList.add('sel'); cb(t.id); }; wrap.appendChild(b); } }
+function buildSwatches(id, sel, cb){ const wrap=$(id); wrap.innerHTML='';
+  for(const t of TINTS){ const s=document.createElement('div'); s.className='sw'+(t.id===sel?' sel':'');
+    s.style.background=t.css; if(t.id==='none')s.style.background='conic-gradient(#888,#ccc,#888)';
+    s.title=t.id; s.onclick=()=>{ for(const c of wrap.children)c.classList.remove('sel'); s.classList.add('sel'); cb(t.id); }; wrap.appendChild(s); } }
+
+
+/* ============================================================
+   STARDUST STORE
+   ============================================================ */
+function updateDustUI(){ const d=dustBalance();
+  const a=$('dustHome'); if(a)a.textContent=d; const b=$('storeDust'); if(b)b.textContent=d; }
+// Upgrades/star-spaces are bought in the shared hub Store overlay (one wallet, tab per game).
+function openGenesisStore(){ if(window.GameCenter&&GameCenter.openStore) GameCenter.openStore('genesis'); }
+const _storeCloseBtn=$('storeClose'); if(_storeCloseBtn)_storeCloseBtn.onclick=()=>$('storeModal').classList.remove('on');
+$('storeBtnHome').onclick=openGenesisStore;
+$('storeBtnSys').onclick=openGenesisStore;
+
+/* ============================================================
+   ACHIEVEMENTS  (one-time stardust rewards)
+   ============================================================ */
+const ACHIEVEMENTS=[
+  {id:'first',   ic:'🌍', name:'Genesis',            desc:'Terraform your first world',        reward:5,  test:s=>s.planets>=1},
+  {id:'livable', ic:'🌎', name:'Gardener',           desc:'Complete a Livable world',          reward:12, test:s=>s.types.has('livable')},
+  {id:'ocean',   ic:'🌊', name:'Waterworld',         desc:'Complete an Ocean world',           reward:8,  test:s=>s.types.has('ocean')},
+  {id:'ice',     ic:'❄️', name:'Deep Freeze',        desc:'Complete an Ice world',             reward:8,  test:s=>s.types.has('ice')},
+  {id:'desert',  ic:'🏜️', name:'Dunelord',          desc:'Complete a Desert world',           reward:8,  test:s=>s.types.has('desert')},
+  {id:'lava',    ic:'🌋', name:'Forgemaster',        desc:'Complete a Lava world',             reward:8,  test:s=>s.types.has('heat')},
+  {id:'gas',     ic:'🪐', name:'Giant',              desc:'Complete a Gas world',              reward:8,  test:s=>s.types.has('gas')},
+  {id:'moon1',   ic:'🌙', name:'Moonwright',         desc:'Terraform your first moon',         reward:8,  test:s=>s.moons>=1},
+  {id:'moon5',   ic:'🌛', name:'Moon Collector',     desc:'Terraform 5 moons',                 reward:15, test:s=>s.moons>=5},
+  {id:'sys2',    ic:'✨', name:'Twin Stars',         desc:'Own 2 solar systems',               reward:10, test:s=>s.systems>=2},
+  {id:'full5',   ic:'🌌', name:'Crowded Sky',        desc:'Have 5 worlds in one system',       reward:15, test:s=>s.maxInSys>=5},
+  {id:'all',     ic:'👑', name:'Master Terraformer', desc:'Complete all 7 planet types',       reward:35, test:s=>['livable','ocean','desert','ice','heat','barren','gas'].every(t=>s.types.has(t))},
+];
+function profileScan(){ const sys=(CUR&&CUR.systems)||[]; let planets=0,moons=0,maxInSys=0,rings=0; const types=new Set();
+  for(const s of sys){ maxInSys=Math.max(maxInSys,s.planets.length);
+    for(const p of s.planets){ planets++; types.add(p.type); moons+=moonList(p).length; if(p.rings)rings++; } }
+  return {systems:sys.length, planets, moons, maxInSys, rings, types}; }
+function checkAchievements(){ if(!CUR) return; ensureMeta(CUR); const scan=profileScan(); let earned=0; const got=[];
+  for(const a of ACHIEVEMENTS){ if(!CUR.achievements[a.id] && a.test(scan)){ CUR.achievements[a.id]=true; earned+=a.reward; got.push(a); } }
+  if(earned>0){ earnDust(earned); flushDust(true); scheduleSave();
+    got.forEach((a,i)=>setTimeout(()=>toastAchievement(a), i*450)); if(music) chime(music.master,1046.5); }
+}
+function toast(icon,title,sub){ const t=document.createElement('div'); t.className='toast';
+  t.innerHTML=`<span class="ti">${icon}</span><div><div class="tn">${title}</div><div class="td">${sub}</div></div>`;
+  $('toastLayer').appendChild(t); setTimeout(()=>{ t.classList.add('out'); setTimeout(()=>t.remove(),520); }, 4400); }
+function toastAchievement(a){ toast('🏆', a.name, `${a.desc} · +${a.reward} ✦`); }
+function openAchievements(){ renderAchievements(); $('awardsModal').classList.add('on'); }
+function renderAchievements(){ const scan=profileScan(); const list=$('awardsList'); list.innerHTML='';
+  const done=ACHIEVEMENTS.filter(a=>CUR.achievements[a.id]).length;
+  $('awardsDust').textContent=dustBalance(); $('awardsCount').textContent=done+' / '+ACHIEVEMENTS.length;
+  for(const a of ACHIEVEMENTS){ const unlocked=!!CUR.achievements[a.id];
+    const row=document.createElement('div'); row.className='ach '+(unlocked?'done':'locked');
+    row.innerHTML=`<div class="ai">${unlocked?a.ic:'🔒'}</div>
+      <div><div class="an">${a.name}</div><div class="ad">${a.desc}</div></div>
+      <div class="ar">${unlocked?'✓ +'+a.reward:'+'+a.reward+' ✦'}</div>`;
+    list.appendChild(row); }
+}
+$('awardsBtn').onclick=openAchievements;
+$('awardsClose').onclick=()=>$('awardsModal').classList.remove('on');
+
+/* ============================================================
+   MISSIONS  (rotating contracts — refresh as you complete them)
+   ============================================================ */
+const MTYPES={
+  planets:{test:(s,t)=>s.planets>=t,  label:t=>`Terraform worlds until you have ${t}`},
+  moons:  {test:(s,t)=>s.moons>=t,    label:t=>`Terraform moons until you have ${t}`},
+  rings:  {test:(s,t)=>s.rings>=t,    label:t=>`Give ${t} of your worlds a ring`},
+  systems:{test:(s,t)=>s.systems>=t,  label:t=>`Own ${t} solar systems`},
+  type:   {test:(s,t)=>s.types.has(t),label:t=>`Complete a ${typeDef(t).name} world`},
+};
+function genMission(scan){
+  const rolls=[
+    ()=>({mtype:'planets', target:scan.planets+2, reward:12}),
+    ()=>({mtype:'moons',   target:scan.moons+1,   reward:10}),
+    ()=>({mtype:'rings',   target:scan.rings+1,   reward:10}),
+    ()=>({mtype:'systems', target:Math.max(2,scan.systems+1), reward:18}),
+    ()=>{ const missing=['ocean','ice','desert','heat','gas','livable','barren'].filter(x=>!scan.types.has(x));
+          return missing.length?{mtype:'type', target:missing[Math.floor(Math.random()*missing.length)], reward:14}:null; },
+  ];
+  for(let i=0;i<12;i++){ const m=rolls[Math.floor(Math.random()*rolls.length)](); if(!m) continue;
+    if(!MTYPES[m.mtype].test(scan,m.target)){ m.desc=MTYPES[m.mtype].label(m.target); return m; } }
+  return {mtype:'planets', target:scan.planets+3, reward:12, desc:`Terraform worlds until you have ${scan.planets+3}`}; }
+function ensureMissions(){ if(!CUR) return; if(!Array.isArray(CUR.missions)) CUR.missions=[];
+  const scan=profileScan(); let guard=0;
+  while(CUR.missions.length<3 && guard++<24){ const m=genMission(scan);
+    if(!CUR.missions.some(x=>x.mtype===m.mtype && x.target===m.target)) CUR.missions.push(m); } }
+function checkMissions(){ if(!CUR) return; ensureMissions(); const scan=profileScan(); let earned=0; const done=[];
+  CUR.missions=CUR.missions.filter(m=>{ if(MTYPES[m.mtype].test(scan,m.target)){ earned+=m.reward; done.push(m); return false; } return true; });
+  if(earned>0){ earnDust(earned); flushDust(true);
+    done.forEach((m,i)=>setTimeout(()=>toast('📜','Mission complete',`${m.desc} · +${m.reward} ✦`), i*450));
+    if(music) chime(music.master,880); }
+  ensureMissions(); scheduleSave(); if(active==='home') renderMissions(); }
+function renderMissions(){ const box=$('missionList'); if(!box) return; ensureMissions(); box.innerHTML='';
+  const scan=profileScan();
+  for(const m of CUR.missions){ const row=document.createElement('div'); row.className='ach';
+    row.innerHTML=`<div class="ai">📜</div><div><div class="an">${m.desc}</div>
+      <div class="ad">${missionProgress(m,scan)}</div></div><div class="ar">+${m.reward} ✦</div>`;
+    box.appendChild(row); } }
+function missionProgress(m,scan){ if(m.mtype==='type') return scan.types.has(m.target)?'Done':'Not yet built';
+  const cur={planets:scan.planets,moons:scan.moons,rings:scan.rings,systems:scan.systems}[m.mtype];
+  return `Progress ${Math.min(cur,m.target)} / ${m.target}`; }
+
+/* ============================================================
+   LIVING CIVILIZATIONS  (livable worlds grow population + passive stardust)
+   ============================================================ */
+const POP_GROWTH=0.019;        // %/sec toward cap (≈ full in ~1.5h of real time)
+const POP_INCOME=0.0022;       // stardust/sec at 100% population, per world (~8/hr maxed)
+function livableWorlds(){ const out=[]; if(CUR&&CUR.systems) for(const s of CUR.systems) for(const p of s.planets) if(p.type==='livable') out.push(p); return out; }
+function colonyIncomePerSec(){ let n=0; for(const p of livableWorlds()) n+=((p.pop||0)/100)*POP_INCOME; return n; }
+function advanceColonies(seconds){ let dust=0;
+  for(const p of livableWorlds()){ const before=p.pop||0; const after=Math.min(100, before + POP_GROWTH*seconds);
+    p.pop=after; dust += ((before+after)/2/100)*POP_INCOME*seconds; }   // trapezoid: income tracks growing pop
+  return dust; }
+function applyOffline(){ if(!CUR) return; const now=Date.now(); const last=CUR.lastSeen||now;
+  let elapsed=Math.min(Math.max(0,(now-last)/1000), 86400);   // cap credit at 24h
+  CUR.lastSeen=now;
+  if(elapsed>60 && livableWorlds().length){ const dust=Math.floor(advanceColonies(elapsed));
+    if(dust>0){ earnDust(dust); const hrs=(elapsed/3600);
+      setTimeout(()=>toast('🌇','Welcome back', `Your colonies earned +${dust} ✦ over ${hrs<1?Math.round(elapsed/60)+' min':hrs.toFixed(1)+' h'} away`), 400); } }
+}
+let colonyTick=null;
+function startColonyTick(){ if(colonyTick) return; let last=performance.now();
+  colonyTick=setInterval(()=>{ if(!CUR){return;} const now=performance.now(); const s=(now-last)/1000; last=now;
+    if(livableWorlds().length){ const d=advanceColonies(s); if(d>0){ earnDust(d); flushDust(); } } }, 4000); }
+
+/* ---- Enter key submits the relevant form ---- */
+function enterKey(inputId, btnId){ const el=$(inputId); if(!el)return;
+  el.addEventListener('keydown',e=>{ if(e.key==='Enter'){ e.preventDefault(); $(btnId).click(); } }); }
+enterKey('authUser','authSubmit'); enterKey('authPass','authSubmit');
+enterKey('starName','newSysCreate'); enterKey('completeName','completeSave');
+
+/* ============================================================
+   AMBIENT MUSIC  (generated with Web Audio — no external files)
+   ============================================================ */
+let actx=null, music=null; const MUSIC_KEY='genesis_music';
+function buildMusic(){
+  actx = actx || new (window.AudioContext||window.webkitAudioContext)();
+  const master=actx.createGain(); master.gain.value=0; master.connect(actx.destination);
+  master.gain.linearRampToValueAtTime(0.6, actx.currentTime+3);   // overall level (chimes lead)
+  // soft sine pad — quiet, no buzzy harmonics, sits up an octave so it doesn't rumble
+  const pad=actx.createGain(); pad.gain.value=0.09; pad.connect(master);
+  const filt=actx.createBiquadFilter(); filt.type='lowpass'; filt.frequency.value=460; filt.Q.value=0.5; filt.connect(pad);
+  const freqs=[130.81,196.00,261.63];   // C3 · G3 · C4 — soft open chord
+  const oscs=freqs.map((f,i)=>{ const o=actx.createOscillator(); o.type='sine'; o.frequency.value=f; o.detune.value=(i-1)*3;
+    const g=actx.createGain(); g.gain.value=0.3; o.connect(g); g.connect(filt); o.start(); return o; });
+  const lfo=actx.createOscillator(); lfo.frequency.value=0.04; const lg=actx.createGain(); lg.gain.value=150; lfo.connect(lg); lg.connect(filt.frequency); lfo.start();
+  const scale=[523.25,587.33,698.46,783.99,880,1046.5];   // bright, gentle chimes (the part you like)
+  const bell=setInterval(()=>{ if(music && Math.random()<0.62) chime(master, scale[Math.floor(Math.random()*scale.length)]); }, 3300);
+  return {master,oscs,lfo,bell};
+}
+function chime(dest,freq){ const o=actx.createOscillator(); o.type='sine'; o.frequency.value=freq;
+  const g=actx.createGain(); g.gain.value=0; o.connect(g); g.connect(dest);
+  const t=actx.currentTime; g.gain.linearRampToValueAtTime(0.08,t+0.04); g.gain.exponentialRampToValueAtTime(0.0001,t+3);
+  o.start(t); o.stop(t+3.1); }
+function startMusic(){ if(music) return; try{ music=buildMusic(); if(actx.state==='suspended')actx.resume(); }catch(e){ music=null; } updateMusicBtn(); }
+function stopMusic(){ if(!music) return; const m=music; music=null; clearInterval(m.bell);
+  try{ const t=actx.currentTime; m.master.gain.cancelScheduledValues(t); m.master.gain.setValueAtTime(m.master.gain.value,t);
+    m.master.gain.linearRampToValueAtTime(0,t+1);
+    setTimeout(()=>{ m.oscs.forEach(o=>{try{o.stop();}catch(e){}}); try{m.lfo.stop();}catch(e){} try{m.master.disconnect();}catch(e){} },1100);
+  }catch(e){} updateMusicBtn(); }
+function updateMusicBtn(){ const b=$('musicToggle'); if(!b)return; const on=!!music;
+  b.textContent=on?'♪ Music: On':'♪ Music: Off'; b.classList.toggle('on',on); b.setAttribute('aria-pressed',on?'true':'false'); }
+$('musicToggle').onclick=()=>{ if(music){ stopMusic(); try{localStorage.setItem(MUSIC_KEY,'0');}catch(e){} }
+  else { startMusic(); try{localStorage.setItem(MUSIC_KEY,'1');}catch(e){} } };
+
+/* ============================================================
+   BOOT
+   ============================================================ */
+(async function boot(){
+  updateMusicBtn();
+  // honor a saved "music on" preference, but browsers require a gesture to start audio
+  try{ if(localStorage.getItem(MUSIC_KEY)==='1'){ const kick=()=>{ startMusic();
+    window.removeEventListener('pointerdown',kick); window.removeEventListener('keydown',kick); };
+    window.addEventListener('pointerdown',kick); window.addEventListener('keydown',kick); } }catch(e){}
+  window.addEventListener('beforeunload',()=>{ dbSave(); flushDust(true); });
+  setInterval(dbSave,8000);
+  // Keep the wallet mirror fresh after shopping in the shared Store overlay.
+  addEventListener('gc:wallet', e=>{ if(e&&e.detail){ WALLET=e.detail; updateDustUI(); } });
+  // Sign-in is the hub's: enter with the logged-in account, else send them to the hub.
+  const u = await refreshWallet();
+  if(u){ enter(u.username); } else { showSignInGate(); }
+})();
+</script>
+</body>
+</html>

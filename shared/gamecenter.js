@@ -303,60 +303,44 @@
   // ===== Shared store: one store, a tab per game (wallet is shared) =====
   // Opened from the hub or any game via GameCenter.openStore(gameSlug?). Buying
   // and equipping go through the same API every game already uses.
-  const STORE_CATALOG = {
-    'lavender-leap': {
-      name: 'Lavender Leap',
-      items: [
-        { key: 'extra_life', name: 'Extra Life', desc: 'Survive a fall in Hard Mode', price: 15 },
-        { key: 'boost', name: '+30s Time Boost', desc: 'Adds 30s to your next Time Trial', price: 15 },
-        { key: 'double_jump', name: 'Double Jump Pack', desc: '10 mid-air jumps · works in any mode', price: 60 },
-      ],
-      skins: [
-        { key: 'll-star-cadet', name: 'Star Cadet', price: 20, color: '#cdbcf2' },
-        { key: 'll-phantom-knight', name: 'Phantom Knight', price: 25, color: '#6d28d9' },
-        { key: 'll-lava-golem', name: 'Lava Golem', price: 30, color: '#ff7a18' },
-        { key: 'll-frost-sprite', name: 'Frost Sprite', price: 35, color: '#7fd4ff' },
-        { key: 'll-neon-bee', name: 'Neon Bee', price: 40, color: '#ffc02e' },
-      ],
-    },
-    'dont-look-down': {
-      name: "Don't Look Down",
-      items: [
-        { key: 'revive', name: 'Revive', desc: 'Get back up after a fall', price: 25 },
-        { key: 'headstart', name: 'Head Start', desc: 'Begin a run +50m up', price: 15 },
-        { key: 'rocket_booster', name: 'Rocket Booster', desc: 'Begin a run +100m up', price: 20 },
-        { key: 'doubler', name: 'Star Doubler', desc: '2× stars for one run', price: 20 },
-      ],
-      skins: [
-        { key: 'dld-nova', name: 'Nova', price: 60, color: '#7b5cff' },
-        { key: 'dld-phantom', name: 'Phantom', price: 80, color: '#3a2a5e' },
-        { key: 'dld-aurora', name: 'Aurora', price: 100, color: '#2de2e6' },
-        { key: 'dld-cosmo', name: 'Cosmo', price: 120, color: '#ff2e97' },
-      ],
-    },
-    'echo': {
-      name: 'Echo',
-      items: [
-        { key: 'echo_big_waves', name: 'Bigger Waves', desc: 'Your pulses travel much farther through the cave', price: 40, permanent: true },
-        { key: 'echo_fast', name: 'Faster Light', desc: 'Glide through the cave noticeably faster', price: 80, permanent: true },
-        { key: 'echo_rapid', name: 'Rapid Pulse', desc: 'Less time between auto pulses (Auto mode)', price: 60, permanent: true },
-        { key: 'echo_phase', name: 'Wall Pass', desc: 'Press E to slip through walls for 2s (long cooldown)', price: 200, permanent: true },
-      ],
-      // Light colours: owned as items, equipped locally (the player IS the light).
-      colors: [
-        { name: 'Cyan',   pref: 'cyan',   swatch: '#5fe6ff' },                          // free default
-        { key: 'echo-purple', name: 'Purple', pref: 'purple', swatch: '#a86bff', price: 20 },
-        { key: 'echo-blue',   name: 'Blue',   pref: 'blue',   swatch: '#5a9bff', price: 20 },
-        { key: 'echo-green',  name: 'Green',  pref: 'green',  swatch: '#50e696', price: 20 },
-        { key: 'echo-yellow', name: 'Yellow', pref: 'yellow', swatch: '#ffd23f', price: 25 },
-        { key: 'echo-orange', name: 'Orange', pref: 'orange', swatch: '#ff9b3c', price: 25 },
-        { key: 'echo-red',    name: 'Red',    pref: 'red',    swatch: '#ff5a64', price: 30 },
-        { key: 'echo-pink',   name: 'Pink',   pref: 'pink',   swatch: '#ff6ec7', price: 30 },
-      ],
-    },
-  };
-  const STORE_TABS = ['lavender-leap', 'dont-look-down', 'echo'];
-  let storeEl = null, storeUser = null, storeTab = STORE_TABS[0];
+  // ===== Catalog: shared/catalog.json is the single source of truth =====
+  // The backend seeds from it; here we derive the Store catalog, tab order and
+  // leaderboard boards from it. Adding a game = one manifest entry, no SDK edits.
+  let STORE_CATALOG = {};   // slug -> { name, items, skins, locals, upgrades }
+  let STORE_TABS = [];      // ordered slugs that sell something
+  let CATALOG = null;       // raw manifest { games: [...] }
+  let _catalogPromise = null;
+  function makeUnit(tpl) {
+    const t = String(tpl == null ? '{n}' : tpl);
+    return (s) => t.replace('{n}', s).replace('{s}', s === 1 ? '' : 's');
+  }
+  function buildFromManifest(m) {
+    STORE_CATALOG = {}; STORE_TABS = []; LB_BOARDS = [];
+    ((m && m.games) || []).forEach((g) => {
+      (g.leaderboards || []).forEach((b) =>
+        LB_BOARDS.push({ game: b.board, label: b.label, unit: makeUnit(b.unit) }));
+      const skins = (g.avatars || []).filter((a) => a.price > 0).map((a) => ({ key: a.key, name: a.name, price: a.price }));
+      const items = (g.items || []).filter((it) => !it.hidden);
+      const locals = g.skinGroups || [];
+      const upgrades = g.upgrades || [];
+      if (items.length || skins.length || locals.length || upgrades.length) {
+        STORE_CATALOG[g.slug] = { name: g.name, items: items, skins: skins, locals: locals, upgrades: upgrades };
+        STORE_TABS.push(g.slug);
+      }
+    });
+  }
+  function loadCatalog() {
+    if (_catalogPromise) return _catalogPromise;
+    _catalogPromise = fetch('/shared/catalog.json', { cache: 'no-cache' })
+      .then((r) => r.json())
+      .then((m) => { CATALOG = m; buildFromManifest(m); return m; })
+      .catch(() => { CATALOG = { games: [] }; buildFromManifest(CATALOG); return CATALOG; });
+    return _catalogPromise;
+  }
+  global.GameCenter.catalog = loadCatalog;              // -> Promise<manifest>
+  global.GameCenter.catalogData = () => CATALOG;        // sync (may be null before first load)
+
+  let storeEl = null, storeUser = null, storeTab = '';
 
   function escapeHtml(s) { return String(s).replace(/[&<>"]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c])); }
   // Render a price label with the gold coin glyph; pass words ("Owned") through as text.
@@ -431,8 +415,10 @@
     const coins = storeUser.coins || 0;
     const items = storeUser.items || {};
     const owned = storeUser.ownedAvatars || [];
-    let html = '<div style="font-family:Fredoka,sans-serif;font-weight:600;font-size:12px;text-transform:uppercase;letter-spacing:.04em;color:var(--gc-muted);margin:6px 0 4px">Power-ups</div>';
-    cat.items.forEach((it) => {
+    let html = (cat.items && cat.items.length)
+      ? '<div style="font-family:Fredoka,sans-serif;font-weight:600;font-size:12px;text-transform:uppercase;letter-spacing:.04em;color:var(--gc-muted);margin:6px 0 4px">Power-ups</div>'
+      : '';
+    (cat.items || []).forEach((it) => {
       const have = items[it.key] || 0;
       const ownedPerm = it.permanent && have > 0;
       html += rowHtml({
@@ -460,24 +446,42 @@
         });
       });
     }
-    if (cat.colors && cat.colors.length) {
-      let pref = 'cyan'; try { pref = localStorage.getItem('echoColor') || 'cyan'; } catch (x) {}
-      html += '<div style="font-family:Fredoka,sans-serif;font-weight:600;font-size:12px;text-transform:uppercase;letter-spacing:.04em;color:var(--gc-muted);margin:14px 0 4px">Light colours</div>';
-      cat.colors.forEach((col) => {
+    if (cat.upgrades && cat.upgrades.length) {
+      html += '<div style="font-family:Fredoka,sans-serif;font-weight:600;font-size:12px;text-transform:uppercase;letter-spacing:.04em;color:var(--gc-muted);margin:14px 0 4px">Upgrades</div>';
+      cat.upgrades.forEach((up) => {
+        let lv = 0;
+        up.levels.forEach((l) => { if ((items[l.key] || 0) > 0) lv++; });
+        const maxed = lv >= up.levels.length;
+        const next = maxed ? null : up.levels[lv];
+        html += rowHtml({
+          title: up.name + ' · Lv ' + lv + '/' + up.levels.length,
+          sub: up.desc,
+          btnLabel: maxed ? 'Maxed' : '★ ' + next.price,
+          btnAttr: maxed ? '' : 'data-item="' + next.key + '"',
+          disabled: !maxed && coins < next.price,
+          done: maxed,
+        });
+      });
+    }
+    // Local-equip groups (skins/colours): bought against the wallet, equipped client-side.
+    (cat.locals || []).forEach((grp, gi) => {
+      let pref = grp.default; try { pref = localStorage.getItem(grp.prefKey) || grp.default; } catch (x) {}
+      html += '<div style="font-family:Fredoka,sans-serif;font-weight:600;font-size:12px;text-transform:uppercase;letter-spacing:.04em;color:var(--gc-muted);margin:14px 0 4px">' + escapeHtml(grp.title) + '</div>';
+      grp.choices.forEach((col) => {
         const free = !col.key;
         const isOwned = free || (items[col.key] || 0) > 0;
         const equipped = isOwned && pref === col.pref;
         html += rowHtml({
           swatch: col.swatch,
-          title: col.name + ' light',
-          sub: equipped ? 'Currently worn' : isOwned ? (free ? 'Free' : 'Unlocked') : 'Light colour',
+          title: col.name,
+          sub: equipped ? 'Currently worn' : isOwned ? (free ? 'Free' : 'Unlocked') : grp.title,
           btnLabel: equipped ? 'Equipped' : isOwned ? 'Equip' : '★ ' + col.price,
-          btnAttr: isOwned ? 'data-ccolor="' + col.pref + '"' : 'data-citem="' + col.key + '"',
+          btnAttr: isOwned ? 'data-lequip="' + gi + '|' + col.pref + '"' : 'data-litem="' + col.key + '"',
           disabled: !isOwned && coins < col.price,
           done: equipped,
         });
       });
-    }
+    });
     body.innerHTML = html;
     body.querySelectorAll('canvas[data-skin]').forEach((cv) => renderSkin(cv.getAttribute('data-skin'), cv));
   }
@@ -502,18 +506,25 @@
     if (av) { GameCenter.buy('avatar', av).then((r) => finishTxn(r, 'Unlocked! Tap Equip to wear it.')); return; }
     const eq = attr('[data-equip]', 'data-equip');
     if (eq) { GameCenter.setProfile({ avatar: eq }).then((r) => finishTxn(r, 'Equipped!')); return; }
-    // Echo light colours: bought as items, equipped locally (no global avatar).
-    const citem = attr('[data-citem]', 'data-citem');
-    if (citem) { GameCenter.buy('item', citem).then((r) => finishTxn(r, 'Unlocked! Tap Equip to wear it.')); return; }
-    const ccolor = attr('[data-ccolor]', 'data-ccolor');
-    if (ccolor) {
-      try { localStorage.setItem('echoColor', ccolor); } catch (x) {}
-      try { window.dispatchEvent(new CustomEvent('gc:echocolor', { detail: ccolor })); } catch (e) {}
-      storeMsg('Light equipped!'); renderStore(); return;
+    // Local-equip groups (Echo colours, Archery/Riposte skins): bought as items,
+    // equipped client-side via localStorage + a per-group event the game listens for.
+    const litem = attr('[data-litem]', 'data-litem');
+    if (litem) { GameCenter.buy('item', litem).then((r) => finishTxn(r, 'Unlocked! Tap Equip to wear it.')); return; }
+    const lequip = attr('[data-lequip]', 'data-lequip');
+    if (lequip) {
+      const sep = lequip.indexOf('|'), gi = +lequip.slice(0, sep), pref = lequip.slice(sep + 1);
+      const grp = (STORE_CATALOG[storeTab].locals || [])[gi];
+      if (grp) {
+        try { localStorage.setItem(grp.prefKey, pref); } catch (x) {}
+        try { window.dispatchEvent(new CustomEvent(grp.event, { detail: pref })); } catch (e) {}
+        storeMsg('Equipped!'); renderStore();
+      }
+      return;
     }
   }
 
   async function openStore(game) {
+    await loadCatalog();
     buildStore();
     if (game && STORE_CATALOG[game]) storeTab = game;
     else { let last = null; try { last = localStorage.getItem('lastStoreTab'); } catch (x) {} storeTab = STORE_CATALOG[last] ? last : STORE_TABS[0]; }
@@ -539,14 +550,9 @@
   });
 
   // ===== Shared leaderboards: full-screen, every game + mode in one place =====
-  const LB_BOARDS = [
-    { game: 'lavender-leap-time', label: 'Lavender · Time Trial', unit: (s) => s + ' level' + (s === 1 ? '' : 's') },
-    { game: 'lavender-leap-hard', label: 'Lavender · Hard Mode', unit: (s) => 'level ' + s },
-    { game: 'lavender-leap', label: 'Lavender · Freeplay', unit: (s) => s + ' pts' },
-    { game: 'dont-look-down', label: "Don't Look Down", unit: (s) => s + ' m' },
-    { game: 'echo', label: 'Echo', unit: (s) => 'cave ' + s },
-  ];
-  let lbEl = null, lbIdx = 0, lbScope = 'global', lbMyName = null;
+  let LB_BOARDS = [];   // built from the manifest by buildFromManifest()
+
+    let lbEl = null, lbIdx = 0, lbScope = 'global', lbMyName = null;
 
   function buildLb() {
     if (lbEl) return lbEl;
@@ -624,11 +630,40 @@
     const scopeEl = t.closest && t.closest('[data-scope]');
     if (scopeEl) { lbScope = scopeEl.getAttribute('data-scope'); renderLb(); loadLbList(); return; }
   }
-  function openLeaderboards() {
+  async function openLeaderboards() {
+    await loadCatalog();
     buildLb(); renderLb(); lbEl.style.display = 'block';
     GameCenter.me().then((r) => { lbMyName = (r.ok && r.data && r.data.username) || null; loadLbList(); });
   }
   global.GameCenter.openLeaderboards = openLeaderboards;
+
+  // ===== Per-game helper: removes the wallet/score/skin boilerplate for new games =====
+  //   const gc = GameCenter.game('my-game');
+  //   gc.onWallet((u) => updateHud(u));   // fires now + after every purchase/score
+  //   gc.bank(score, coins);  gc.use(key);  gc.buy(key);  gc.skin('myPref');
+  global.GameCenter.game = function (slug) {
+    let user = null; const subs = [];
+    const emit = (u) => { user = u; subs.forEach((fn) => { try { fn(u); } catch (e) {} }); };
+    const api = {
+      slug: slug,
+      get user() { return user; },
+      coins: function () { return user ? (user.coins || 0) : 0; },
+      items: function () { return (user && user.items) || {}; },
+      qty: function (key) { return (user && user.items && user.items[key]) || 0; },
+      owns: function (key) { return this.qty(key) > 0 || !!(user && user.ownedAvatars && user.ownedAvatars.indexOf(key) >= 0); },
+      skin: function (prefKey, dflt) { try { return localStorage.getItem(prefKey) || dflt || null; } catch (e) { return dflt || null; } },
+      onWallet: function (cb) { subs.push(cb); if (user) { try { cb(user); } catch (e) {} } return api; },
+      refresh: function () { return request('/api/me', 'GET').then((r) => { if (r.ok) emit(r.data); return r; }); },
+      bank: function (score, coins) { return request('/api/score', 'POST', { game: slug, score: score || 0, coins: coins || 0 }).then((r) => { if (r.ok && r.data && r.data.wallet) emit(r.data.wallet); return r; }); },
+      use: function (key) { return request('/api/use', 'POST', { item: key }).then((r) => { if (r.ok) emit(r.data); return r; }); },
+      buy: function (key, kind) { return request('/api/store/buy', 'POST', { kind: kind || 'item', key: key }).then((r) => { if (r.ok) emit(r.data); return r; }); },
+      openStore: function () { return openStore(slug); },
+      openLeaderboards: function () { return openLeaderboards(); },
+    };
+    window.addEventListener('gc:wallet', (e) => { if (e && e.detail) emit(e.detail); });
+    api.refresh();
+    return api;
+  };
 
   // Ensure fonts, the icon set, and the theme tokens exist on any page that loads
   // the SDK (the hub already ships them; standalone game pages may not).
@@ -640,6 +675,7 @@
     var st = document.createElement('style'); st.id = 'gc-css'; st.textContent = GC_TOKENS; document.head.appendChild(st);
   }
   function initChrome() {
+    loadCatalog();
     injectAssets();
     applyTheme();            // honor saved theme on every page (hub + games)
     injectHomeButton();

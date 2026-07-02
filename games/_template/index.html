@@ -1,0 +1,75 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>New Game — The Stickmen Hub</title>
+<!--
+  STARTER TEMPLATE for a new hub game. To add a game:
+
+  1. Add an entry to /shared/catalog.json (slug, name, cover, blurb, chips, playColor,
+     play path, leaderboards, and any items/skinGroups/upgrades). That one entry seeds
+     the backend, fills the shared Store + Leaderboards, and renders the hub card.
+  2. Copy this folder to  games/<your-slug>/  and set SLUG below to match.
+  3. Build your game inside startGame()/endGame(); call gc.bank(score, coins) on game over.
+
+  Everything else — sign-in, the coin wallet, the Store overlay, Leaderboards, Settings,
+  the Home button, and theming — is provided by /shared/gamecenter.js. Don't re-implement it.
+-->
+<style>
+  *{box-sizing:border-box} html,body{margin:0;height:100%}
+  body{font-family:Nunito,system-ui,sans-serif;background:var(--gc-plate-bg,#eef4fb);color:var(--gc-ink,#243a5e);
+       display:flex;align-items:center;justify-content:center}
+  .card{background:var(--gc-panel,#fff);border:1px solid var(--gc-line,#dce6f5);border-radius:20px;
+        box-shadow:var(--gc-shadow,0 10px 40px rgba(40,60,110,.2));padding:26px 24px;width:340px;max-width:92vw;text-align:center}
+  h1{font-family:Fredoka,sans-serif;margin:0 0 4px}
+  .coins{display:inline-flex;align-items:center;gap:6px;background:var(--gc-chip,#f4f7fc);border:1px solid var(--gc-chip-line,#dbe4f3);
+         color:var(--gc-coin,#c8920c);font-family:Fredoka,sans-serif;font-weight:600;border-radius:20px;padding:5px 13px;margin:8px 0}
+  button{font-family:Fredoka,sans-serif;font-weight:600;font-size:16px;border:none;border-radius:12px;cursor:pointer;
+         padding:12px;margin-top:8px;width:100%;color:#fff;background:var(--gc-accent,#7d2ae8)}
+  button.alt{background:var(--gc-accent2,#1d9e75)}
+  .msg{min-height:20px;color:var(--gc-muted,#5a6b86);font-weight:700;font-size:13px;margin-top:8px}
+</style>
+</head>
+<body>
+  <div class="card">
+    <h1 id="title">New Game</h1>
+    <div class="coins"><i class="ti ti-coin"></i> <span id="coins">0</span></div>
+    <div id="play"><button id="playBtn">Play a round</button></div>
+    <button class="alt" id="storeBtn"><i class="ti ti-shopping-bag"></i> Store</button>
+    <div class="msg" id="msg"></div>
+  </div>
+
+<script src="/shared/gamecenter.js"></script>
+<script>
+  // 1) Match this to your catalog.json slug.
+  const SLUG = 'my-game';
+  const $ = (id) => document.getElementById(id);
+
+  // 2) One handle gives you the wallet, scoring, items and skins — no boilerplate.
+  const gc = GameCenter.game(SLUG);
+
+  // onWallet fires now (once /api/me resolves) and again after every purchase or score,
+  // so the coin display and any owned power-ups stay in sync automatically.
+  gc.onWallet((u) => { $('coins').textContent = u.coins || 0; });
+
+  // 3) A trivial "round" — replace with your game loop. Bank score + coins on game over.
+  $('playBtn').onclick = async () => {
+    const score = Math.floor(Math.random() * 100);   // TODO: your real score
+    const coinsEarned = Math.ceil(score / 20);        // TODO: your real payout
+    $('msg').textContent = 'Scored ' + score + ' · banking ' + coinsEarned + ' coins…';
+    const r = await gc.bank(score, coinsEarned);       // -> submitScore, credits the shared wallet
+    $('msg').textContent = r.ok ? ('Banked! +' + coinsEarned + ' coins') : (r.error || 'Sign in from the hub to save.');
+  };
+
+  // 4) The Store overlay + Leaderboards are shared; just open your tab.
+  $('storeBtn').onclick = () => gc.openStore();
+
+  // Cosmetics (optional): if your catalog entry has a skinGroup with prefKey 'mySkin',
+  // read the equipped one with gc.skin('mySkin', 'default') and re-read on its event:
+  //   addEventListener('gc:myskin', (e) => applySkin(e.detail));
+
+  // Consumable power-ups (optional): spend one with gc.use('my_item_key').
+</script>
+</body>
+</html>

@@ -1,0 +1,29 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 560 300" width="560" height="300" role="img" aria-label="Genesis">
+  <defs>
+    <radialGradient id="ge-bg" cx="30%" cy="20%" r="110%">
+      <stop offset="0%" stop-color="#1b1440"/><stop offset="60%" stop-color="#0d0a24"/><stop offset="100%" stop-color="#06040f"/>
+    </radialGradient>
+    <radialGradient id="ge-planet" cx="38%" cy="34%" r="72%">
+      <stop offset="0%" stop-color="#7fe3b0"/><stop offset="45%" stop-color="#3aa6d6"/><stop offset="100%" stop-color="#1b3a6b"/>
+    </radialGradient>
+    <radialGradient id="ge-star" cx="50%" cy="50%" r="50%">
+      <stop offset="0%" stop-color="#fff3c4"/><stop offset="55%" stop-color="#ffc861"/><stop offset="100%" stop-color="#ff9b3c" stop-opacity="0"/>
+    </radialGradient>
+  </defs>
+  <rect width="560" height="300" fill="url(#ge-bg)"/>
+  <g fill="#fff" opacity=".8">
+    <circle cx="70" cy="60" r="1.6"/><circle cx="120" cy="120" r="1.1"/><circle cx="200" cy="40" r="1.4"/>
+    <circle cx="470" cy="70" r="1.2"/><circle cx="510" cy="150" r="1.6"/><circle cx="90" cy="210" r="1.2"/>
+    <circle cx="250" cy="250" r="1.1"/><circle cx="430" cy="230" r="1.4"/><circle cx="330" cy="30" r="1.1"/>
+  </g>
+  <circle cx="486" cy="52" r="34" fill="url(#ge-star)"/>
+  <g transform="translate(360,168)">
+    <ellipse cx="0" cy="0" rx="138" ry="34" fill="none" stroke="#c8b3ff" stroke-width="6" opacity=".55"/>
+    <circle r="82" fill="url(#ge-planet)"/>
+    <ellipse cx="0" cy="0" rx="138" ry="34" fill="none" stroke="#e7d8ff" stroke-width="3" opacity=".85"
+      stroke-dasharray="120 400"/>
+    <circle cx="-30" cy="-24" r="16" fill="#8ff0c0" opacity=".6"/><circle cx="24" cy="18" r="22" fill="#2f7fb8" opacity=".5"/>
+  </g>
+  <text x="34" y="66" font-family="'Trebuchet MS', sans-serif" font-size="46" font-weight="800" letter-spacing="8" fill="#ffc861">GENESIS</text>
+  <text x="36" y="94" font-family="'Trebuchet MS', sans-serif" font-size="15" letter-spacing="3" fill="#b6a8e0">TERRAFORM WORLDS · BUILD A GALAXY</text>
+</svg>

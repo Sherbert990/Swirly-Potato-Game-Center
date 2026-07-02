@@ -1,0 +1,24 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 560 300" width="560" height="300" role="img" aria-label="Archery Range">
+  <defs>
+    <radialGradient id="ar-bg" cx="50%" cy="30%" r="90%">
+      <stop offset="0%" stop-color="#1a2b22"/><stop offset="100%" stop-color="#0e1813"/>
+    </radialGradient>
+    <radialGradient id="ar-glow" cx="50%" cy="50%" r="50%">
+      <stop offset="0%" stop-color="#ecbe3c" stop-opacity=".22"/><stop offset="100%" stop-color="#ecbe3c" stop-opacity="0"/>
+    </radialGradient>
+  </defs>
+  <rect width="560" height="300" fill="url(#ar-bg)"/>
+  <ellipse cx="330" cy="150" rx="150" ry="150" fill="url(#ar-glow)"/>
+  <g transform="translate(330,150)">
+    <circle r="120" fill="#efe9da"/><circle r="98" fill="#2a2622"/>
+    <circle r="76" fill="#4aa6d6"/><circle r="54" fill="#e6483c"/><circle r="30" fill="#ecbe3c"/>
+    <circle r="9" fill="#c99a26"/>
+  </g>
+  <g stroke="#e6483c" stroke-width="6" stroke-linecap="round">
+    <line x1="60" y1="250" x2="342" y2="138"/>
+  </g>
+  <polygon points="352,134 334,140 342,150" fill="#cfcabb"/>
+  <g fill="#e6483c"><polygon points="60,250 46,246 54,258"/><polygon points="60,250 64,236 72,248"/></g>
+  <text x="34" y="52" font-family="Oswald, sans-serif" font-size="40" font-weight="700" letter-spacing="4" fill="#ece5d4">ARCHERY <tspan fill="#ecbe3c">RANGE</tspan></text>
+  <text x="36" y="80" font-family="Oswald, sans-serif" font-size="15" letter-spacing="3" fill="#7f9084">JUDGE THE WIND · LOOSE THE ARROW</text>
+</svg>
