@@ -27,11 +27,16 @@ uvicorn backend.app:app --reload --port 8000
 
 Hub at `/`, games under `/games/...`, API under `/api/...`.
 
-## Tests (real MySQL, per-test rollback)
+## Tests (per-test rollback)
 
 ```bash
-pytest backend/tests -q            # from repo root, needs gamecenter_test
+pytest backend/tests -q            # from repo root
 ```
+
+Defaults to a local SQLite file (zero setup — no MySQL needed). To run against a
+real MySQL instead, set `TEST_DATABASE_URL` to a **throwaway** `gamecenter_test`
+DB. The schema is dropped at the start and end of the session, so never point it
+at a database with data you care about (e.g. staging).
 
 ## Endpoints (normalized contract — DESIGN.md §4)
 
