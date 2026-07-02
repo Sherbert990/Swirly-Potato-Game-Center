@@ -37,9 +37,13 @@ jobs:
         run: python scripts/check_catalog.py
       - uses: actions/setup-node@v4
         with:
-          node-version: "20"
+          node-version: "22"
       - name: Syntax-check client JS
         run: node scripts/check_js.js
+      - name: Install JS test deps
+        run: npm ci
+      - name: Frontend + SDK tests (node:test + jsdom)
+        run: npm test
 
   pytest:
     runs-on: ubuntu-latest

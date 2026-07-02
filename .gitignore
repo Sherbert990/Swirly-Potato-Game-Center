@@ -21,3 +21,6 @@ data/
 
 # Local tooling state
 .claude/
+
+# Node (dev-only test tooling)
+node_modules/
