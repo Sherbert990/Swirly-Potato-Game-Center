@@ -251,7 +251,7 @@
   const COLOR_ORDER = ['cyan','purple','blue','green','yellow','orange','red','pink'];
   let owned = {};   // server-owned store items {key: qty} — refreshed from /api/me
   let coins = 0;
-  function colorKey(){ const k = localStorage.getItem('echoColor') || 'cyan'; return COLORS[k] ? k : 'cyan'; }
+  function colorKey(){ const k = (window.GameCenter && GameCenter.getPref) ? GameCenter.getPref('echoColor','cyan') : (localStorage.getItem('echoColor')||'cyan'); return COLORS[k] ? k : 'cyan'; }
   function curColor(){ const c = COLORS[colorKey()]; return (c.item && !(owned[c.item] > 0)) ? COLORS.cyan : c; }
   function ownsColor(k){ const c = COLORS[k]; return !c.item || owned[c.item] > 0; }
   function ownsBigWaves(){ return owned['echo_big_waves'] > 0; }

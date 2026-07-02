@@ -40,8 +40,9 @@ SESSION_DAYS = 30
 
 # Anti-cheat sanity caps (D3 / T5). Server is the source of truth for the wallet.
 MAX_COINS_PER_SUBMIT = 1000   # clamp coins credited per score submission
-MAX_SCORE = 1_000_000         # reject obviously impossible scores
+MAX_SCORE = 1_000_000         # fallback cap; per-board caps come from the catalog (SCORE_CAPS)
 SCORE_MIN_INTERVAL_SEC = 2    # basic rate limit between score posts per user
+SCORES_KEEP_PER_GAME = 50     # bound the scores table: keep each user's best N per game (>= personal board size 20)
 
 # Login hardening (Phase 7): lock out brute-force after too many fails in a window.
 LOGIN_MAX_FAILS = 5

@@ -465,7 +465,7 @@
     }
     // Local-equip groups (skins/colours): bought against the wallet, equipped client-side.
     (cat.locals || []).forEach((grp, gi) => {
-      let pref = grp.default; try { pref = localStorage.getItem(grp.prefKey) || grp.default; } catch (x) {}
+      const pref = global.GameCenter.getPref(grp.prefKey, grp.default);
       html += '<div style="font-family:Fredoka,sans-serif;font-weight:600;font-size:12px;text-transform:uppercase;letter-spacing:.04em;color:var(--gc-muted);margin:14px 0 4px">' + escapeHtml(grp.title) + '</div>';
       grp.choices.forEach((col) => {
         const free = !col.key;
@@ -515,7 +515,7 @@
       const sep = lequip.indexOf('|'), gi = +lequip.slice(0, sep), pref = lequip.slice(sep + 1);
       const grp = (STORE_CATALOG[storeTab].locals || [])[gi];
       if (grp) {
-        try { localStorage.setItem(grp.prefKey, pref); } catch (x) {}
+        global.GameCenter.setPref(grp.prefKey, pref);
         try { window.dispatchEvent(new CustomEvent(grp.event, { detail: pref })); } catch (e) {}
         storeMsg('Equipped!'); renderStore();
       }
@@ -534,7 +534,7 @@
     try { window.dispatchEvent(new CustomEvent('gc:storeopen')); } catch (e) {}
     const r = await GameCenter.me();
     if (!r.ok) { storeUser = null; renderStore(); storeMsg('Sign in to shop.'); return; }
-    storeUser = r.data; storeMsg(''); renderStore();
+    storeUser = r.data; setAuthUser(storeUser); storeMsg(''); renderStore();
   }
   function closeStore() {
     if (storeEl) storeEl.style.display = 'none';
@@ -637,13 +637,34 @@
   }
   global.GameCenter.openLeaderboards = openLeaderboards;
 
+  // ===== Per-account local prefs (equipped skin/colour) =====
+  // Cosmetics are OWNED server-side; the *equipped* choice is a local pref. Namespace
+  // it by the signed-in user so two accounts on one device don't share equips.
+  let _authUser = null;
+  function setAuthUser(u) { if (u && u.username) _authUser = u.username; }
+  function _prefKey(key) { return 'gc:pref:' + (_authUser || '_guest') + ':' + key; }
+  global.GameCenter.getPref = function (key, dflt) {
+    try {
+      const v = localStorage.getItem(_prefKey(key));
+      if (v !== null) return v;
+      const legacy = localStorage.getItem(key);   // migrate pre-namespacing (device-global) prefs
+      if (legacy !== null) return legacy;
+    } catch (e) {}
+    return dflt === undefined ? null : dflt;
+  };
+  global.GameCenter.setPref = function (key, val) {
+    try { localStorage.setItem(_prefKey(key), val); } catch (e) {}
+  };
+
   // ===== Per-game helper: removes the wallet/score/skin boilerplate for new games =====
   //   const gc = GameCenter.game('my-game');
   //   gc.onWallet((u) => updateHud(u));   // fires now + after every purchase/score
   //   gc.bank(score, coins);  gc.use(key);  gc.buy(key);  gc.skin('myPref');
+  const _gameInstances = {};
   global.GameCenter.game = function (slug) {
-    let user = null; const subs = [];
-    const emit = (u) => { user = u; subs.forEach((fn) => { try { fn(u); } catch (e) {} }); };
+    if (_gameInstances[slug]) return _gameInstances[slug];   // memoized: one instance + one listener per slug
+    let user = null, inflight = null; const subs = [];
+    const emit = (u) => { user = u; setAuthUser(u); subs.forEach((fn) => { try { fn(u); } catch (e) {} }); };
     const api = {
       slug: slug,
       get user() { return user; },
@@ -651,9 +672,13 @@
       items: function () { return (user && user.items) || {}; },
       qty: function (key) { return (user && user.items && user.items[key]) || 0; },
       owns: function (key) { return this.qty(key) > 0 || !!(user && user.ownedAvatars && user.ownedAvatars.indexOf(key) >= 0); },
-      skin: function (prefKey, dflt) { try { return localStorage.getItem(prefKey) || dflt || null; } catch (e) { return dflt || null; } },
+      skin: function (prefKey, dflt) { return global.GameCenter.getPref(prefKey, dflt); },
       onWallet: function (cb) { subs.push(cb); if (user) { try { cb(user); } catch (e) {} } return api; },
-      refresh: function () { return request('/api/me', 'GET').then((r) => { if (r.ok) emit(r.data); return r; }); },
+      refresh: function () {
+        if (inflight) return inflight;          // dedupe concurrent /api/me (constructor + a boot refresh)
+        inflight = request('/api/me', 'GET').then((r) => { inflight = null; if (r.ok) emit(r.data); return r; });
+        return inflight;
+      },
       // board defaults to the game slug; pass one for per-mode boards (e.g. lavender-leap-time).
       bank: function (score, coins, board) { return request('/api/score', 'POST', { game: board || slug, score: score || 0, coins: coins || 0 }).then((r) => { if (r.ok && r.data && r.data.wallet) emit(r.data.wallet); return r; }); },
       use: function (key) { return request('/api/use', 'POST', { item: key }).then((r) => { if (r.ok) emit(r.data); return r; }); },
@@ -662,6 +687,7 @@
       openLeaderboards: function () { return openLeaderboards(); },
     };
     window.addEventListener('gc:wallet', (e) => { if (e && e.detail) emit(e.detail); });
+    _gameInstances[slug] = api;
     api.refresh();
     return api;
   };

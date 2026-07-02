@@ -31,10 +31,13 @@ def verify_password(password: str, hashed: str) -> bool:
 
 
 def _now() -> datetime.datetime:
-    return datetime.datetime.utcnow()
+    # Naive UTC (matches the DB's naive datetimes) without the deprecated utcnow().
+    return datetime.datetime.now(datetime.timezone.utc).replace(tzinfo=None)
 
 
 def create_session(db: OrmSession, user_id: int) -> str:
+    # Opportunistic cleanup so the sessions table stays bounded — nothing else prunes it.
+    db.query(DbSession).filter(DbSession.expires_at < _now()).delete(synchronize_session=False)
     token = secrets.token_urlsafe(32)
     db.add(DbSession(token=token, user_id=user_id,
                      expires_at=_now() + datetime.timedelta(days=config.SESSION_DAYS)))

@@ -74,7 +74,7 @@ def check(catalog):
                 claim(lv.get("key"), f"upgrade in {slug}")
 
     # Derived rows must fit their DB columns.
-    game_rows, avatars, items, item_game = derive(catalog)
+    game_rows, avatars, items, item_game, _caps = derive(catalog)
     for s, n in game_rows:
         if len(s) > LIMITS["game_slug"]:
             errors.append(f"derived game slug too long: '{s}'")
