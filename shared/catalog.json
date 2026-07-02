@@ -11,8 +11,8 @@
       "playColor": "p1",
       "play": "/games/lavender-leap/index.html",
       "leaderboards": [
-        { "board": "lavender-leap-time", "name": "Lavender Leap · Time Trial", "label": "Lavender · Time Trial", "unit": "{n} level{s}" },
-        { "board": "lavender-leap-hard", "name": "Lavender Leap · Hard Mode", "label": "Lavender · Hard Mode", "unit": "level {n}" },
+        { "board": "lavender-leap-time", "name": "Lavender Leap · Time Trial", "label": "Lavender · Time Trial", "unit": "{n} level{s}", "maxScore": 5000 },
+        { "board": "lavender-leap-hard", "name": "Lavender Leap · Hard Mode", "label": "Lavender · Hard Mode", "unit": "level {n}", "maxScore": 5000 },
         { "board": "lavender-leap", "label": "Lavender · Freeplay", "unit": "{n} pts" }
       ],
       "items": [
@@ -75,7 +75,7 @@
       "playColor": "p3",
       "play": "/games/echo/index.html",
       "leaderboards": [
-        { "board": "echo", "label": "Echo", "unit": "cave {n}" }
+        { "board": "echo", "label": "Echo", "unit": "cave {n}", "maxScore": 100000 }
       ],
       "items": [
         { "key": "echo_big_waves", "name": "Bigger Waves", "desc": "Your pulses travel much farther through the cave", "price": 40, "permanent": true, "type": "echo_powerup" },
@@ -108,7 +108,7 @@
       "playColor": "p1",
       "play": "/games/archery-range/index.html",
       "leaderboards": [
-        { "board": "archery-range", "label": "Archery Range", "unit": "{n} pts" }
+        { "board": "archery-range", "label": "Archery Range", "unit": "{n} pts", "maxScore": 5000 }
       ],
       "items": [
         { "key": "arch_golden_arrow", "name": "Golden Arrow", "desc": "Your next arrow scores double", "price": 18, "type": "archery_power" },
@@ -141,7 +141,7 @@
       "playColor": "p2",
       "play": "/games/fencing-riposte/index.html",
       "leaderboards": [
-        { "board": "fencing-riposte", "label": "Riposte", "unit": "{n} rally" }
+        { "board": "fencing-riposte", "label": "Riposte", "unit": "{n} rally", "maxScore": 5000 }
       ],
       "items": [
         { "key": "rip_retry", "name": "Retry", "desc": "Replay a flubbed pattern instead of losing the point", "price": 5, "type": "riposte_power" }
@@ -180,7 +180,7 @@
       "playColor": "p3",
       "play": "/games/genesis/index.html",
       "leaderboards": [
-        { "board": "genesis", "label": "Genesis", "unit": "{n} world{s}" }
+        { "board": "genesis", "label": "Genesis", "unit": "{n} world{s}", "maxScore": 100000 }
       ],
       "items": [
         { "key": "gen_ring", "name": "Planetary Ring", "desc": "A luminous ring to adorn one planet (bought in-game)", "price": 6, "type": "genesis_ring", "hidden": true }

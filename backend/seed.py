@@ -24,13 +24,14 @@ def load_catalog() -> dict:
 
 def derive(catalog: dict):
     """Flatten the manifest into the rows the DB needs.
-    Returns (games, avatars, store_items, item_game):
+    Returns (games, avatars, store_items, item_game, score_caps):
       games       -> [(slug, name)]              (main slugs + every leaderboard board slug)
       avatars     -> [(key, name, source_game, price, is_premium)]
       store_items -> [(key, name, type, price)]  (items + keyed skin choices + upgrade levels)
       item_game   -> {store_item_key: game_slug} (lets each game show only its own items)
+      score_caps  -> {board_slug: max_score}     (per-board sanity cap for /api/score)
     """
-    games, avatars, store_items, item_game = [], [], [], {}
+    games, avatars, store_items, item_game, score_caps = [], [], [], {}, {}
     seen_games = set()
 
     def add_game(slug, name):
@@ -47,6 +48,8 @@ def derive(catalog: dict):
         add_game(slug, name)
         for b in g.get("leaderboards", []):
             add_game(b["board"], b.get("name", b.get("label", name)))
+            if b.get("maxScore") is not None:
+                score_caps[b["board"]] = int(b["maxScore"])
         for a in g.get("avatars", []):
             avatars.append((a["key"], a["name"], slug, a.get("price", 0),
                             bool(a.get("premium", a.get("price", 0) > 0))))
@@ -62,12 +65,12 @@ def derive(catalog: dict):
             for i, lv in enumerate(up.get("levels", []), start=1):
                 add_item(lv["key"], f"{up['name']} {_ROMAN[i]}",
                          up.get("itemType", "upgrade"), lv["price"], slug)
-    return games, avatars, store_items, item_game
+    return games, avatars, store_items, item_game, score_caps
 
 
 # Derived once at import so `from .seed import GAMES/AVATARS/STORE_ITEMS/ITEM_GAME` still works.
 CATALOG = load_catalog()
-GAMES, AVATARS, STORE_ITEMS, ITEM_GAME = derive(CATALOG)
+GAMES, AVATARS, STORE_ITEMS, ITEM_GAME, SCORE_CAPS = derive(CATALOG)
 
 # (key, name, description, game ('' = any), metric, threshold) — backend-only, not in the catalog.
 ACHIEVEMENTS = [
@@ -84,17 +87,32 @@ ACHIEVEMENTS = [
 
 
 def seed(db: OrmSession) -> None:
+    """Upsert reference data: insert new rows AND update mutable fields on existing
+    ones, so editing a price/name/etc in catalog.json actually propagates to an
+    already-seeded DB (staging/prod), not just a fresh one. Never deletes."""
     for slug, name in GAMES:
-        if not db.query(Game).filter_by(slug=slug).first():
+        g = db.query(Game).filter_by(slug=slug).first()
+        if g:
+            g.name = name
+        else:
             db.add(Game(slug=slug, name=name))
     for key, name, src, price, premium in AVATARS:
-        if not db.get(Avatar, key):
+        a = db.get(Avatar, key)
+        if a:
+            a.name, a.source_game, a.price, a.is_premium = name, src, price, premium
+        else:
             db.add(Avatar(key=key, name=name, source_game=src, price=price, is_premium=premium))
     for key, name, typ, price in STORE_ITEMS:
-        if not db.get(StoreItem, key):
+        it = db.get(StoreItem, key)
+        if it:
+            it.name, it.type, it.price = name, typ, price
+        else:
             db.add(StoreItem(key=key, name=name, type=typ, price=price))
     for key, name, desc, game, metric, threshold in ACHIEVEMENTS:
-        if not db.get(Achievement, key):
+        ach = db.get(Achievement, key)
+        if ach:
+            ach.name, ach.description, ach.game, ach.metric, ach.threshold = name, desc, game, metric, threshold
+        else:
             db.add(Achievement(key=key, name=name, description=desc, game=game,
                                metric=metric, threshold=threshold))
     db.commit()

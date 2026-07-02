@@ -9,6 +9,12 @@ Deferred work from the CEO plan review (2026-06-20). Critical-path tasks live in
 - [ ] **Achievements engine in the SDK** (P3) — per-game milestones defined via the SDK so every future game gets them free. The real platform bet. Needs the SDK (Phase 4).
 - [ ] **Login hardening** (P2) — rate-limit login attempts + "remember me" longer sessions. Pairs with Phase 1 auth.
 
+## Scaling hardening (from the 2026-07-02 pre-scale review)
+Done in that pass: seed upsert, CI manifest+JS coverage, bounded scores/sessions,
+per-board score caps, per-account cosmetic prefs, dead-code cleanup. Deferred:
+- [ ] **(3) Store + leaderboard UI doesn't scale past ~8 games** (P1) — `shared/gamecenter.js` renders one `flex:1` tab per game and one segmented button per board (flat rows). At ~12–20 games the store tab bar and the leaderboard board list become unusable. Move to a scrollable/searchable game picker; group leaderboard boards under a game selector → mode sub-tabs. This is the main visual blocker to scaling out games.
+- [ ] **(4) In-process rate-limit/lockout state won't survive horizontal scaling** (P1) — `_last_score_at` (`backend/routes/game_routes.py`) and `_login_fails` (`backend/routes/auth_routes.py`) are per-process dicts: multi-instance deploys make limits per-instance (ineffective), and `_last_score_at` never evicts (unbounded memory). Move to Redis or a DB table (with TTL/eviction) before running more than one web instance.
+
 ## Deferred / watch-outs (from the review)
 - [ ] **Combined avatars** (M–L) — unify two renderers + move to stable keys. NOT mechanical (DESIGN.md §7). Deferred to Phase 6.
 - [ ] **Coin-farm balancing** — normalize earn rates across games when Lavender joins the shared wallet, so one game isn't a coin farm (DESIGN.md §9.5).

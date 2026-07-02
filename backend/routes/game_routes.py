@@ -10,6 +10,7 @@ from ..db import get_db
 from ..models import (User, Game, Score, Avatar, StoreItem, UserAvatar, UserItem,
                       Achievement, UserAchievement)
 from .. import auth, config
+from ..seed import SCORE_CAPS
 from ._common import public_user, get_game_or_404
 
 
@@ -78,9 +79,12 @@ def submit_score(body: ScoreBody, user: User = Depends(auth.current_user), db: O
     game = get_game_or_404(db, body.game)
 
     # --- anti-cheat sanity caps (D3) ---
-    if body.score < 0 or body.score > config.MAX_SCORE:
+    # Per-board cap from the catalog (bounded games reject absurd scores), falling
+    # back to the global MAX_SCORE for open-ended boards.
+    cap = SCORE_CAPS.get(body.game, config.MAX_SCORE)
+    if body.score < 0 or body.score > cap:
         raise HTTPException(status_code=422, detail="Score out of range")
-    now = datetime.datetime.utcnow()
+    now = datetime.datetime.now(datetime.timezone.utc).replace(tzinfo=None)  # naive UTC (matches DB)
     last = _last_score_at.get(user.id)
     if last and (now - last).total_seconds() < config.SCORE_MIN_INTERVAL_SEC:
         raise HTTPException(status_code=429, detail="Slow down a moment")
@@ -93,6 +97,17 @@ def submit_score(body: ScoreBody, user: User = Depends(auth.current_user), db: O
     db.commit()
     db.refresh(user)
     db.refresh(row)
+
+    # Bound the scores table: keep only this user's best N runs for this game.
+    keep = [r.id for r in db.query(Score.id)
+            .filter_by(user_id=user.id, game_id=game.id)
+            .order_by(Score.score.desc(), Score.id.asc())
+            .limit(config.SCORES_KEEP_PER_GAME).all()]
+    (db.query(Score)
+       .filter(Score.user_id == user.id, Score.game_id == game.id, ~Score.id.in_(keep))
+       .delete(synchronize_session=False))
+    db.commit()
+
     newly = evaluate_achievements(db, user, game.slug, int(body.score))
     # Returns the refreshed wallet + this game's personal board for the game-over screen.
     return {"wallet": public_user(db, user),

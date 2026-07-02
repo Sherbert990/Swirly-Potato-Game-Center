@@ -456,7 +456,7 @@
         muted = !!d.muted;
         musicSel = d.musicSel || 'none';
       }
-      selectedSkin = localStorage.getItem('archerySkin') || 'classic';
+      selectedSkin = (window.GameCenter && GameCenter.getPref) ? GameCenter.getPref('archerySkin', 'classic') : (localStorage.getItem('archerySkin') || 'classic');
     } catch(_){}
   }
 
@@ -465,6 +465,7 @@
   function syncWallet(u){
     if (!u) return;
     coins = u.coins || 0;
+    if (window.GameCenter && GameCenter.getPref) selectedSkin = GameCenter.getPref('archerySkin', 'classic');
     const items = u.items || {};
     for (const id in PU_KEYS) inventory[id] = items[PU_KEYS[id]] || 0;
     updateHUD(); renderPowerTray();

@@ -419,19 +419,8 @@
   <div class="row"><button class="ghost" id="typeCancel">Cancel</button><button class="primary" id="typeBegin">Begin terraforming</button></div>
 </div></div>
 
-<div class="modal" id="storeModal"><div class="card">
-  <h3 style="text-align:center">Stardust Store</h3>
-  <p style="text-align:center">You have <b id="storeDust">0</b> ✦ stardust. Earn more by completing worlds. These upgrades are permanent and apply to every planet you terraform.</p>
-  <div id="storeList"></div>
-  <div style="margin-top:10px;padding:11px 13px;border:1px dashed rgba(120,150,200,.35);border-radius:12px;background:rgba(120,150,200,.05)">
-    <div style="font-size:10px;letter-spacing:.16em;text-transform:uppercase;color:var(--ink-faint);font-family:var(--display);margin-bottom:7px">🛠 Testing — grant stardust</div>
-    <div style="display:flex;gap:8px">
-      <input id="devDustAmt" type="number" min="0" placeholder="amount" style="flex:1;background:var(--panel-solid);border:1px solid var(--line);border-radius:9px;padding:9px 11px;color:var(--ink);font-size:14px;font-family:var(--body);outline:none">
-      <button class="primary" id="devDustAdd" style="padding:9px 16px">Add ✦</button>
-    </div>
-  </div>
-  <div class="row"><button class="ghost" id="storeClose">Close</button></div>
-</div></div>
+<!-- Stardust Store modal removed: purchases now use the shared hub Store overlay. -->
+
 
 <div class="modal" id="newSysModal"><div class="card center">
   <h3>Forge a new star</h3>
@@ -559,14 +548,8 @@ function goalSummary(t){ const g=goalsFor(t); const lab={heat:'Heat',atmo:'Atmos
   const parts=[]; for(const k of ['heat','atmo','water','bio']) if(g[k]>0) parts.push(lab[k]+' →'+g[k]);
   return parts.length?('Needs: '+parts.join(' · ')):'A bare rock — quick to make.'; }
 
-/* persistent Stardust store (applies to every future terraform) */
-const STORE=[
-  {id:'tap',  name:'Twin Tap',     icon:'✦', max:3, eff:l=>'Energy per tap ×'+Math.pow(2,l), cost:l=>[2,4,8][l-1]},
-  {id:'auto', name:'Auto-Collector',icon:'🛰', max:3, eff:l=>'Passive +'+(l*2)+' energy / sec', cost:l=>[3,6,12][l-1]},
-  {id:'build',name:'Efficient Builders',icon:'🔧',max:4, eff:l=>'Structure costs −'+(l*8)+'%', cost:l=>[3,5,8,12][l-1]},
-  {id:'accel',name:'Terraform Accelerator',icon:'⚙',max:4, eff:l=>'Terraform speed +'+(l*20)+'%', cost:l=>[4,7,11,16][l-1]},
-  {id:'kick', name:'Kickstart Reserves',icon:'🔋',max:3, eff:l=>'Start each world with '+[50,250,1500][l-1]+' energy', cost:l=>[2,4,8][l-1]},
-];
+/* Upgrade catalog lives in shared/catalog.json now; storeLv() reads owned levels
+   from the shared wallet (see GEN_UP). Purchases go through the shared Store overlay. */
 /* the first two systems are free; each additional "star space" is bought with stardust */
 const FREE_SYSTEMS=2, MAX_SYSTEMS=6, STARSPACE_COST=[8,14,22,32];
 function maxSystems(){ return MAX_SYSTEMS; }
@@ -1577,11 +1560,9 @@ function buildSwatches(id, sel, cb){ const wrap=$(id); wrap.innerHTML='';
 /* ============================================================
    STARDUST STORE
    ============================================================ */
-function updateDustUI(){ const d=dustBalance();
-  const a=$('dustHome'); if(a)a.textContent=d; const b=$('storeDust'); if(b)b.textContent=d; }
+function updateDustUI(){ const d=dustBalance(); const a=$('dustHome'); if(a)a.textContent=d; }
 // Upgrades/star-spaces are bought in the shared hub Store overlay (one wallet, tab per game).
 function openGenesisStore(){ if(window.GameCenter&&GameCenter.openStore) GameCenter.openStore('genesis'); }
-const _storeCloseBtn=$('storeClose'); if(_storeCloseBtn)_storeCloseBtn.onclick=()=>$('storeModal').classList.remove('on');
 $('storeBtnHome').onclick=openGenesisStore;
 $('storeBtnSys').onclick=openGenesisStore;
 

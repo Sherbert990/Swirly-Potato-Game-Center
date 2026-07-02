@@ -106,13 +106,14 @@ const OUTFITS=[{key:'white',hex:'#eef1f6'},{key:'charcoal',hex:'#3a4657'},
   {key:'mint',hex:'#8fe0a0'},{key:'royal',hex:'#c9a0ff'}];
 let bladeColor='#d7dde6', outfitColor='#eef1f6';
 function applySkins(){
-  const bk=loadS('riposteBlade','silver'), ok=loadS('riposteOutfit','white');
+  const gp=(window.GameCenter&&GameCenter.getPref)?((k,d)=>GameCenter.getPref(k,d)):loadS;
+  const bk=gp('riposteBlade','silver'), ok=gp('riposteOutfit','white');
   bladeColor=(BLADES.find(b=>b.key===bk)||BLADES[0]).hex;
   outfitColor=(OUTFITS.find(o=>o.key===ok)||OUTFITS[0]).hex;
   CAT_PAL.J=outfitColor;
 }
 const gc = (window.GameCenter && GameCenter.game) ? GameCenter.game('fencing-riposte') : null;
-function walletFrom(u){ if(!u)return; coins=u.coins||0; retries=(u.items&&u.items.rip_retry)||0; refreshStats(); }
+function walletFrom(u){ if(!u)return; coins=u.coins||0; retries=(u.items&&u.items.rip_retry)||0; refreshStats(); applySkins(); }
 if(gc) gc.onWallet(walletFrom);
 async function refreshWallet(){ if(gc) return gc.refresh(); }
 // Bank coins earned this match to the shared wallet + record the rally length.
