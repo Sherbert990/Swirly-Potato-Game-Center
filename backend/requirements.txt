@@ -2,3 +2,4 @@
 -r ../requirements.txt
 pytest==8.3.4
 httpx==0.28.1
+pytest-cov==7.1.0   # coverage: python -m pytest backend/tests --cov=backend --cov-report=term-missing

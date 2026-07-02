@@ -19,6 +19,21 @@ def test_open_board_still_allows_large_scores(client):
     assert client.post("/api/score", json={"game": "dont-look-down", "score": 500000, "coins": 0}).status_code == 200
 
 
+def test_coins_from_all_games_pool_into_one_wallet(client):
+    """The platform's core promise: coins earned in DIFFERENT games land in the same
+    wallet, and the store spends from it regardless of which game earned them."""
+    reg(client, "Tycoon")
+    client.post("/api/score", json={"game": "dont-look-down", "score": 100, "coins": 5})
+    client.post("/api/score", json={"game": "archery-range", "score": 60, "coins": 8})
+    w = client.post("/api/score", json={"game": "genesis", "score": 1, "coins": 3}).json()["wallet"]
+    assert w["coins"] == 16                                   # 5 + 8 + 3, one wallet
+
+    r = client.post("/api/store/buy", json={"kind": "item", "key": "gen_tap1"})    # 2
+    assert r.status_code == 200 and r.json()["coins"] == 14
+    r = client.post("/api/store/buy", json={"kind": "item", "key": "rip_retry"})   # 5 (a different game)
+    assert r.status_code == 200 and r.json()["coins"] == 9    # spent across games from one balance
+
+
 def test_scores_table_bounded_per_user_per_game(client, monkeypatch):
     import backend.config as cfg
     monkeypatch.setattr(cfg, "SCORES_KEEP_PER_GAME", 3)
