@@ -1,12 +1,46 @@
-name: backend-tests
+name: ci
 
+# Run on backend changes AND on the shared manifest / client JS the backend + hub
+# depend on, so a bad catalog.json or a JS syntax error can't slip through.
 on:
   push:
-    paths: ["backend/**", ".github/workflows/ci.yml"]
+    paths:
+      - "backend/**"
+      - "shared/**"
+      - "games/**"
+      - "scripts/**"
+      - "index.html"
+      - "sw.js"
+      - ".github/workflows/ci.yml"
   pull_request:
-    paths: ["backend/**", ".github/workflows/ci.yml"]
+    paths:
+      - "backend/**"
+      - "shared/**"
+      - "games/**"
+      - "scripts/**"
+      - "index.html"
+      - "sw.js"
+      - ".github/workflows/ci.yml"
 
 jobs:
+  # Fast, no database: manifest integrity + client-JS syntax.
+  checks:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+      - name: Install deps
+        run: pip install -r backend/requirements.txt
+      - name: Validate catalog manifest
+        run: python scripts/check_catalog.py
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+      - name: Syntax-check client JS
+        run: node scripts/check_js.js
+
   pytest:
     runs-on: ubuntu-latest
     services:
