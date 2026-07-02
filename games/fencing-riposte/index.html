@@ -33,6 +33,10 @@
   #shopBtn, #shopBack { background: linear-gradient(90deg,#9db4ff,#6f8fe0); }
   #fastToggle { background:#243043; color:#c3ccd6; border:1px solid #3a4657; }
   #fastToggle.on { background:linear-gradient(90deg,#ffcf5c,#ff9d3a); color:#0b0e14; }
+  .speedrow { display:flex; align-items:center; gap:10px; margin:2px 0; font-size:13px; color:#c3ccd6; }
+  .speedrow .lbl { font-size:17px; }
+  .speedrow input[type=range]{ width:200px; accent-color:#ffcf5c; cursor:pointer; }
+  #speedVal { min-width:40px; text-align:left; font-weight:700; color:#ffcf5c; }
   button:hover { filter: brightness(1.08); } button:disabled { filter: grayscale(.6) brightness(.7); }
   .item { background:#141b28; border:1px solid #2b3648; border-radius:8px;
     padding:11px 16px; max-width:460px; width:100%; display:flex; align-items:center; gap:12px; text-align:left; }
@@ -64,6 +68,12 @@
          Buy retries & <b>skins</b> in the 🛒 Shop.</p>
     </div>
     <button id="fastToggle">⚡ Fast Mode: OFF</button>
+    <div class="speedrow">
+      <span class="lbl">🐢</span>
+      <input id="speed" type="range" min="0.6" max="2" step="0.1" value="1">
+      <span class="lbl">🐇</span>
+      <b id="speedVal">1.0×</b>
+    </div>
     <div class="btnrow">
       <button id="soloBtn">1 PLAYER</button>
       <button id="versusBtn">2 PLAYERS</button>
@@ -87,7 +97,7 @@ ctx.imageSmoothingEnabled=false;
 const W=800,H=500, $=id=>document.getElementById(id);
 
 const BASE_BD=0.6, SPEEDUP=0.92, MIN_BD=0.34;
-const HITFRAC=0.24, PERFFRAC=0.11, TARGET=5, RETRY_PRICE=5;
+const HITFRAC=0.34, PERFFRAC=0.15, TARGET=5, RETRY_PRICE=5;
 const DIRS=['up','down','left','right'];
 
 // ===== ECONOMY / SKINS — shared wallet via GameCenter =====
@@ -98,6 +108,7 @@ function loadS(k,d){ try{const v=localStorage.getItem(k); return v===null?d:v;}c
 function saveV(k,v){ try{localStorage.setItem(k,v);}catch(e){} }
 let coins=0, retries=0, earned=0;   // earned = coins banked this match, flushed on game over
 let fastMode=loadN('riposte_fast',0)===1;
+let speedMult=loadN('riposte_speed',1)||1;   // overall tempo multiplier (menu slider); higher = faster
 const BLADES=[{key:'silver',hex:'#d7dde6'},{key:'gold',hex:'#ffcf5c'},
   {key:'crimson',hex:'#ff5a5a'},{key:'azure',hex:'#5aa0ff'},
   {key:'emerald',hex:'#5ae08a'},{key:'violet',hex:'#c98bff'}];
@@ -186,7 +197,7 @@ const ALLKEYS={...P1KEYS,...P2KEYS};
 function randDirs(n){const a=[];for(let i=0;i<n;i++)a.push(DIRS[(Math.random()*4)|0]);return a;}
 function makePhrase(idx){ const len=Math.min(3+Math.floor(idx/2),6);
   const owner=mode==='versus'?(idx%2)+1:1, level=Math.floor(idx/2);
-  const bd=Math.max(MIN_BD,BASE_BD*Math.pow(SPEEDUP,level)), dirs=randDirs(len);
+  const bd=Math.max(MIN_BD,BASE_BD*Math.pow(SPEEDUP,level))/speedMult, dirs=randDirs(len);
   p={len,owner,bd,level,dirs,resp:dirs.map(d=>({dir:d})),results:[],start:actx.currentTime+0.5,retried:false};
   currentBd=bd; }
 function phaseOf(){ const bd=p.bd,L=p.len, wb=fastMode?0:L;
@@ -245,6 +256,8 @@ function update(dt){ if(state==='playing'&&p){ const el=actx.currentTime-p.start
 // ===== DRAW =====
 const C={bg1:'#141b2e',bg2:'#0d1119',floor:'#20293a',line:'#3a4a63',gold:'#ffcf5c',
   good:'#6fe06f',bad:'#ff6a5a',faint:'#232d3d',text:'#e8ecf1',cat:'#ff8f52',dog:'#7ad67a',dim:'#8494a6'};
+// Build the background gradient once — recreating it every frame was a real perf drag.
+const bgGrad=ctx.createLinearGradient(0,0,0,H);bgGrad.addColorStop(0,C.bg1);bgGrad.addColorStop(1,C.bg2);
 function roundRect(x,y,w,h,r){ctx.beginPath();ctx.moveTo(x+r,y);ctx.arcTo(x+w,y,x+w,y+h,r);
   ctx.arcTo(x+w,y+h,x,y+h,r);ctx.arcTo(x,y+h,x,y,r);ctx.arcTo(x,y,x+w,y,r);ctx.closePath();}
 function arrowPath(x,y,dir,s){const P={
@@ -255,8 +268,8 @@ function arrowPath(x,y,dir,s){const P={
   ctx.beginPath();P.forEach((q,i)=>i?ctx.lineTo(x+q[0],y+q[1]):ctx.moveTo(x+q[0],y+q[1]));ctx.closePath();}
 function drawArrow(x,y,dir,color,s){ctx.fillStyle=color;arrowPath(x,y,dir,s);ctx.fill();}
 function lamps(x,count,color){for(let i=0;i<TARGET;i++){ctx.beginPath();ctx.arc(x+i*24,32,8,0,7);
-  ctx.fillStyle=i<count?color:C.faint;if(i<count){ctx.shadowColor=color;ctx.shadowBlur=12;}
-  ctx.fill();ctx.shadowBlur=0;ctx.strokeStyle='#0b0e14';ctx.lineWidth=2;ctx.stroke();}}
+  ctx.fillStyle=i<count?color:C.faint;
+  ctx.fill();ctx.strokeStyle='#0b0e14';ctx.lineWidth=2;ctx.stroke();}}
 function drawBar(el,ph){
   const n=p.len,slot=52,gap=10,tw=n*slot+(n-1)*gap,x0=W/2-tw/2,y=182;
   const watching=el>=ph.introEnd&&el<ph.watchEnd, demoIdx=watching?Math.floor((el-ph.introEnd)/p.bd):-1;
@@ -274,8 +287,7 @@ function drawBar(el,ph){
       if(hl){const prox=1-Math.min(1,Math.abs(el-(ph.respStart+i*p.bd))/(p.bd*0.5));scale=1+0.15*prox;} }
     ctx.save();ctx.translate(cx,cy);ctx.scale(scale,scale);ctx.translate(-cx,-cy);
     ctx.fillStyle=hl?'rgba(255,207,92,0.18)':'rgba(255,255,255,0.045)';roundRect(bx,y,slot,slot,10);ctx.fill();
-    if(hl){ctx.shadowColor=C.gold;ctx.shadowBlur=18;}
-    ctx.strokeStyle=resCol||(hl?C.gold:'#3a4657');ctx.lineWidth=hl?3:2;roundRect(bx,y,slot,slot,10);ctx.stroke();ctx.shadowBlur=0;
+    ctx.strokeStyle=resCol||(hl?C.gold:'#3a4657');ctx.lineWidth=hl?3:2;roundRect(bx,y,slot,slot,10);ctx.stroke();
     if(revealed){const col=resCol||(hl?C.gold:(watching?C.text:'#aebccb'));drawArrow(cx,cy,p.resp[i].dir,col,15);}
     else{ctx.fillStyle='#3a4657';ctx.font='bold 24px Trebuchet MS';ctx.textAlign='center';ctx.fillText('?',cx,cy+8);}
     ctx.restore();
@@ -302,8 +314,7 @@ function drawFighters(activeSide){ const px=6,floorY=432,catBase=200,dogBase=600
   ctx.fillStyle=C.cat;ctx.fillText(mode==='versus'?'🐱 Player 1':'🐱 Whiskers (You)',catX,floorY+30);
   ctx.fillStyle=C.dog;ctx.fillText(mode==='versus'?'🐶 Player 2':'🐶 Biscuit',dogX,floorY+30); }
 function draw(){
-  const g=ctx.createLinearGradient(0,0,0,H);g.addColorStop(0,C.bg1);g.addColorStop(1,C.bg2);
-  ctx.fillStyle=g;ctx.fillRect(0,0,W,H);
+  ctx.fillStyle=bgGrad;ctx.fillRect(0,0,W,H);
   ctx.fillStyle=C.floor;ctx.fillRect(70,362,W-140,90);
   ctx.strokeStyle=C.line;ctx.lineWidth=2;ctx.strokeRect(70,362,W-140,90);
   ctx.beginPath();ctx.moveTo(W/2,362);ctx.lineTo(W/2,452);ctx.strokeStyle='#2b3648';ctx.stroke();
@@ -370,6 +381,10 @@ $('noRetry').onclick=declineRetry;
 $('fastToggle').onclick=()=>{ fastMode=!fastMode; saveV('riposte_fast',fastMode?1:0);
   $('fastToggle').textContent='⚡ Fast Mode: '+(fastMode?'ON':'OFF'); $('fastToggle').classList.toggle('on',fastMode); };
 $('fastToggle').textContent='⚡ Fast Mode: '+(fastMode?'ON':'OFF'); $('fastToggle').classList.toggle('on',fastMode);
+const speedEl=$('speed');
+if(speedEl){ speedEl.value=speedMult; $('speedVal').textContent=speedMult.toFixed(1)+'×';
+  speedEl.oninput=()=>{ speedMult=+speedEl.value; saveV('riposte_speed',speedMult);
+    $('speedVal').textContent=speedMult.toFixed(1)+'×'; }; }
 // gc.onWallet keeps coins/retries fresh after shopping; re-apply skins when equipped in the Store.
 addEventListener('gc:riposteblade', applySkins);
 addEventListener('gc:riposteoutfit', applySkins);
