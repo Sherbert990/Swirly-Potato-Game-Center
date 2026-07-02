@@ -272,10 +272,11 @@
     phaseUntil = now + 2000; phaseReadyAt = now + 15000;
     showHint('phasing — slip through the walls!'); sfx.beacon();
   }
-  async function refreshWallet(){
-    if(!(window.GameCenter && GameCenter.me)) return;
-    try { const r = await GameCenter.me(); if(r && r.ok){ coins = r.data.coins || 0; owned = r.data.items || {}; } } catch(e){}
-  }
+  // Shared wallet via the GameCenter helper: onWallet keeps coins + owned items in sync.
+  const gc = (window.GameCenter && GameCenter.game) ? GameCenter.game('echo') : null;
+  function applyWallet(u){ coins = u.coins || 0; owned = u.items || {}; setIntroCoins(); }
+  if (gc) gc.onWallet(applyWallet);
+  async function refreshWallet(){ if (gc) return gc.refresh(); }
 
   // ---------- audio (synth, no files) ----------
   let actx = null;
@@ -668,9 +669,7 @@
     running = false; sfx.win();
     // Best-effort: record caves-cleared on the shared leaderboard + a few coins.
     // No-ops when played outside the hub (not signed in).
-    if (window.GameCenter && GameCenter.submitScore) {
-      try { GameCenter.submitScore('echo', level, 3); } catch(e){}
-    }
+    if (gc) { try { gc.bank(level, 3); } catch(e){} }   // caves-cleared board + a few coins
     const sub = mode==='collect'
       ? `cave ${level} cleared in ${game.time.toFixed(1)}s`
       : `escaped with ${Math.round(game.meter)}% light to spare`;
@@ -764,17 +763,15 @@
   // Store + leaderboards: the same shared hub overlays the other games use.
   $('introStore').onclick = ()=>{ if(window.GameCenter && GameCenter.openStore) GameCenter.openStore('echo'); };
   $('introTrophy').onclick = ()=>{ if(window.GameCenter && GameCenter.openLeaderboards) GameCenter.openLeaderboards(); };
-  // Keep coins/owned fresh after shopping so a new colour or Bigger Waves applies in-game.
-  addEventListener('gc:wallet', e=>{ if(e && e.detail){ coins = e.detail.coins||0; owned = e.detail.items||{}; setIntroCoins(); } });
-  addEventListener('gc:storeclose', ()=>{ refreshWallet().then(setIntroCoins); });
+  // gc.onWallet already keeps coins/owned fresh after purchases; refresh once more on store close.
+  addEventListener('gc:storeclose', ()=>{ if(gc) gc.refresh().then(setIntroCoins); });
 
   // ---------- boot: account-gated like the other games ----------
   syncPulseLabel();
   (async ()=>{
-    if(window.GameCenter && GameCenter.me){
-      const r = await GameCenter.me();
-      if(!r.ok){ location.href = '/'; return; }   // not signed in -> hub (shared SDK auth)
-      coins = r.data.coins||0; owned = r.data.items||{};
+    if(gc){
+      const r = await gc.refresh();                     // gc.onWallet applies coins/owned
+      if(!r || !r.ok){ location.href = '/'; return; }   // not signed in -> hub (shared SDK auth)
     }
     setIntroCoins();
     $('intro').classList.remove('hidden');

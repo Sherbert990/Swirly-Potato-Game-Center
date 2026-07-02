@@ -1,23 +1,31 @@
 """
-Test harness (T9): real MySQL (not SQLite), per-test transaction rollback so tests
-never pollute each other. Seeded reference data is committed once per session.
+Test harness (T9): per-test transaction rollback so tests never pollute each other.
+Seeded reference data is committed once per session.
 
-Requires a MySQL database `gamecenter_test` reachable at TEST_DATABASE_URL (default
-below). Run:  python -m backend.init_db is NOT needed — conftest creates the schema.
+The test DB is TEST_DATABASE_URL (from .env or the shell). It defaults to a local
+SQLite file — zero setup, no MySQL needed — but point it at a throwaway MySQL
+(`gamecenter_test`) to test against the real engine. NEVER set it to a DB with data
+you care about: the schema is dropped at session start and end.
 """
 import os
+from pathlib import Path
+
+from dotenv import load_dotenv
+
+# Honor .env (esp. TEST_DATABASE_URL) before choosing the test DB.
+load_dotenv(Path(__file__).resolve().parents[2] / ".env")
 
 os.environ["DATABASE_URL"] = os.getenv(
     "TEST_DATABASE_URL",
-    "mysql+pymysql://root@127.0.0.1:3306/gamecenter_test?charset=utf8mb4",
+    "sqlite:///./backend_test.sqlite",   # default: zero-setup local SQLite
 )
 
 import pytest
-from sqlalchemy import create_engine, event
+from sqlalchemy import event
 from sqlalchemy.orm import sessionmaker
 from fastapi.testclient import TestClient
 
-from backend.db import Base, get_db
+from backend.db import Base, get_db, _make_engine
 from backend import models  # noqa: F401
 from backend.app import app
 from backend.seed import seed
@@ -25,7 +33,20 @@ from backend import config as _cfg
 
 _cfg.SCORE_MIN_INTERVAL_SEC = 0  # rate limit off in tests (covered separately, avoids flakiness)
 
-engine = create_engine(os.environ["DATABASE_URL"], future=True)
+engine = _make_engine(os.environ["DATABASE_URL"])   # SQLite- and MySQL-aware
+
+# pysqlite mismanages transactions by default, which breaks the per-test savepoint
+# rollback recipe (db_session) — data leaks between tests. Documented fix: disable
+# the driver's implicit BEGIN and let SQLAlchemy emit BEGIN/SAVEPOINT itself.
+# No-op on MySQL.
+if engine.dialect.name == "sqlite":
+    @event.listens_for(engine, "connect")
+    def _sqlite_no_autobegin(dbapi_conn, _rec):
+        dbapi_conn.isolation_level = None
+
+    @event.listens_for(engine, "begin")
+    def _sqlite_begin(conn):
+        conn.exec_driver_sql("BEGIN")
 
 
 @pytest.fixture(scope="session", autouse=True)

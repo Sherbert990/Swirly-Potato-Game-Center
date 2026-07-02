@@ -12,7 +12,8 @@ backend/.venv/
 
 # Local data
 data/
-*.sqlite
+*.sqlite*
+*.db
 
 # OS
 .DS_Store
