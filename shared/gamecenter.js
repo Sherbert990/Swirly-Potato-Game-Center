@@ -654,7 +654,8 @@
       skin: function (prefKey, dflt) { try { return localStorage.getItem(prefKey) || dflt || null; } catch (e) { return dflt || null; } },
       onWallet: function (cb) { subs.push(cb); if (user) { try { cb(user); } catch (e) {} } return api; },
       refresh: function () { return request('/api/me', 'GET').then((r) => { if (r.ok) emit(r.data); return r; }); },
-      bank: function (score, coins) { return request('/api/score', 'POST', { game: slug, score: score || 0, coins: coins || 0 }).then((r) => { if (r.ok && r.data && r.data.wallet) emit(r.data.wallet); return r; }); },
+      // board defaults to the game slug; pass one for per-mode boards (e.g. lavender-leap-time).
+      bank: function (score, coins, board) { return request('/api/score', 'POST', { game: board || slug, score: score || 0, coins: coins || 0 }).then((r) => { if (r.ok && r.data && r.data.wallet) emit(r.data.wallet); return r; }); },
       use: function (key) { return request('/api/use', 'POST', { item: key }).then((r) => { if (r.ok) emit(r.data); return r; }); },
       buy: function (key, kind) { return request('/api/store/buy', 'POST', { kind: kind || 'item', key: key }).then((r) => { if (r.ok) emit(r.data); return r; }); },
       openStore: function () { return openStore(slug); },

@@ -874,6 +874,15 @@ document.getElementById('reviveBtn').onclick = async () => {
 // ---- Store ----
 // Power-ups and premium skins live in the one shared store (a tab per game).
 document.getElementById('storeBtn').onclick = () => GameCenter.openStore('dont-look-down');
+
+// Shared wallet via the GameCenter helper. DLD keeps its api() translation adapter
+// (height/stars, avatar index<->key) for scores/items, and uses the helper only for
+// live wallet sync: gc.onWallet fires after any Store purchase, in this game's shape.
+const gc = (window.GameCenter && GameCenter.game) ? GameCenter.game(DLD_GAME) : null;
+if (gc) gc.onWallet((u) => {
+  try { currentUser = userFromServer(u); selectedAvatar = currentUser.avatar; refreshStartScreen(); } catch (e) {}
+});
+
 // Shared store: when it closes, pull the latest wallet/skin and refresh the start screen.
 window.addEventListener('gc:storeclose', async () => {
   const r = await api('/api/me');

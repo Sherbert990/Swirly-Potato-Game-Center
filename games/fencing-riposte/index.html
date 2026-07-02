@@ -111,14 +111,14 @@ function applySkins(){
   outfitColor=(OUTFITS.find(o=>o.key===ok)||OUTFITS[0]).hex;
   CAT_PAL.J=outfitColor;
 }
+const gc = (window.GameCenter && GameCenter.game) ? GameCenter.game('fencing-riposte') : null;
 function walletFrom(u){ if(!u)return; coins=u.coins||0; retries=(u.items&&u.items.rip_retry)||0; refreshStats(); }
-async function refreshWallet(){ if(!(window.GameCenter&&GameCenter.me))return;
-  try{ const r=await GameCenter.me(); if(r&&r.ok) walletFrom(r.data); }catch(e){} }
+if(gc) gc.onWallet(walletFrom);
+async function refreshWallet(){ if(gc) return gc.refresh(); }
 // Bank coins earned this match to the shared wallet + record the rally length.
 function bankEarned(){
   const gain=earned; earned=0;
-  if(window.GameCenter&&GameCenter.submitScore)
-    GameCenter.submitScore('fencing-riposte', turnIndex, gain).then(r=>{ if(r&&r.ok&&r.data&&r.data.wallet) walletFrom(r.data.wallet); });
+  if(gc) gc.bank(turnIndex, gain);   // rally-length board + banks coins to the shared wallet
 }
 function refreshStats(){ $('menuCoins').textContent=coins; $('menuRetries').textContent=retries;
   const rc=$('retryCount'); if(rc) rc.textContent=retries; }
@@ -228,7 +228,7 @@ function checkWinOrNext(){ if(player>=TARGET){winner='cat';endGame();}
   else if(rival>=TARGET){winner='dog';endGame();} else {turnIndex++;makePhrase(turnIndex);} }
 function doRetry(){ if(retries<=0){declineRetry();return;}
   retries--; refreshStats();
-  if(window.GameCenter&&GameCenter.use) GameCenter.use('rip_retry').then(r=>{ if(r&&r.ok) walletFrom(r.data); });
+  if(gc) gc.use('rip_retry');   // consume server-side; gc.onWallet refreshes retries
   p.results=[];p.retried=true;p.start=actx.currentTime+0.4; state='playing';showScreen(null); }
 function declineRetry(){ state='playing';showScreen(null);applyMiss(); }
 function endGame(){ state='over';
@@ -369,8 +369,7 @@ $('noRetry').onclick=declineRetry;
 $('fastToggle').onclick=()=>{ fastMode=!fastMode; saveV('riposte_fast',fastMode?1:0);
   $('fastToggle').textContent='⚡ Fast Mode: '+(fastMode?'ON':'OFF'); $('fastToggle').classList.toggle('on',fastMode); };
 $('fastToggle').textContent='⚡ Fast Mode: '+(fastMode?'ON':'OFF'); $('fastToggle').classList.toggle('on',fastMode);
-// Keep coins/retries fresh after shopping; re-apply skins the moment they're equipped in the Store.
-addEventListener('gc:wallet', e=>{ if(e&&e.detail) walletFrom(e.detail); });
+// gc.onWallet keeps coins/retries fresh after shopping; re-apply skins when equipped in the Store.
 addEventListener('gc:riposteblade', applySkins);
 addEventListener('gc:riposteoutfit', applySkins);
 applySkins(); refreshStats(); showScreen('menu'); refreshWallet(); requestAnimationFrame(loop);

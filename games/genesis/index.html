@@ -590,8 +590,9 @@ const GEN_SPACE=['gen_space3','gen_space4','gen_space5','gen_space6'];
 function ownedLevel(keys){ let n=0; for(const k of keys){ if(itemQty(k)>0)n++; else break; } return n; }
 function storeLv(id){ return GEN_UP[id] ? ownedLevel(GEN_UP[id]) : 0; }
 
-async function refreshWallet(){ if(!(window.GameCenter&&GameCenter.me)) return null;
-  try{ const r=await GameCenter.me(); if(r&&r.ok){ WALLET=r.data; return WALLET; } }catch(e){} return null; }
+const gc = (window.GameCenter && GameCenter.game) ? GameCenter.game('genesis') : null;
+if(gc) gc.onWallet(u=>{ WALLET=u; updateDustUI(); });   // keeps the balance + owned upgrades live
+async function refreshWallet(){ if(!gc) return null; const r=await gc.refresh(); return (r&&r.ok)?r.data:null; }
 function earnDust(amt){ if(amt>0){ pendingDust+=amt; updateDustUI(); } }
 // Bank earnings to the wallet in batches (score submitted = livable worlds terraformed).
 async function flushDust(force){
@@ -599,17 +600,17 @@ async function flushDust(force){
   const now=Date.now(); if(!force && now-dustFlushAt<8000) return;
   dustFlushAt=now;
   const gain=Math.min(Math.floor(pendingDust),1000);
-  if(window.GameCenter&&GameCenter.submitScore){
-    try{ const r=await GameCenter.submitScore('genesis', livableWorlds().length, gain);
-      if(r&&r.ok&&r.data&&r.data.wallet){ WALLET=r.data.wallet; pendingDust-=gain; updateDustUI(); } }catch(e){}
+  if(gc){
+    const r=await gc.bank(livableWorlds().length, gain);   // gc.onWallet applies the new balance
+    if(r&&r.ok) pendingDust-=gain;
   }
 }
 // Spend on a backend item key (the server deducts from the one wallet). Returns success.
 async function walletBuy(key){
   await flushDust(true);                    // bank pending first so the server balance is current
-  if(!(window.GameCenter&&GameCenter.buy)) return false;
-  try{ const r=await GameCenter.buy('item', key); if(r&&r.ok){ WALLET=r.data; updateDustUI(); return true; } }catch(e){}
-  return false;
+  if(!gc) return false;
+  const r=await gc.buy(key);                // gc.onWallet applies the new balance
+  return !!(r && r.ok);
 }
 
 function ensureMeta(p){ if(!p) return; if(!Array.isArray(p.systems))p.systems=[];
@@ -1534,7 +1535,7 @@ function renderCosmetics(){ const p=SYS.planets[editIdx]; const wrap=$('cosmetic
   if(p.rings){ rb.disabled=true; rb.innerHTML=`<span class="cn">💫 Ring</span><span class="cc">Owned ✓</span>`; }
   else { rb.disabled=dust<RING_PRICE; rb.innerHTML=`<span class="cn">💫 Add ring</span><span class="cc">✦ ${RING_PRICE}</span>`;
     rb.onclick=async()=>{ if(dustBalance()<RING_PRICE)return; const ok=await walletBuy('gen_ring'); if(!ok)return;
-      if(window.GameCenter&&GameCenter.use) GameCenter.use('gen_ring').then(r=>{ if(r&&r.ok){ WALLET=r.data; updateDustUI(); } });
+      if(gc) gc.use('gen_ring');   // consume the ring token; gc.onWallet refreshes the balance
       p.rings=true; afterCosmetic(); }; }
   wrap.appendChild(rb);
 }
@@ -1744,8 +1745,7 @@ $('musicToggle').onclick=()=>{ if(music){ stopMusic(); try{localStorage.setItem(
     window.addEventListener('pointerdown',kick); window.addEventListener('keydown',kick); } }catch(e){}
   window.addEventListener('beforeunload',()=>{ dbSave(); flushDust(true); });
   setInterval(dbSave,8000);
-  // Keep the wallet mirror fresh after shopping in the shared Store overlay.
-  addEventListener('gc:wallet', e=>{ if(e&&e.detail){ WALLET=e.detail; updateDustUI(); } });
+  // gc.onWallet keeps the wallet mirror fresh after shopping in the shared Store overlay.
   // Sign-in is the hub's: enter with the logged-in account, else send them to the hub.
   const u = await refreshWallet();
   if(u){ enter(u.username); } else { showSignInGate(); }

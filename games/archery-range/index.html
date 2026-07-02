@@ -461,6 +461,7 @@
   }
 
   // ---------- shared wallet ----------
+  const gc = (window.GameCenter && GameCenter.game) ? GameCenter.game('archery-range') : null;
   function syncWallet(u){
     if (!u) return;
     coins = u.coins || 0;
@@ -468,15 +469,12 @@
     for (const id in PU_KEYS) inventory[id] = items[PU_KEYS[id]] || 0;
     updateHUD(); renderPowerTray();
   }
-  async function refreshWallet(){
-    if (!(window.GameCenter && GameCenter.me)) return;
-    try { const r = await GameCenter.me(); if (r && r.ok) syncWallet(r.data); } catch(_){}
-  }
+  if (gc) gc.onWallet(syncWallet);
+  async function refreshWallet(){ if (gc) return gc.refresh(); }
   function flushCoins(){
     // Bank the level's coins into the shared wallet + record the level score.
     const gain = pendingCoins; pendingCoins = 0;
-    if (window.GameCenter && GameCenter.submitScore)
-      GameCenter.submitScore('archery-range', endScore, gain).then(r => { if (r && r.ok && r.data && r.data.wallet) syncWallet(r.data.wallet); });
+    if (gc) gc.bank(endScore, gain);
   }
 
   // ---------- sound (Web Audio, no assets) ----------
@@ -839,7 +837,7 @@
     const p = POWERUPS.find(x => x.id === id);
     if (!p || !canActivate(p)) return;
     inventory[id]--;
-    if (window.GameCenter && GameCenter.use) GameCenter.use(PU_KEYS[id]).then(r => { if (r && r.ok) syncWallet(r.data); });
+    if (gc) gc.use(PU_KEYS[id]);   // consume server-side; gc.onWallet refreshes the tray
     fx[id] = true;
     if (id === 'wideTarget') resize();
     if (id === 'windBlock') renderWind();
@@ -1122,8 +1120,7 @@
   el.musicSelect.value = musicSel;
   showScreen('menu');
   refreshWallet();
-  // Keep coins/power-ups fresh after shopping; swap the target skin live when equipped.
-  addEventListener('gc:wallet', (e) => { if (e && e.detail) syncWallet(e.detail); });
+  // gc.onWallet keeps coins/power-ups fresh after shopping; swap the target skin live when equipped.
   addEventListener('gc:archeryskin', (e) => { selectedSkin = (e && e.detail) || 'classic'; });
   requestAnimationFrame((t) => { lastTs = t; loop(t); });
 })();

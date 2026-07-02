@@ -1177,6 +1177,12 @@ function applyUser(u) {
   updateCoinHud();
 }
 
+// Shared wallet + scoring via the GameCenter helper (named `hub` because this file
+// already uses `gc` for the backend user object). hub.onWallet -> applyUser keeps
+// coins/items/avatar in sync on load and after every purchase or score.
+const hub = (window.GameCenter && GameCenter.game) ? GameCenter.game(LL_GAME) : null;
+if (hub) hub.onWallet(applyUser);
+
 // Each mode reports to its own leaderboard with its own score:
 //   timetrial -> levels cleared, hard -> highest level reached, freeplay -> world score.
 function runSlugAndScore() {
@@ -1193,10 +1199,9 @@ async function commitRun(force = false) {
   if (runCoins <= 0 && !force) return;
   const { slug, score } = runSlugAndScore();
   const coins = runCoins; runCoins = 0;
-  const r = await GameCenter.submitScore(slug, score | 0, coins);
-  if (r.ok && r.data && r.data.wallet) applyUser(r.data.wallet);
-  else runCoins += coins;  // submit failed — keep the coins for the next boundary
-  updateCoinHud();
+  const r = await hub.bank(score | 0, coins, slug);   // board override -> the mode's leaderboard
+  if (!(r && r.ok)) runCoins += coins;                // submit failed — keep coins for next boundary
+  updateCoinHud();                                     // (applyUser runs via hub.onWallet on success)
   return r;
 }
 
@@ -1209,7 +1214,7 @@ function ownsDoubleJump() {
 function consumeDoubleJump() {
   if (!gc || !gc.items) return;
   gc.items.double_jump = Math.max(0, doubleJumpCharges() - 1);  // spend locally for instant feedback
-  GameCenter.use("double_jump");  // persist to the server (fire-and-forget; not awaited)
+  if (hub) hub.use("double_jump");  // persist to the server (fire-and-forget; not awaited)
 }
 
 // Legacy local-profile helpers are no longer used (login is the shared account).
@@ -1788,11 +1793,11 @@ window.addEventListener("gc:storeopen", async () => {
   }
 });
 window.addEventListener("gc:storeclose", async () => {
-  const r = await GameCenter.me();
-  if (r.ok) { applyUser(r.data); buildAvatarPicker(); renderProfilePowerups(); }
+  const r = hub ? await hub.refresh() : { ok: false };   // applyUser runs via hub.onWallet
+  if (r.ok) { buildAvatarPicker(); renderProfilePowerups(); }
   if (storeWasRunning) { storeWasRunning = false; resumeGame(); }
 });
-window.addEventListener("gc:wallet", (e) => { if (e.detail) applyUser(e.detail); });
+// gc:wallet is handled by the hub helper (hub.onWallet -> applyUser).
 storeBackBtn.addEventListener("click", showModes);
 storeResumeBtn.addEventListener("click", resumeGame);
 reviveUseBtn.addEventListener("click", useRevive);
@@ -1941,7 +1946,7 @@ window.addEventListener("pagehide", () => {
 
 (async () => {
   showScreen(null);  // hide the welcome screen immediately — no sign-in flash before the gate resolves
-  const r = await GameCenter.me();
+  const r = hub ? await hub.refresh() : { ok: false };
   if (!r.ok) { location.href = "/"; return; }  // not logged in -> hub (shared SDK auth)
   applyUser(r.data);
   currentUser = r.data.username;
