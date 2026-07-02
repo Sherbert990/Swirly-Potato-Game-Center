@@ -24,3 +24,7 @@ data/
 
 # Node (dev-only test tooling)
 node_modules/
+
+# Coverage artifacts
+.coverage
+htmlcov/
