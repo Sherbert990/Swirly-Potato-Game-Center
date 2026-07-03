@@ -204,7 +204,8 @@
       "playColor": "p2",
       "play": "/games/orbit-dodge/index.html",
       "leaderboards": [
-        { "board": "orbit-dodge", "label": "Orbit Dodge", "unit": "{n} pts", "maxScore": 5000 }
+        { "board": "orbit-dodge", "label": "Orbit Dodge", "unit": "{n} pts", "maxScore": 5000 },
+        { "board": "orbit-dodge-infinity", "name": "Orbit Dodge · Infinity", "label": "Orbit · Infinity", "unit": "{n}s", "maxScore": 100000 }
       ],
       "items": [
         { "key": "orbit_shield", "name": "Shield", "desc": "Start every run with a one-hit shield", "price": 40, "type": "orbit_power", "permanent": true },

@@ -181,6 +181,7 @@
     <div class="coins" id="coins-menu">0</div>
     <div class="menu-btns">
       <button class="btn primary" id="btn-play">Play</button>
+      <button class="btn" id="btn-infinity" style="border-color:rgba(111,240,208,.5);color:var(--gap)">&#8734; Infinity</button>
       <button class="btn" id="btn-levels">Levels</button>
       <button class="btn" id="btn-store">Store</button>
     </div>
@@ -230,6 +231,7 @@
   const overLevel = document.getElementById('overlevel');
   const coinsEarned = document.getElementById('coins-earned');
   const bestLine = document.getElementById('bestline');
+  const finalLabel = document.querySelector('#over .final-label');
 
   const startOv = document.getElementById('start');
   const levelsOv = document.getElementById('levels');
@@ -258,10 +260,10 @@
 
   /* ---------- Local save: bests + audio pref only ---------- */
   const KEY = 'orbitDodgeSave';
-  let save = { best:0, highestLevel:1, muted:false };
+  let save = { best:0, bestTime:0, highestLevel:1, muted:false };
   try {
     const raw = localStorage.getItem(KEY);
-    if (raw){ const s = JSON.parse(raw); save.best = s.best||0; save.highestLevel = s.highestLevel||1; save.muted = !!s.muted; }
+    if (raw){ const s = JSON.parse(raw); save.best = s.best||0; save.bestTime = s.bestTime||0; save.highestLevel = s.highestLevel||1; save.muted = !!s.muted; }
   } catch(e){}
   function persist(){ try { localStorage.setItem(KEY, JSON.stringify(save)); } catch(e){} }
 
@@ -383,16 +385,28 @@
   let spawnTimer = 0, elapsed = 0, runTime = 0, shake = 0, shieldFlash = 0, deathFlash = 0;
   let score = 0, level = 1, gapsThisLevel = 0, coinsRun = 0, ringCount = 0, shields = 0;
   let runStartLevel = 1;
+  let mode = 'classic';                 // 'classic' = score is gaps threaded; 'infinity' = score is time survived
 
   const RINGS_PER_LEVEL = 6;
 
   // Level 1 is deliberately gentle: slow rings, wide gaps, lots of spacing.
-  function ringSpeed(){ return Math.min(38 + (level-1)*9, 215); }             // px/s
+  // Infinity mode adds a time term past 25s so difficulty never fully plateaus.
+  function ringSpeed(){
+    let s = Math.min(38 + (level-1)*9, 215);                                  // px/s
+    if (mode === 'infinity') s += Math.max(0, runTime - 25) * 1.2;
+    return s;
+  }
   function spawnInterval(){ return Math.max(0.72, 2.2 - (level-1)*0.09); }     // seconds
   function gapHalfWidth(){
     let g = Math.max(0.38, 1.02 - (level-1)*0.055);                           // radians
+    if (mode === 'infinity') g = Math.max(0.30, g - Math.max(0, runTime - 25) * 0.0022);
     if (hasUpgrade('steady')) g += 0.07;
     return g;
+  }
+  // mm:ss.d stopwatch text (drops the minutes segment under a minute).
+  function fmtTime(t){
+    const m = Math.floor(t / 60), s = t - m * 60;
+    return m > 0 ? m + ':' + s.toFixed(1).padStart(4, '0') : s.toFixed(1);
   }
   function moveScale(){ return (hasUpgrade('slowstart') && runTime < 5) ? 0.55 : 1; }
 
@@ -404,14 +418,19 @@
     rings = []; particles = []; trail.length = 0;
     spawnTimer = 0.5; elapsed = 0; runTime = 0; shake = 0; shieldFlash = 0; deathFlash = 0;
     shields = hasUpgrade('shield') ? 1 : 0;
-    if (level > save.highestLevel){ save.highestLevel = level; persist(); }
+    if (mode !== 'infinity' && level > save.highestLevel){ save.highestLevel = level; persist(); }
     updateHud();
     banner.classList.remove('show');
   }
 
   function updateHud(){
-    levelHud.textContent = 'Level ' + level;
-    scoreEl.textContent = score;
+    if (mode === 'infinity'){
+      levelHud.textContent = '∞ Infinity';
+      scoreEl.textContent = fmtTime(runTime);
+    } else {
+      levelHud.textContent = 'Level ' + level;
+      scoreEl.textContent = score;
+    }
     coinHud.textContent = coinsRun;
   }
 
@@ -437,7 +456,7 @@
 
   function onLevelUp(){
     coinsRun += 5;
-    if (level > save.highestLevel){ save.highestLevel = level; persist(); }
+    if (mode !== 'infinity' && level > save.highestLevel){ save.highestLevel = level; persist(); }
     banner.textContent = 'Level ' + level;
     banner.classList.remove('show'); void banner.offsetWidth; banner.classList.add('show');
     shake = Math.max(shake, 6);
@@ -474,16 +493,28 @@
     stopMusic(); SFX.die(); haptic(60);
     state = STATE.OVER;
 
-    const isNew = score > save.best;
-    if (isNew) save.best = score;
-    persist();
-    if (gc) gc.bank(score, coinsRun);          // bank coins + submit score to the shared leaderboard
-    else { coins += coinsRun; refreshCoinsUI(); }
-
-    finalEl.textContent = score;
-    overLevel.textContent = 'Reached level ' + level;
+    if (mode === 'infinity'){
+      const isNew = runTime > save.bestTime;
+      if (isNew) save.bestTime = runTime;
+      persist();
+      if (gc) gc.bank(Math.floor(runTime), coinsRun, 'orbit-dodge-infinity');   // seconds -> the Infinity board
+      else { coins += coinsRun; refreshCoinsUI(); }
+      finalLabel.textContent = 'Time survived';
+      finalEl.textContent = fmtTime(runTime);
+      overLevel.textContent = 'Reached level ' + level;
+      bestLine.innerHTML = isNew ? '<span class="newbest">New best!</span>' : 'Best <b>' + fmtTime(save.bestTime) + '</b>';
+    } else {
+      const isNew = score > save.best;
+      if (isNew) save.best = score;
+      persist();
+      if (gc) gc.bank(score, coinsRun);          // gaps -> the classic board
+      else { coins += coinsRun; refreshCoinsUI(); }
+      finalLabel.textContent = 'Score';
+      finalEl.textContent = score;
+      overLevel.textContent = 'Reached level ' + level;
+      bestLine.innerHTML = isNew ? '<span class="newbest">New best!</span>' : 'Best <b>' + save.best + '</b>';
+    }
     coinsEarned.textContent = '+' + coinsRun;
-    bestLine.innerHTML = isNew ? '<span class="newbest">New best!</span>' : 'Best <b>' + save.best + '</b>';
     setTimeout(() => show('over'), 300);
   }
 
@@ -497,7 +528,8 @@
   }
   function hideAll(){ for (const k in screens) screens[k].classList.add('hidden'); currentScreen = null; }
 
-  function startPlay(atLevel){ ac(); hideAll(); reset(atLevel); state = STATE.PLAY; startMusic(); updateMuteVis(); }
+  function startPlay(atLevel){ ac(); hideAll(); mode = 'classic'; reset(atLevel); state = STATE.PLAY; startMusic(); updateMuteVis(); }
+  function startInfinity(){ ac(); hideAll(); mode = 'infinity'; reset(1); state = STATE.PLAY; startMusic(); updateMuteVis(); }
 
   function renderLevels(){
     const grid = document.getElementById('lvl-grid');
@@ -525,10 +557,11 @@
   });
 
   document.getElementById('btn-play').addEventListener('click', () => startPlay(1));
+  document.getElementById('btn-infinity').addEventListener('click', startInfinity);
   document.getElementById('btn-levels').addEventListener('click', () => { renderLevels(); show('levels'); });
   document.getElementById('btn-store').addEventListener('click', openHubStore);
   document.querySelectorAll('[data-back]').forEach(b => b.addEventListener('click', () => show('start')));
-  document.getElementById('btn-retry').addEventListener('click', () => startPlay(runStartLevel));
+  document.getElementById('btn-retry').addEventListener('click', () => { if (mode === 'infinity') startInfinity(); else startPlay(runStartLevel); });
   document.getElementById('btn-over-levels').addEventListener('click', () => { renderLevels(); show('levels'); });
   document.getElementById('btn-over-store').addEventListener('click', openHubStore);
   document.getElementById('btn-over-menu').addEventListener('click', () => show('start'));
@@ -556,6 +589,7 @@
   function update(dt){
     if (state === STATE.PLAY){
       elapsed += dt; runTime += dt;
+      if (mode === 'infinity') scoreEl.textContent = fmtTime(runTime);   // live stopwatch
       playerAngle += dir * playerSpeed * dt;
 
       const p = playerPos();
