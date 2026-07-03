@@ -22,8 +22,25 @@ os.environ["DATABASE_URL"] = os.getenv(
 
 import pytest
 from sqlalchemy import event
+from sqlalchemy.engine import make_url
 from sqlalchemy.orm import sessionmaker
 from fastapi.testclient import TestClient
+
+# Safety guard: the schema is dropped at session start/end (see _schema below), so a
+# stray TEST_DATABASE_URL pointing at a *remote* DB — e.g. a copy-pasted dev/prod URL
+# in someone's .env — would silently wipe real data over a slow link. Refuse to run
+# unless the target is SQLite or on this machine. Set ALLOW_REMOTE_TEST_DB=1 to
+# override (as CI does implicitly by using a 127.0.0.1 service, which passes anyway).
+_LOCAL_HOSTS = {None, "", "localhost", "127.0.0.1", "::1"}
+if not os.getenv("ALLOW_REMOTE_TEST_DB"):
+    _u = make_url(os.environ["DATABASE_URL"])
+    if _u.get_backend_name() != "sqlite" and _u.host not in _LOCAL_HOSTS:
+        raise RuntimeError(
+            f"Refusing to run tests against remote DB host {_u.host!r}: the harness "
+            f"DROPS ALL TABLES at start/end. Point TEST_DATABASE_URL at local SQLite "
+            f"(sqlite:///./backend_test.sqlite) or a throwaway localhost DB. "
+            f"Set ALLOW_REMOTE_TEST_DB=1 only if you truly mean it."
+        )
 
 from backend.db import Base, get_db, _make_engine
 from backend import models  # noqa: F401
