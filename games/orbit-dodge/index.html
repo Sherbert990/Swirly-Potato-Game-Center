@@ -278,10 +278,15 @@
   function openHubStore(){ if (window.GameCenter && GameCenter.openStore) GameCenter.openStore('orbit-dodge'); }
 
   /* ---------- Audio (procedural, no assets) ---------- */
-  let muted = !!save.muted, actx = null;
+  // Separate SFX and music buses so they mix independently and stay gentle.
+  let muted = !!save.muted, actx = null, sfxBus = null, musicBus = null;
   function ac(){
     if (muted) return null;
-    if (!actx){ try { actx = new (window.AudioContext || window.webkitAudioContext)(); } catch(e){ return null; } }
+    if (!actx){ try {
+      actx = new (window.AudioContext || window.webkitAudioContext)();
+      sfxBus = actx.createGain(); sfxBus.gain.value = 0.75; sfxBus.connect(actx.destination);
+      musicBus = actx.createGain(); musicBus.gain.value = 0.16; musicBus.connect(actx.destination);
+    } catch(e){ return null; } }
     if (actx.state === 'suspended') actx.resume();
     return actx;
   }
@@ -291,9 +296,9 @@
     o.type = type || 'sine'; o.frequency.setValueAtTime(freq, t);
     if (slideTo) o.frequency.exponentialRampToValueAtTime(slideTo, t + dur);
     g.gain.setValueAtTime(0.0001, t);
-    g.gain.exponentialRampToValueAtTime(gain || 0.1, t + 0.008);
+    g.gain.exponentialRampToValueAtTime(gain || 0.1, t + 0.01);
     g.gain.exponentialRampToValueAtTime(0.0001, t + dur);
-    o.connect(g); g.connect(a.destination); o.start(t); o.stop(t + dur + 0.02);
+    o.connect(g); g.connect(sfxBus); o.start(t); o.stop(t + dur + 0.02);
   }
   function noiseHit(dur, gain){
     const a = ac(); if (!a) return;
@@ -301,16 +306,50 @@
     for (let i=0;i<n;i++) d[i] = (Math.random()*2-1) * (1 - i/n);
     const s = a.createBufferSource(); s.buffer = buf;
     const g = a.createGain(); g.gain.value = gain;
-    s.connect(g); g.connect(a.destination); s.start();
+    s.connect(g); g.connect(sfxBus); s.start();
   }
+  // Softer palette: gentle sine/triangle tones at roughly half the old level.
   const SFX = {
-    reverse(){ blip(300, 0.05, 'square', 0.045, 440); },
-    score(n){ blip(520 + Math.min(n,14)*26, 0.10, 'triangle', 0.09); },
-    level(){ [523,659,784,1046].forEach((f,i) => setTimeout(() => blip(f, 0.16, 'triangle', 0.09), i*70)); },
-    shield(){ blip(180, 0.18, 'sawtooth', 0.11, 70); noiseHit(0.1, 0.08); },
-    die(){ blip(320, 0.5, 'sawtooth', 0.13, 60); noiseHit(0.28, 0.16); },
+    reverse(){ blip(300, 0.045, 'sine', 0.03, 380); },
+    score(n){ blip(480 + Math.min(n,14)*22, 0.09, 'sine', 0.05); },
+    level(){ [523,659,784].forEach((f,i) => setTimeout(() => blip(f, 0.15, 'triangle', 0.05), i*90)); },
+    shield(){ blip(210, 0.16, 'triangle', 0.06, 110); },
+    die(){ blip(300, 0.40, 'triangle', 0.07, 80); noiseHit(0.18, 0.05); },
   };
   function haptic(ms){ try { if (navigator.vibrate) navigator.vibrate(ms); } catch(e){} }
+
+  /* ---------- Background music: a calm, looping arpeggio (procedural) ---------- */
+  const midiToFreq = m => 440 * Math.pow(2, (m - 69) / 12);
+  // Am – F – C – G, gentle and spacey to match the orbit vibe.
+  const MUSIC = { bpm: 82, prog: [ [45,57,60,64], [41,53,57,60], [48,55,60,64], [43,55,59,62] ] };
+  let musicTimer = null, musicOn = false, mBar = 0, mStep = 0, mNext = 0;
+  function musicNote(freq, t, dur, gain, wave){
+    if (!musicBus) return;
+    const o = actx.createOscillator(), g = actx.createGain();
+    o.type = wave || 'triangle'; o.frequency.value = freq;
+    g.gain.setValueAtTime(0.0001, t);
+    g.gain.exponentialRampToValueAtTime(gain, t + 0.03);
+    g.gain.exponentialRampToValueAtTime(0.0001, t + dur);
+    o.connect(g); g.connect(musicBus); o.start(t); o.stop(t + dur + 0.05);
+  }
+  function musicSchedule(){
+    const a = ac(); if (!a || !musicOn) return;
+    const stepDur = (60 / MUSIC.bpm) / 2;                 // eighth notes
+    while (mNext < a.currentTime + 0.12){
+      const ch = MUSIC.prog[mBar], arp = [ch[1], ch[2], ch[3], ch[2]];
+      if (mStep === 0) musicNote(midiToFreq(ch[0] - 12), mNext, stepDur * 3.4, 0.5, 'sine');       // soft bass
+      musicNote(midiToFreq(arp[mStep % 4]), mNext, stepDur * 0.9, 0.30, 'triangle');               // arpeggio
+      if (mStep === 5) musicNote(midiToFreq(ch[3] + 12), mNext, stepDur * 1.4, 0.11, 'triangle');  // high shimmer
+      if (++mStep >= 8){ mStep = 0; mBar = (mBar + 1) % MUSIC.prog.length; }
+      mNext += stepDur;
+    }
+  }
+  function startMusic(){
+    const a = ac(); if (!a || musicOn) return;
+    mBar = 0; mStep = 0; mNext = a.currentTime + 0.1; musicOn = true;
+    musicTimer = setInterval(musicSchedule, 25);
+  }
+  function stopMusic(){ musicOn = false; if (musicTimer){ clearInterval(musicTimer); musicTimer = null; } }
 
   function skinById(id){ return SKINS.find(s => s.id === id) || SKINS[0]; }
   function ringColorFor(skin, lvl, idx){
@@ -432,7 +471,7 @@
     const p = playerPos();
     burst(p.x, p.y, C.danger);
     shake = 16; deathFlash = 0.5;
-    SFX.die(); haptic(60);
+    stopMusic(); SFX.die(); haptic(60);
     state = STATE.OVER;
 
     const isNew = score > save.best;
@@ -458,7 +497,7 @@
   }
   function hideAll(){ for (const k in screens) screens[k].classList.add('hidden'); currentScreen = null; }
 
-  function startPlay(atLevel){ ac(); hideAll(); reset(atLevel); state = STATE.PLAY; updateMuteVis(); }
+  function startPlay(atLevel){ ac(); hideAll(); reset(atLevel); state = STATE.PLAY; startMusic(); updateMuteVis(); }
 
   function renderLevels(){
     const grid = document.getElementById('lvl-grid');
@@ -501,7 +540,11 @@
     muteBtn.classList.toggle('muted', muted);
     muteBtn.setAttribute('aria-label', muted ? 'Unmute' : 'Mute');
   }
-  function toggleMute(){ muted = !muted; save.muted = muted; persist(); renderMute(); if (!muted) ac(); }
+  function toggleMute(){
+    muted = !muted; save.muted = muted; persist(); renderMute();
+    if (muted) stopMusic();
+    else { ac(); if (state === STATE.PLAY) startMusic(); }
+  }
   function updateMuteVis(){ if (muteBtn) muteBtn.style.display = (currentScreen === 'start' || currentScreen === null) ? 'flex' : 'none'; }
   muteBtn.addEventListener('pointerdown', e => e.stopPropagation());
   muteBtn.addEventListener('click', e => { e.stopPropagation(); toggleMute(); });
