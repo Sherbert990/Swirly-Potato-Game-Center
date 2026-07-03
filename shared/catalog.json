@@ -194,6 +194,36 @@
         { "name": "Kickstart Reserves", "desc": "Start each world with more energy", "itemType": "genesis_upgrade", "levels": [{ "key": "gen_kick1", "price": 10 }, { "key": "gen_kick2", "price": 25 }, { "key": "gen_kick3", "price": 55 }] },
         { "name": "Star Space", "desc": "Unlock room for another solar system", "itemType": "genesis_space", "levels": [{ "key": "gen_space3", "price": 40 }, { "key": "gen_space4", "price": 75 }, { "key": "gen_space5", "price": 130 }, { "key": "gen_space6", "price": 200 }] }
       ]
+    },
+    {
+      "slug": "orbit-dodge",
+      "name": "Orbit Dodge",
+      "cover": "/design/hub/orbit-dodge-cover.svg",
+      "blurb": "Circle the core and thread each closing ring through its gap. One tap reverses your spin. Every level closes in faster.",
+      "chips": ["Endless", "One-tap"],
+      "playColor": "p2",
+      "play": "/games/orbit-dodge/index.html",
+      "leaderboards": [
+        { "board": "orbit-dodge", "label": "Orbit Dodge", "unit": "{n} pts", "maxScore": 5000 }
+      ],
+      "items": [
+        { "key": "orbit_shield", "name": "Shield", "desc": "Start every run with a one-hit shield", "price": 40, "type": "orbit_power", "permanent": true },
+        { "key": "orbit_steady", "name": "Steady Hand", "desc": "Every gap is a little wider — more room to thread", "price": 55, "type": "orbit_power", "permanent": true },
+        { "key": "orbit_slowstart", "name": "Slow Start", "desc": "Rings crawl for the first 5 seconds of each run", "price": 60, "type": "orbit_power", "permanent": true }
+      ],
+      "skinGroups": [
+        {
+          "title": "Ring skins", "prefKey": "orbitSkin", "event": "gc:orbitskin", "default": "aurora", "itemType": "orbit_skin",
+          "choices": [
+            { "name": "Aurora", "pref": "aurora", "swatch": "hsl(258,72%,64%)" },
+            { "key": "orbit-skin-ember", "name": "Ember", "pref": "ember", "swatch": "hsl(34,82%,60%)", "price": 80 },
+            { "key": "orbit-skin-toxic", "name": "Toxic", "pref": "toxic", "swatch": "hsl(140,70%,58%)", "price": 100 },
+            { "key": "orbit-skin-rose", "name": "Rose", "pref": "rose", "swatch": "hsl(354,76%,66%)", "price": 100 },
+            { "key": "orbit-skin-mono", "name": "Mono", "pref": "mono", "swatch": "hsl(0,0%,84%)", "price": 140 },
+            { "key": "orbit-skin-spectrum", "name": "Spectrum", "pref": "spectrum", "swatch": "conic-gradient(from 0deg,hsl(0,80%,62%),hsl(120,80%,62%),hsl(240,80%,62%),hsl(360,80%,62%))", "price": 275 }
+          ]
+        }
+      ]
     }
   ]
 }

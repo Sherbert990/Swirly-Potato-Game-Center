@@ -1,0 +1,46 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 560 300" width="560" height="300" role="img" aria-label="Orbit Dodge">
+  <defs>
+    <radialGradient id="od-bg" cx="36%" cy="46%" r="80%">
+      <stop offset="0%" stop-color="#17122e"/><stop offset="70%" stop-color="#0d0b1f"/>
+    </radialGradient>
+    <radialGradient id="od-core" cx="50%" cy="50%" r="50%">
+      <stop offset="0%" stop-color="#8fe4ff"/><stop offset="45%" stop-color="rgba(143,228,255,0.35)"/><stop offset="100%" stop-color="rgba(143,228,255,0)"/>
+    </radialGradient>
+    <linearGradient id="od-ttl" x1="0" y1="0" x2="1" y2="0">
+      <stop offset="0%" stop-color="#ffcb6b"/><stop offset="100%" stop-color="#ff9d5c"/>
+    </linearGradient>
+  </defs>
+  <rect width="560" height="300" fill="url(#od-bg)"/>
+
+  <!-- orbit ring (player path) -->
+  <circle cx="200" cy="158" r="104" fill="none" stroke="rgba(234,230,255,0.10)" stroke-width="1"/>
+
+  <!-- closing rings, each with a gap -->
+  <g transform="rotate(35 200 158)">
+    <circle cx="200" cy="158" r="100" fill="none" stroke="hsl(218,72%,64%)" stroke-width="7" stroke-linecap="round" stroke-dasharray="558 70" opacity="0.9"/>
+  </g>
+  <g transform="rotate(150 200 158)">
+    <circle cx="200" cy="158" r="76" fill="none" stroke="hsl(238,72%,66%)" stroke-width="7" stroke-linecap="round" stroke-dasharray="418 60" opacity="0.92"/>
+  </g>
+  <g transform="rotate(255 200 158)">
+    <circle cx="200" cy="158" r="52" fill="none" stroke="hsl(258,74%,68%)" stroke-width="7" stroke-linecap="round" stroke-dasharray="282 45" opacity="0.95"/>
+  </g>
+
+  <!-- gap markers on the outer ring -->
+  <circle cx="279" cy="93" r="4.5" fill="#6ff0d0"/>
+  <circle cx="243" cy="70" r="4.5" fill="#6ff0d0"/>
+
+  <!-- glowing core -->
+  <circle cx="200" cy="158" r="34" fill="url(#od-core)"/>
+  <circle cx="200" cy="158" r="11" fill="#8fe4ff"/>
+
+  <!-- player at top of the orbit, with a little trail -->
+  <circle cx="200" cy="54" r="4" fill="#ff9d5c" opacity="0.25"/>
+  <circle cx="188" cy="58" r="3" fill="#ff9d5c" opacity="0.18"/>
+  <circle cx="200" cy="54" r="9" fill="#ffcb6b"/>
+
+  <!-- title -->
+  <text x="404" y="146" text-anchor="middle" font-family="'Space Grotesk', sans-serif" font-size="47" font-weight="700" letter-spacing="1" fill="url(#od-ttl)">ORBIT</text>
+  <text x="404" y="193" text-anchor="middle" font-family="'Space Grotesk', sans-serif" font-size="47" font-weight="700" letter-spacing="1" fill="#6ff0d0">DODGE</text>
+  <text x="404" y="222" text-anchor="middle" font-family="'Space Grotesk', sans-serif" font-size="14" letter-spacing="3" fill="#9891c4">TAP TO REVERSE · THREAD THE GAP</text>
+</svg>
