@@ -108,7 +108,8 @@
       "playColor": "p1",
       "play": "/games/archery-range/index.html",
       "leaderboards": [
-        { "board": "archery-range", "label": "Archery Range", "unit": "{n} pts", "maxScore": 5000 }
+        { "board": "archery-range", "label": "Archery Range", "unit": "{n} pts", "maxScore": 5000 },
+        { "board": "archery-range-streak", "name": "Archery Range · Bullseye Streak", "label": "Archery · Streak", "unit": "{n} in a row", "maxScore": 100000 }
       ],
       "items": [
         { "key": "arch_golden_arrow", "name": "Golden Arrow", "desc": "Your next arrow scores double", "price": 18, "type": "archery_power" },

@@ -89,6 +89,13 @@
   .lv-stars .s.on{color:var(--gold)}
   .lv-best{font-family:"Oswald",sans-serif;font-size:10px;letter-spacing:.08em;color:var(--gold-deep);min-height:12px}
 
+  /* Bullseye Streak call-to-action */
+  .streak-cta{width:100%;text-align:left;background:linear-gradient(180deg,rgba(236,190,60,.14),rgba(236,190,60,.03));border:1px solid var(--gold-deep);border-radius:14px;padding:14px 16px;margin-bottom:6px;cursor:pointer;color:var(--cream);display:flex;flex-direction:column;gap:4px;transition:border-color .18s,transform .12s;font-family:inherit}
+  .streak-cta:hover{border-color:var(--gold);transform:translateY(-1px)}
+  .streak-cta .t{font-family:"Oswald",sans-serif;font-size:17px;font-weight:600;letter-spacing:.06em;text-transform:uppercase;color:var(--gold)}
+  .streak-cta .d{font-size:12px;color:var(--muted);line-height:1.4}
+  .streak-cta .b{font-family:"Oswald",sans-serif;font-size:11px;letter-spacing:.08em;color:var(--gold-deep);min-height:13px}
+
   /* ---------- SHOP ---------- */
   .shop-tabs{align-self:center}
   .shop-grid{display:grid;grid-template-columns:1fr 1fr;gap:12px}
@@ -267,6 +274,13 @@
       <p>Draw the bow, judge the wind, and loose. Your ring follows only your hand &mdash; the wind bends the arrow after you release. Each level blows harder than the last.</p>
     </div>
 
+    <div class="section-label">Endless</div>
+    <button class="streak-cta" id="streakBtn">
+      <span class="t">&#127919; Bullseye Streak</span>
+      <span class="d">How many bullseyes can you land in a row? Every shot gets harder.</span>
+      <span class="b" id="streakBest"></span>
+    </button>
+
     <div class="section-label">Select a level</div>
     <div class="levels" id="levelGrid"></div>
   </section>
@@ -341,10 +355,15 @@
 (() => {
   "use strict";
   const reduceMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
-  const MAX_LEVEL = 16;
+  const MAX_LEVEL = 50;
   const ARROWS_PER_END = 6;
   const LEVEL_NAMES = ['Still Air','Light Breeze','Fresh Breeze','Brisk Wind','Strong Wind','High Wind','Gale','Storm',
-    'Violent Storm','Squall','Tempest','Hurricane','Cyclone','Typhoon','Maelstrom','The Reckoning'];
+    'Violent Storm','Squall','Tempest','Hurricane','Cyclone','Typhoon','Maelstrom','The Reckoning',
+    'Tempest\'s Edge','Howling Pass','Gale\'s Fury','Stormbreak','Windshear','The Gauntlet','Raging Sky','Vortex',
+    'Cataclysm','Wrath','Tempest King','Skyfall','Ruin','The Maw','Whirlwind','Devil\'s Draft',
+    'Screaming Gale','Titan\'s Breath','Chaos','The Rift','Stormheart','The Furies','Apex','The Crucible',
+    'Nightmare Wind','The Abyss','Ragnarok','Void Gale','Oblivion','Final Squall','Judgment','The Impossible',
+    'Nemesis','Legend'];
   // >1 compresses the inner scoring rings so the bullseye is small & hard to hit.
   const BULLSEYE_GAMMA = 1.35;
   const ringFrac = k => Math.pow(k / 10, BULLSEYE_GAMMA);
@@ -369,8 +388,12 @@
     coinsGame: $('coinsGame'), coinsGameNum: $('coinsGameNum'),
     openShop: $('openShop'),
     powerTray: $('powerTray'), muteBtn: $('muteBtn'), musicSelect: $('musicSelect'),
+    streakBtn: $('streakBtn'), streakBest: $('streakBest'),
   };
   el.arrowsPerEnd.textContent = ARROWS_PER_END;
+  // Handles for repurposing the HUD between Levels and Bullseye-Streak modes.
+  const statLabels = [...document.querySelectorAll('.scoreboard .stat .k')];   // [Level, Best, Run]
+  const arrowCountEl = document.querySelector('.arrow-count');
 
   // ---------- difficulty per level ----------
   function levelParams(L){
@@ -437,6 +460,7 @@
   let selectedSkin = 'classic';
   const bestByLevel = {};
   const starsByLevel = {};
+  let bestStreak = 0;                    // best Bullseye-Streak run (on-device)
   let muted = false;
   let musicSel = 'none';
 
@@ -445,7 +469,7 @@
                     slowTime:'arch_slow_time', goldenArrow:'arch_golden_arrow', magnet:'arch_magnet' };
 
   function save(){
-    try { localStorage.setItem(SAVE_KEY, JSON.stringify({ bestByLevel, starsByLevel, muted, musicSel })); } catch(_){}
+    try { localStorage.setItem(SAVE_KEY, JSON.stringify({ bestByLevel, starsByLevel, bestStreak, muted, musicSel })); } catch(_){}
   }
   function load(){
     try {
@@ -453,6 +477,7 @@
       if (d) {
         Object.assign(bestByLevel, d.bestByLevel || {});
         Object.assign(starsByLevel, d.starsByLevel || {});
+        bestStreak = d.bestStreak || 0;
         muted = !!d.muted;
         musicSel = d.musicSel || 'none';
       }
@@ -523,9 +548,9 @@
   const midiToFreq = n => 440 * Math.pow(2, (n - 69) / 12);
   const MUSIC_TRACKS = {
     // "Meadow" — calm, warm, major. "Focus" — steady minor groove. "Tempest" — dark & driving for the storms.
-    meadow:  { name:'Meadow',  bpm:80,  wave:'triangle', vol:0.05,  prog:[[48,55,60,64],[45,52,57,60],[41,53,57,60],[43,50,55,59]] },
-    focus:   { name:'Focus',   bpm:104, wave:'sine',     vol:0.05,  prog:[[45,52,57,60],[43,50,55,58],[41,48,53,57],[47,54,59,62]] },
-    tension: { name:'Tempest', bpm:128, wave:'sawtooth', vol:0.038, prog:[[38,45,50,53],[40,47,51,54],[36,43,48,51],[41,48,53,56]] },
+    meadow:  { name:'Meadow',  bpm:80,  wave:'triangle', vol:0.078, prog:[[48,55,60,64],[45,52,57,60],[41,53,57,60],[43,50,55,59]] },
+    focus:   { name:'Focus',   bpm:104, wave:'sine',     vol:0.078, prog:[[45,52,57,60],[43,50,55,58],[41,48,53,57],[47,54,59,62]] },
+    tension: { name:'Tempest', bpm:128, wave:'sawtooth', vol:0.058, prog:[[38,45,50,53],[40,47,51,54],[36,43,48,51],[41,48,53,56]] },
   };
   let musicGain = null, musicOn = false, schedTimer = null;
   let barIndex = 0, stepIndex = 0, nextNoteTime = 0;
@@ -571,9 +596,18 @@
 
   // ---------- state ----------
   let screen = 'menu';
+  let gameMode = 'levels';         // 'levels' (score per level) | 'streak' (endless bullseyes in a row)
   let level = 1;
   let P = levelParams(1);
   let state = 'ready';             // ready | drawing | flying | ended
+  // Bullseye Streak: each landed gold ramps the difficulty; one non-gold ends the run.
+  function streakLevel(){ return 1 + Math.round(streak * 1.4); }
+  function streakVerdict(n){
+    if (n < 3) return 'A start. Loose only once the ring settles on the gold.';
+    if (n < 6) return 'Nice run — the targets were getting mean.';
+    if (n < 10) return 'Sharp shooting under real pressure.';
+    return 'Elite. Robin Hood is taking notes.';
+  }
   let arrowIndex = 0, endScore = 0, sessionTotal = 0, streak = 0;
   let endArrows = [], stuck = [];
   let wind = 0;
@@ -683,6 +717,7 @@
 
   function land(){
     const {toX, toY} = flight;
+    const priorStreak = streak;     // streak before this shot (for the Streak-mode result)
     let s = scoreAt(toX, toY);
     const x = isX(toX, toY);
     if (x) s += 1;                        // X ring rewarded: 11
@@ -711,6 +746,24 @@
     chip.innerHTML = label
       + (coinGain > 0 ? ` <span class="coin-gain">+${coinGain}&#9670;</span>` : '')
       + (streak >= 2 ? ` <span class="streak">&#128293;${streak}</span>` : '');
+
+    if (gameMode === 'streak'){
+      resetArrowFx(); updateHUD(); save(); flight = null;
+      if (s >= 9){                              // gold — the streak lives on, target ramps up
+        stuck = []; endArrows = [];
+        P = levelParams(streakLevel());
+        resize();
+        state = 'ready';
+        newWind();
+        updateStreakHUD();
+        setHint('Bullseye! <b>' + streak + '</b> in a row — keep the gold.');
+      } else {                                  // anything but gold ends the run
+        updateStreakHUD();
+        state = 'ended';
+        setTimeout(() => streakOver(priorStreak), reduceMotion ? 150 : 650);
+      }
+      return;
+    }
 
     resetArrowFx();
     renderPowerTray();
@@ -810,6 +863,38 @@
     save();
   }
 
+  // ---------- Bullseye Streak mode ----------
+  function updateStreakHUD(){
+    el.levelNum.textContent = streakLevel();
+    el.levelName.textContent = 'Bullseye Streak';
+    arrowCountEl.style.display = 'none';
+    el.arrowsStrip.style.display = 'none';
+    el.powerTray.style.display = 'none';        // pure skill — no power-ups
+    statLabels[0].textContent = 'Streak';
+    statLabels[2].textContent = 'Level';
+    el.endScore.textContent = streak;
+    el.bestScore.textContent = bestStreak;
+    el.totalScore.textContent = streakLevel();
+  }
+  function streakOver(finalStreak){
+    const isNew = finalStreak > bestStreak;
+    if (isNew) bestStreak = finalStreak;
+    const gain = pendingCoins; pendingCoins = 0;
+    if (gc) gc.bank(finalStreak, gain, 'archery-range-streak');   // streak -> its own leaderboard
+    save();
+    el.ovEyebrow.textContent = 'Streak over';
+    el.ovStars.innerHTML = '';
+    el.ovScore.innerHTML = finalStreak + '<span> in a row</span>';
+    el.ovVerdict.textContent = isNew ? 'New personal best — bullseye after bullseye!' : streakVerdict(finalStreak);
+    el.ovCoins.innerHTML = gain > 0 ? `+${gain} &#9670; earned` : '';
+    el.nextBtn.textContent = 'Try again';
+    sfx('level');
+    bumpCoins();
+    el.overlay.classList.add('show');
+    updateStreakHUD();   // reflect the (possibly new) best behind the overlay
+    updateHUD();
+  }
+
   // ---------- power-up tray (in game) ----------
   function canActivate(p){
     if ((inventory[p.id] || 0) <= 0 || fx[p.id]) return false;
@@ -855,11 +940,15 @@
     game.classList.toggle('hidden', name !== 'game');
   }
   function startLevel(L){
+    gameMode = 'levels';
     level = Math.min(MAX_LEVEL, Math.max(1, L));
     P = levelParams(level);
     resetRoundFx();
     arrowIndex = 0; endScore = 0; endArrows = []; stuck = []; streak = 0;
     state = 'ready';
+    // restore the Levels HUD (in case we came from Streak mode)
+    arrowCountEl.style.display = ''; el.arrowsStrip.style.display = ''; el.powerTray.style.display = '';
+    statLabels[0].textContent = 'Level'; statLabels[2].textContent = 'Run';
     el.levelNum.textContent = level;
     el.levelName.textContent = LEVEL_NAMES[level - 1];
     el.arrowNum.textContent = 1;
@@ -877,6 +966,33 @@
     updateHUD();
     renderPowerTray();
     setHint(readyHint());
+  }
+
+  function startStreak(){
+    gameMode = 'streak';
+    streak = 0;
+    P = levelParams(1);
+    resetRoundFx();
+    arrowIndex = 0; endScore = 0; sessionTotal = 0; endArrows = []; stuck = [];
+    state = 'ready';
+    el.overlay.classList.remove('show');
+    el.lastHit.classList.remove('show');
+    el.drawZone.style.display = 'none';
+    el.drawFill.style.width = '0%';
+    el.steadyWord.textContent = 'At rest';
+    el.steadyWord.style.color = 'var(--muted)';
+    showScreen('game');
+    resize();
+    aim.x = cx; aim.y = cy;
+    newWind();
+    updateStreakHUD();
+    updateHUD();
+    setHint('Land the <b>gold</b> to keep the streak alive.');
+  }
+
+  function refreshMenu(){
+    buildLevelGrid();
+    el.streakBest.textContent = bestStreak ? 'Your best: ' + bestStreak + ' in a row' : 'No streak yet — go for one!';
   }
 
   function buildLevelGrid(){
@@ -952,10 +1068,11 @@
     if (e.code === 'ArrowDown') keys.down = false;
   });
 
-  el.nextBtn.addEventListener('click', () => startLevel(level < MAX_LEVEL ? level + 1 : level));
-  el.ovMenuBtn.addEventListener('click', () => { buildLevelGrid(); showScreen('menu'); });
-  el.toMenu.addEventListener('click', () => { buildLevelGrid(); showScreen('menu'); });
-  el.resetLevel.addEventListener('click', () => startLevel(level));
+  el.nextBtn.addEventListener('click', () => { if (gameMode === 'streak') startStreak(); else startLevel(level < MAX_LEVEL ? level + 1 : level); });
+  el.ovMenuBtn.addEventListener('click', () => { refreshMenu(); showScreen('menu'); });
+  el.toMenu.addEventListener('click', () => { refreshMenu(); showScreen('menu'); });
+  el.resetLevel.addEventListener('click', () => { if (gameMode === 'streak') startStreak(); else startLevel(level); });
+  el.streakBtn.addEventListener('click', startStreak);
   el.openShop.addEventListener('click', () => { if (window.GameCenter && GameCenter.openStore) GameCenter.openStore('archery-range'); });
   el.muteBtn.addEventListener('click', () => {
     muted = !muted;
@@ -1116,7 +1233,7 @@
 
   // ---------- boot ----------
   load();
-  buildLevelGrid();
+  refreshMenu();
   updateHUD();
   el.musicSelect.value = musicSel;
   showScreen('menu');
