@@ -548,6 +548,7 @@
   function reverse(){ if (state === STATE.PLAY){ dir *= -1; SFX.reverse(); } }
   stage.addEventListener('pointerdown', () => reverse());
   window.addEventListener('keydown', (e) => {
+    if (e.repeat) return;                 // ignore auto-repeat: a held key = one action (like a single tap)
     if (e.code === 'KeyM'){ toggleMute(); return; }
     if (e.code === 'Space' || e.code === 'ArrowUp' || e.code === 'Enter'){
       e.preventDefault();
