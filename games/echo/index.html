@@ -64,6 +64,11 @@
   /* ---- HUD ---- */
   #hud{position:absolute;inset:0;pointer-events:none;z-index:5;font-size:12px;letter-spacing:.14em}
   #hud .corner{position:absolute;padding:16px 18px;text-transform:uppercase;color:var(--dim)}
+  /* Wall Pass countdown — a mini bar at the top while phasing */
+  #phaseBar{position:absolute;top:14px;left:50%;transform:translateX(-50%);width:150px;height:7px;
+    border-radius:5px;background:rgba(255,255,255,.13);overflow:hidden;display:none}
+  #phaseBar.show{display:block;box-shadow:0 0 12px rgba(95,230,255,.4)}
+  #phaseFill{height:100%;width:100%;border-radius:5px;background:linear-gradient(90deg,#5fe6ff,#a86bff)}
   #lvl{top:0;left:0}
   #lvl b{font-family:var(--ff-title);color:var(--ink);font-size:15px}
   #status{top:0;left:50%;transform:translateX(-50%);text-align:center;padding-top:16px}
@@ -143,6 +148,7 @@
   <div class="corner" id="lvl">Cave <b>1</b></div>
   <div class="corner" id="status"></div>
   <div class="corner" id="right"><button id="menuBtn">⌂ menu</button><button id="mute">♪ sound on</button></div>
+  <div id="phaseBar"><div id="phaseFill"></div></div>
   <div id="hint"></div>
 </div>
 
@@ -263,14 +269,39 @@
   function moveSpeed(){ return ownsFast() ? SPEED * 1.45 : SPEED; }
   function autoInterval(){ return ownsRapid() ? 0.95 : AUTO_INTERVAL; }   // shorter gap between auto pulses
   // Wall Pass: a 2s window where the player ignores walls, on a long cooldown.
-  let phaseUntil = 0, phaseReadyAt = 0;
+  const PHASE_MS = 2000;
+  let phaseUntil = 0, phaseReadyAt = 0, wasPhasing = false;
+  const phaseBarEl = document.getElementById('phaseBar'), phaseFillEl = document.getElementById('phaseFill');
   function phasing(){ return performance.now() < phaseUntil; }
   function tryPhase(){
     if(!ownsPhase() || !running) return;
     const now = performance.now();
     if(now < phaseReadyAt) return;          // still cooling down
-    phaseUntil = now + 2000; phaseReadyAt = now + 15000;
+    phaseUntil = now + PHASE_MS; phaseReadyAt = now + 15000;
     showHint('phasing — slip through the walls!'); sfx.beacon();
+  }
+  // When the window closes, never leave the player buried in a wall — pull them to
+  // the nearest corridor cell so they can't get stuck (the reported bug).
+  function teleportToNearestFloor(){
+    const gm = game; if(!gm) return;
+    const cgx = Math.floor(gm.px/CELL), cgy = Math.floor(gm.py/CELL);
+    let bx = -1, by = -1, bd = Infinity;
+    for(let y=0;y<gm.gh;y++) for(let x=0;x<gm.gw;x++){
+      if(gm.g[y][x] !== 0) continue;
+      const d = (x-cgx)*(x-cgx) + (y-cgy)*(y-cgy);
+      if(d < bd){ bd = d; bx = x; by = y; }
+    }
+    if(bx >= 0){ gm.px = (bx+0.5)*CELL; gm.py = (by+0.5)*CELL; gm.vx = gm.vy = 0; showHint('pulled to a corridor'); pulse(false); }
+  }
+  function updatePhaseUi(){
+    if(phasing()){
+      phaseBarEl.classList.add('show');
+      phaseFillEl.style.width = Math.max(0, (phaseUntil - performance.now()) / PHASE_MS) * 100 + '%';
+      wasPhasing = true;
+    } else {
+      phaseBarEl.classList.remove('show');
+      if(wasPhasing){ wasPhasing = false; if(game && isWall(game.px, game.py)) teleportToNearestFloor(); }
+    }
   }
   // Shared wallet via the GameCenter helper: onWallet keeps coins + owned items in sync.
   const gc = (window.GameCenter && GameCenter.game) ? GameCenter.game('echo') : null;
@@ -445,6 +476,7 @@
     if(!collides(nx, gm.py, PLAYER_R)) gm.px = nx;
     const ny = gm.py + gm.vy*dt;
     if(!collides(gm.px, ny, PLAYER_R)) gm.py = ny;
+    updatePhaseUi();   // Wall Pass timer bar + safety teleport on expiry
 
     // pulses (manual + auto)
     manualTimer -= dt; autoTimer -= dt;
