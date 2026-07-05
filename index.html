@@ -124,6 +124,7 @@ h1,.gtitle,.brand,.wm{font-family:Fredoka,sans-serif}
       <button class="nav" id="lbBtn"><i class="ti ti-trophy" aria-hidden="true"></i> Leaderboards</button>
       <button class="nav" id="achBtn"><i class="ti ti-medal" aria-hidden="true"></i> Achievements</button>
       <button class="nav" id="shareBtn"><i class="ti ti-share" aria-hidden="true"></i> Share</button>
+      <button class="nav" id="musicBtn"><i class="ti ti-music" aria-hidden="true"></i> Music</button>
       <button class="nav" id="settingsBtn"><i class="ti ti-settings" aria-hidden="true"></i> Settings</button>
       <button class="nav" id="logoutBtn"><i class="ti ti-logout" aria-hidden="true"></i> Log out</button>
       <button class="toggle" id="tgl" aria-label="Toggle light or dark"><i class="ti ti-sun" aria-hidden="true"></i><i class="ti ti-moon" aria-hidden="true"></i><span class="knob"></span></button>
@@ -168,6 +169,46 @@ $('tgl').onclick = () => {
   GameCenter.settings.setTheme(dark ? 'light' : 'dark');
 };
 function toast(msg){ const t=$('toast'); t.textContent=msg; t.classList.add('show'); setTimeout(()=>t.classList.remove('show'),2200); }
+
+// ---- hub background music (procedural loop, no assets) — plays across the
+// sign-in screen, the hub and the store overlay. One track, on/off toggle. ----
+let hubMusicOn = true;
+try { const v = localStorage.getItem('hubMusic'); if (v !== null) hubMusicOn = v !== 'off'; } catch (e) {}
+const hMidi = n => 440 * Math.pow(2, (n - 69) / 12);
+const HUB_PROG = [[45,52,57,61],[43,50,55,59],[48,55,59,62],[41,53,57,60]];   // warm, welcoming ii–I–IV
+let hActx = null, hGain = null, hOn = false, hTimer = null, hBar = 0, hStep = 0, hNext = 0;
+function hAudio(){ if (!hActx){ try { hActx = new (window.AudioContext || window.webkitAudioContext)(); } catch (e) { return null; } } if (hActx.state === 'suspended') hActx.resume(); return hActx; }
+function hNote(freq, t, dur, wave, g){
+  if (!hGain) return;
+  const o = hActx.createOscillator(), gn = hActx.createGain();
+  o.type = wave; o.frequency.value = freq; o.connect(gn); gn.connect(hGain);
+  gn.gain.setValueAtTime(0.0001, t); gn.gain.exponentialRampToValueAtTime(g, t + 0.03);
+  gn.gain.exponentialRampToValueAtTime(0.0001, t + dur); o.start(t); o.stop(t + dur + 0.04);
+}
+function hSched(){
+  const a = hAudio(); if (!a || !hOn) return;
+  const stepDur = (60 / 76) / 2;
+  while (hNext < a.currentTime + 0.12){
+    const c = HUB_PROG[hBar];
+    if (hStep === 0) hNote(hMidi(c[0] - 12), hNext, stepDur * 3.4, 'sine', 0.4);          // soft bass
+    const arp = [c[1], c[2], c[3], c[2]];
+    hNote(hMidi(arp[hStep % 4]), hNext, stepDur * 1.1, 'triangle', 0.14);                  // gentle arp
+    if (hStep === 4) hNote(hMidi(c[2] + 12), hNext, stepDur * 1.8, 'sine', 0.07);          // shimmer
+    if (++hStep >= 8){ hStep = 0; hBar = (hBar + 1) % HUB_PROG.length; }
+    hNext += stepDur;
+  }
+}
+function hubStart(){ const a = hAudio(); if (!a || !hubMusicOn) return; hubStop(); if (!hGain){ hGain = a.createGain(); hGain.connect(a.destination); } hGain.gain.value = 0.06; hBar = 0; hStep = 0; hNext = a.currentTime + 0.1; hOn = true; hTimer = setInterval(hSched, 25); }
+function hubStop(){ hOn = false; if (hTimer){ clearInterval(hTimer); hTimer = null; } }
+document.addEventListener('pointerdown', () => { if (hubMusicOn && !hOn) hubStart(); });   // unlock on first gesture
+function renderMusicBtn(){ $('musicBtn').innerHTML = `<i class="ti ti-music${hubMusicOn ? '' : '-off'}" aria-hidden="true"></i> Music`; }
+$('musicBtn').onclick = () => {
+  hubMusicOn = !hubMusicOn;
+  try { localStorage.setItem('hubMusic', hubMusicOn ? 'on' : 'off'); } catch (e) {}
+  renderMusicBtn();
+  if (hubMusicOn) hubStart(); else hubStop();
+};
+renderMusicBtn();
 
 // ---- starter avatars (free) for signup — rendered so players see them ----
 const AV_DARK = '#1a1030';
