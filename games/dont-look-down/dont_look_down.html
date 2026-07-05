@@ -160,14 +160,7 @@ canvas { display: block; width: 100%; height: 100%; background: #1a0b2e; }
         <label class="toggleRow" id="hsRow"><input type="checkbox" id="useHeadStart"><span>Head Start (+50m) — <b id="hsCount">0</b> owned</span></label>
         <label class="toggleRow" id="rkRow"><input type="checkbox" id="useRocket"><span>Rocket Booster (+100m) — <b id="rkCount">0</b> owned</span></label>
         <label class="toggleRow" id="dbRow"><input type="checkbox" id="useDoubler"><span>Star Doubler (2× stars) — <b id="dbCount">0</b> owned</span></label>
-        <label class="toggleRow" id="musicRow"><span>&#9834; Music</span>
-          <select id="musicSel" style="margin-left:8px;background:var(--gc-chip);color:var(--gc-ink);border:1px solid var(--gc-chip-line);border-radius:9px;padding:4px 8px;font:inherit;font-weight:700;cursor:pointer">
-            <option value="none">Off</option>
-            <option value="breeze">Breeze</option>
-            <option value="ascent">Ascent</option>
-            <option value="vertigo">Vertigo</option>
-          </select>
-        </label>
+        <label class="toggleRow" id="musicRow"><input type="checkbox" id="musicChk"><span>&#9834; Music</span></label>
       </div>
       <div class="introActions">
         <button class="gBtn" id="startBtn"><i class="ti ti-player-play" aria-hidden="true"></i> Play</button>
@@ -791,16 +784,13 @@ function showScreen(id) {
   document.getElementById('gameButtons').style.display = id ? 'none' : 'flex';
 }
 
-// ---- background music (procedural loops, no assets — same engine as Archery) ----
+// ---- background music: "Skyward" — DLD's own track (procedural, no assets).
+// Chiptune-flavoured climbing arpeggio (soft square lead over a syncopated sine
+// bass) so it sounds nothing like Archery's warm triangle "Meadow".
 const midiToFreq = n => 440 * Math.pow(2, (n - 69) / 12);
-const MUSIC_TRACKS = {
-  // "Breeze" — airy and calm. "Ascent" — steady climbing groove. "Vertigo" — tense, for the brave.
-  breeze:  { bpm: 84,  wave: 'triangle', vol: 0.078, prog: [[48,55,60,64],[43,50,55,59],[45,52,57,60],[41,48,53,57]] },
-  ascent:  { bpm: 108, wave: 'sine',     vol: 0.078, prog: [[45,52,57,60],[48,55,60,64],[43,50,55,58],[47,54,59,62]] },
-  vertigo: { bpm: 132, wave: 'sawtooth', vol: 0.055, prog: [[38,45,50,53],[36,43,48,51],[40,47,51,54],[41,48,53,56]] },
-};
-let musicSel = 'none';
-try { musicSel = localStorage.getItem('dldMusic') || 'none'; } catch (e) {}
+const MUSIC = { bpm: 104, vol: 0.062, prog: [[45,52,57,60],[41,48,53,57],[43,50,55,59],[48,55,60,64]] };
+let musicWanted = true;   // one track, on/off — persisted below
+try { const v = localStorage.getItem('dldMusic'); if (v !== null) musicWanted = v !== 'off' && v !== 'none'; } catch (e) {}
 let mActx = null, musicGain = null, musicOn = false, schedTimer = null;
 let mBar = 0, mStep = 0, mNext = 0;
 function mAudio() {
@@ -820,38 +810,39 @@ function musicNote(freq, t, dur, wave, g) {
 }
 function musicScheduler() {
   const a = mAudio(); if (!a || !musicOn) return;
-  const T = MUSIC_TRACKS[musicSel]; if (!T) return;
-  const stepDur = (60 / T.bpm) / 2;                       // eighth notes
+  const stepDur = (60 / MUSIC.bpm) / 2;                   // eighth notes
   while (mNext < a.currentTime + 0.12) {
-    const chord = T.prog[mBar];
-    if (mStep === 0) musicNote(midiToFreq(chord[0] - 12), mNext, stepDur * 3.6, T.wave, 0.5);   // bass
-    if (mStep === 4) musicNote(midiToFreq(chord[0] - 12), mNext, stepDur * 3.2, T.wave, 0.42);
-    const arp = [chord[1], chord[2], chord[3], chord[2]];
-    musicNote(midiToFreq(arp[mStep % 4]), mNext, stepDur * 0.9, T.wave, 0.3);
-    if (++mStep >= 8) { mStep = 0; mBar = (mBar + 1) % T.prog.length; }
+    const c = MUSIC.prog[mBar];
+    if (mStep === 0) musicNote(midiToFreq(c[0] - 12), mNext, stepDur * 2.6, 'sine', 0.55);       // root
+    if (mStep === 3) musicNote(midiToFreq(c[0] - 5),  mNext, stepDur * 1.6, 'sine', 0.38);       // syncopated fifth
+    if (mStep === 6) musicNote(midiToFreq(c[0] - 12), mNext, stepDur * 1.6, 'sine', 0.42);
+    const climb = [c[1], c[2], c[3], c[1] + 12, c[2] + 12, c[3], c[2], c[1]];                    // up-and-over
+    musicNote(midiToFreq(climb[mStep]), mNext, stepDur * 0.72, 'square', 0.16);
+    if (mStep === 7 && mBar % 2 === 1) musicNote(midiToFreq(c[3] + 12), mNext, stepDur * 1.8, 'triangle', 0.14);
+    if (++mStep >= 8) { mStep = 0; mBar = (mBar + 1) % MUSIC.prog.length; }
     mNext += stepDur;
   }
 }
 function startMusic() {
-  const a = mAudio(); if (!a || musicSel === 'none' || !MUSIC_TRACKS[musicSel]) return;
+  const a = mAudio(); if (!a || !musicWanted) return;
   stopMusic();
   if (!musicGain) { musicGain = a.createGain(); musicGain.connect(a.destination); }
-  musicGain.gain.value = MUSIC_TRACKS[musicSel].vol;
+  musicGain.gain.value = MUSIC.vol;
   mBar = 0; mStep = 0; mNext = a.currentTime + 0.1;
   musicOn = true;
   schedTimer = setInterval(musicScheduler, 25);
 }
 function stopMusic() { musicOn = false; if (schedTimer) { clearInterval(schedTimer); schedTimer = null; } }
-function ensureMusic() { if (musicSel !== 'none' && !musicOn) startMusic(); }
+function ensureMusic() { if (musicWanted && !musicOn) startMusic(); }
 document.addEventListener('pointerdown', ensureMusic);    // browsers need a gesture to unlock audio
 (() => {
-  const sel = document.getElementById('musicSel');
-  if (!sel) return;
-  sel.value = musicSel;
-  sel.addEventListener('change', () => {
-    musicSel = sel.value;
-    try { localStorage.setItem('dldMusic', musicSel); } catch (e) {}
-    if (musicSel === 'none') stopMusic(); else startMusic();
+  const chk = document.getElementById('musicChk');
+  if (!chk) return;
+  chk.checked = musicWanted;
+  chk.addEventListener('change', () => {
+    musicWanted = chk.checked;
+    try { localStorage.setItem('dldMusic', musicWanted ? 'on' : 'off'); } catch (e) {}
+    if (musicWanted) startMusic(); else stopMusic();
   });
 })();
 

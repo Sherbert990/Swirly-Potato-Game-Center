@@ -258,14 +258,7 @@
     <div class="topbar">
       <div class="coins-pill" id="coinsMenu"><span class="gem">&#9670;</span> <b id="coinsMenuNum">0</b></div>
       <div class="topbar-right">
-        <label class="music-pick">&#9834;
-          <select id="musicSelect" aria-label="Background music">
-            <option value="none">Off</option>
-            <option value="meadow">Meadow</option>
-            <option value="focus">Focus</option>
-            <option value="tension">Tempest</option>
-          </select>
-        </label>
+        <button class="link-btn" id="musicToggle">&#9834; Music: On</button>
         <button class="link-btn" id="openShop">Shop &#9656;</button>
       </div>
     </div>
@@ -387,7 +380,7 @@
     coinsMenu: $('coinsMenu'), coinsMenuNum: $('coinsMenuNum'),
     coinsGame: $('coinsGame'), coinsGameNum: $('coinsGameNum'),
     openShop: $('openShop'),
-    powerTray: $('powerTray'), muteBtn: $('muteBtn'), musicSelect: $('musicSelect'),
+    powerTray: $('powerTray'), muteBtn: $('muteBtn'), musicToggle: $('musicToggle'),
     streakBtn: $('streakBtn'), streakBest: $('streakBest'),
   };
   el.arrowsPerEnd.textContent = ARROWS_PER_END;
@@ -462,7 +455,7 @@
   const starsByLevel = {};
   let bestStreak = 0;                    // best Bullseye-Streak run (on-device)
   let muted = false;
-  let musicSel = 'none';
+  let musicSel = 'meadow';   // 'meadow' (on) | 'none' (off) — single-track toggle
 
   // powerup id (in-game) -> backend store item key (shared wallet)
   const PU_KEYS = { windBlock:'arch_wind_block', steadyHand:'arch_steady_hand', wideTarget:'arch_wide_target',
@@ -479,7 +472,8 @@
         Object.assign(starsByLevel, d.starsByLevel || {});
         bestStreak = d.bestStreak || 0;
         muted = !!d.muted;
-        musicSel = d.musicSel || 'none';
+        // migrate old multi-track saves: any track -> meadow; explicit off stays off
+        musicSel = d.musicSel === 'none' ? 'none' : 'meadow';
       }
       selectedSkin = (window.GameCenter && GameCenter.getPref) ? GameCenter.getPref('archerySkin', 'classic') : (localStorage.getItem('archerySkin') || 'classic');
     } catch(_){}
@@ -546,11 +540,9 @@
 
   // ---------- background music (procedural loops, no assets) ----------
   const midiToFreq = n => 440 * Math.pow(2, (n - 69) / 12);
+  // One track per game (hub-wide convention): Archery's is "Meadow" — calm, warm, major.
   const MUSIC_TRACKS = {
-    // "Meadow" — calm, warm, major. "Focus" — steady minor groove. "Tempest" — dark & driving for the storms.
     meadow:  { name:'Meadow',  bpm:80,  wave:'triangle', vol:0.078, prog:[[48,55,60,64],[45,52,57,60],[41,53,57,60],[43,50,55,59]] },
-    focus:   { name:'Focus',   bpm:104, wave:'sine',     vol:0.078, prog:[[45,52,57,60],[43,50,55,58],[41,48,53,57],[47,54,59,62]] },
-    tension: { name:'Tempest', bpm:128, wave:'sawtooth', vol:0.058, prog:[[38,45,50,53],[40,47,51,54],[36,43,48,51],[41,48,53,56]] },
   };
   let musicGain = null, musicOn = false, schedTimer = null;
   let barIndex = 0, stepIndex = 0, nextNoteTime = 0;
@@ -1079,9 +1071,10 @@
     if (muted) stopMusic(); else { audio(); ensureMusic(); }
     updateHUD(); save();
   });
-  el.musicSelect.addEventListener('change', () => {
-    musicSel = el.musicSelect.value;
-    save();
+  function renderMusicToggle(){ el.musicToggle.innerHTML = '&#9834; Music: ' + (musicSel === 'none' ? 'Off' : 'On'); }
+  el.musicToggle.addEventListener('click', () => {
+    musicSel = musicSel === 'none' ? 'meadow' : 'none';
+    save(); renderMusicToggle();
     if (musicSel === 'none' || muted) stopMusic(); else startMusic();
   });
   document.addEventListener('pointerdown', () => { audio(); ensureMusic(); });
@@ -1235,7 +1228,7 @@
   load();
   refreshMenu();
   updateHUD();
-  el.musicSelect.value = musicSel;
+  renderMusicToggle();
   showScreen('menu');
   refreshWallet();
   // gc.onWallet keeps coins/power-ups fresh after shopping; swap the target skin live when equipped.
