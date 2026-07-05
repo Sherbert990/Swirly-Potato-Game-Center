@@ -160,6 +160,14 @@ canvas { display: block; width: 100%; height: 100%; background: #1a0b2e; }
         <label class="toggleRow" id="hsRow"><input type="checkbox" id="useHeadStart"><span>Head Start (+50m) — <b id="hsCount">0</b> owned</span></label>
         <label class="toggleRow" id="rkRow"><input type="checkbox" id="useRocket"><span>Rocket Booster (+100m) — <b id="rkCount">0</b> owned</span></label>
         <label class="toggleRow" id="dbRow"><input type="checkbox" id="useDoubler"><span>Star Doubler (2× stars) — <b id="dbCount">0</b> owned</span></label>
+        <label class="toggleRow" id="musicRow"><span>&#9834; Music</span>
+          <select id="musicSel" style="margin-left:8px;background:var(--gc-chip);color:var(--gc-ink);border:1px solid var(--gc-chip-line);border-radius:9px;padding:4px 8px;font:inherit;font-weight:700;cursor:pointer">
+            <option value="none">Off</option>
+            <option value="breeze">Breeze</option>
+            <option value="ascent">Ascent</option>
+            <option value="vertigo">Vertigo</option>
+          </select>
+        </label>
       </div>
       <div class="introActions">
         <button class="gBtn" id="startBtn"><i class="ti ti-player-play" aria-hidden="true"></i> Play</button>
@@ -782,6 +790,70 @@ function showScreen(id) {
   screens.forEach(s => document.getElementById(s).style.display = (s === id ? 'flex' : 'none'));
   document.getElementById('gameButtons').style.display = id ? 'none' : 'flex';
 }
+
+// ---- background music (procedural loops, no assets — same engine as Archery) ----
+const midiToFreq = n => 440 * Math.pow(2, (n - 69) / 12);
+const MUSIC_TRACKS = {
+  // "Breeze" — airy and calm. "Ascent" — steady climbing groove. "Vertigo" — tense, for the brave.
+  breeze:  { bpm: 84,  wave: 'triangle', vol: 0.078, prog: [[48,55,60,64],[43,50,55,59],[45,52,57,60],[41,48,53,57]] },
+  ascent:  { bpm: 108, wave: 'sine',     vol: 0.078, prog: [[45,52,57,60],[48,55,60,64],[43,50,55,58],[47,54,59,62]] },
+  vertigo: { bpm: 132, wave: 'sawtooth', vol: 0.055, prog: [[38,45,50,53],[36,43,48,51],[40,47,51,54],[41,48,53,56]] },
+};
+let musicSel = 'none';
+try { musicSel = localStorage.getItem('dldMusic') || 'none'; } catch (e) {}
+let mActx = null, musicGain = null, musicOn = false, schedTimer = null;
+let mBar = 0, mStep = 0, mNext = 0;
+function mAudio() {
+  if (!mActx) { try { mActx = new (window.AudioContext || window.webkitAudioContext)(); } catch (e) { return null; } }
+  if (mActx.state === 'suspended') mActx.resume();
+  return mActx;
+}
+function musicNote(freq, t, dur, wave, g) {
+  if (!musicGain) return;
+  const o = mActx.createOscillator(), gn = mActx.createGain();
+  o.type = wave; o.frequency.value = freq;
+  o.connect(gn); gn.connect(musicGain);
+  gn.gain.setValueAtTime(0.0001, t);
+  gn.gain.exponentialRampToValueAtTime(g, t + 0.02);
+  gn.gain.exponentialRampToValueAtTime(0.0001, t + dur);
+  o.start(t); o.stop(t + dur + 0.03);
+}
+function musicScheduler() {
+  const a = mAudio(); if (!a || !musicOn) return;
+  const T = MUSIC_TRACKS[musicSel]; if (!T) return;
+  const stepDur = (60 / T.bpm) / 2;                       // eighth notes
+  while (mNext < a.currentTime + 0.12) {
+    const chord = T.prog[mBar];
+    if (mStep === 0) musicNote(midiToFreq(chord[0] - 12), mNext, stepDur * 3.6, T.wave, 0.5);   // bass
+    if (mStep === 4) musicNote(midiToFreq(chord[0] - 12), mNext, stepDur * 3.2, T.wave, 0.42);
+    const arp = [chord[1], chord[2], chord[3], chord[2]];
+    musicNote(midiToFreq(arp[mStep % 4]), mNext, stepDur * 0.9, T.wave, 0.3);
+    if (++mStep >= 8) { mStep = 0; mBar = (mBar + 1) % T.prog.length; }
+    mNext += stepDur;
+  }
+}
+function startMusic() {
+  const a = mAudio(); if (!a || musicSel === 'none' || !MUSIC_TRACKS[musicSel]) return;
+  stopMusic();
+  if (!musicGain) { musicGain = a.createGain(); musicGain.connect(a.destination); }
+  musicGain.gain.value = MUSIC_TRACKS[musicSel].vol;
+  mBar = 0; mStep = 0; mNext = a.currentTime + 0.1;
+  musicOn = true;
+  schedTimer = setInterval(musicScheduler, 25);
+}
+function stopMusic() { musicOn = false; if (schedTimer) { clearInterval(schedTimer); schedTimer = null; } }
+function ensureMusic() { if (musicSel !== 'none' && !musicOn) startMusic(); }
+document.addEventListener('pointerdown', ensureMusic);    // browsers need a gesture to unlock audio
+(() => {
+  const sel = document.getElementById('musicSel');
+  if (!sel) return;
+  sel.value = musicSel;
+  sel.addEventListener('change', () => {
+    musicSel = sel.value;
+    try { localStorage.setItem('dldMusic', musicSel); } catch (e) {}
+    if (musicSel === 'none') stopMusic(); else startMusic();
+  });
+})();
 
 let currentUser = null; // { username, avatar }
 
