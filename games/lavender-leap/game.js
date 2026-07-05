@@ -509,6 +509,12 @@ function resolveHorizontal() {
   const body = { x: player.x, y: player.y, w: player.w, h: player.h };
   platforms.forEach((platform) => {
     if (!rectsOverlap(body, platform)) return;
+    // A rising platform can poke a few px into a jumper's feet on the frame they
+    // leave the ground (the ride offset only applies while grounded). That shallow
+    // foot graze is NOT a wall hit — shoving the player sideways here is what
+    // knocked riders off upward-moving platforms (#10). Let the vertical resolver
+    // land them on top instead.
+    if (player.y + player.h - platform.y <= 12) return;
     if (player.vx > 0) player.x = platform.x - player.w;
     if (player.vx < 0) player.x = platform.x + platform.w;
     player.vx = 0;
