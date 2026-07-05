@@ -184,6 +184,7 @@
       <button class="btn" id="btn-infinity" style="border-color:rgba(111,240,208,.5);color:var(--gap)">&#8734; Infinity</button>
       <button class="btn" id="btn-levels">Levels</button>
       <button class="btn" id="btn-store">Store</button>
+      <button class="btn ghost" id="btn-inf-levels" style="font-size:11px">Show levels in Infinity: OFF</button>
     </div>
   </div>
 
@@ -208,6 +209,17 @@
     <div class="menu-btns">
       <button class="btn primary" id="il-continue">Keep going &#9656;</button>
       <button class="btn ghost" id="il-menu">Menu</button>
+    </div>
+  </div>
+
+  <!-- Infinity death: second chance -->
+  <div id="revive" class="overlay hidden">
+    <div class="final-label">Down at</div>
+    <div class="final-score" id="rv-time" style="font-size:clamp(40px,12vmin,72px)">0.0</div>
+    <div class="tag" id="rv-sub">Revive and the clock keeps running.</div>
+    <div class="menu-btns">
+      <button class="btn primary" id="rv-yes">Revive</button>
+      <button class="btn ghost" id="rv-no">No thanks</button>
     </div>
   </div>
 
@@ -248,8 +260,9 @@
   const startOv = document.getElementById('start');
   const levelsOv = document.getElementById('levels');
   const interOv = document.getElementById('interlevel');
+  const reviveOv = document.getElementById('revive');
   const overOv = document.getElementById('over');
-  const screens = { start:startOv, levels:levelsOv, interlevel:interOv, over:overOv };
+  const screens = { start:startOv, levels:levelsOv, interlevel:interOv, revive:reviveOv, over:overOv };
 
   const css = getComputedStyle(document.documentElement);
   const C = {
@@ -273,10 +286,10 @@
 
   /* ---------- Local save: bests + audio pref only ---------- */
   const KEY = 'orbitDodgeSave';
-  let save = { best:0, bestTime:0, highestLevel:1, muted:false };
+  let save = { best:0, bestTime:0, highestLevel:1, muted:false, showInfLevels:false };
   try {
     const raw = localStorage.getItem(KEY);
-    if (raw){ const s = JSON.parse(raw); save.best = s.best||0; save.bestTime = s.bestTime||0; save.highestLevel = s.highestLevel||1; save.muted = !!s.muted; }
+    if (raw){ const s = JSON.parse(raw); save.best = s.best||0; save.bestTime = s.bestTime||0; save.highestLevel = s.highestLevel||1; save.muted = !!s.muted; save.showInfLevels = !!s.showInfLevels; }
   } catch(e){}
   function persist(){ try { localStorage.setItem(KEY, JSON.stringify(save)); } catch(e){} }
 
@@ -428,7 +441,7 @@
     runStartLevel = level;
     score = 0; gapsThisLevel = 0; coinsRun = 0; ringCount = 0;
     playerAngle = -Math.PI/2; dir = 1;
-    rings = []; particles = []; trail.length = 0;
+    rings = []; particles = []; trail.length = 0; lastGap = null;
     spawnTimer = 0.5; elapsed = 0; runTime = 0; shake = 0; shieldFlash = 0; deathFlash = 0;
     shields = hasUpgrade('shield') ? 1 : 0;
     if (mode !== 'infinity' && level > save.highestLevel){ save.highestLevel = level; persist(); }
@@ -447,11 +460,18 @@
     coinHud.textContent = coinsRun;
   }
 
+  let lastGap = null;
   function spawnRing(){
     ringCount++;
     const skin = skinById(equippedSkinId());
+    // Force consecutive gaps at least ~50° apart — random alone can line several
+    // gaps up in one direction, which made early levels (esp. 3) trivially easy.
+    let gap;
+    if (lastGap === null) gap = Math.random()*Math.PI*2;
+    else gap = (lastGap + 0.9 + Math.random()*(Math.PI*2 - 1.8)) % (Math.PI*2);
+    lastGap = gap;
     rings.push({
-      r:6, gap:Math.random()*Math.PI*2, gh:gapHalfWidth(),
+      r:6, gap, gh:gapHalfWidth(),
       spd:ringSpeed(), color:ringColorFor(skin, level, ringCount),
       scored:false, dead:0
     });
@@ -474,8 +494,11 @@
   function onLevelUp(){
     coinsRun += 3;
     if (mode !== 'infinity' && level > save.highestLevel){ save.highestLevel = level; persist(); }
-    banner.textContent = 'Level ' + level;
-    banner.classList.remove('show'); void banner.offsetWidth; banner.classList.add('show');
+    // In Infinity the "Level N" popup is opt-in (menu toggle) so the clock stays clean.
+    if (mode !== 'infinity' || save.showInfLevels){
+      banner.textContent = 'Level ' + level;
+      banner.classList.remove('show'); void banner.offsetWidth; banner.classList.add('show');
+    }
     shake = Math.max(shake, 6);
     SFX.level();
     updateHud();
@@ -517,6 +540,7 @@
     }
   }
 
+  const REVIVE_KEY = 'orbit_revive', REVIVE_PRICE = 15;   // price mirrors catalog.json
   function die(){
     const p = playerPos();
     burst(p.x, p.y, C.danger);
@@ -524,6 +548,33 @@
     stopMusic(); SFX.die(); haptic(60);
     state = STATE.OVER;
 
+    // Infinity: offer a revive (own one, or buy on the spot) before the run ends.
+    if (mode === 'infinity' && gc && (gc.qty(REVIVE_KEY) > 0 || coins >= REVIVE_PRICE)){
+      const owned = gc.qty(REVIVE_KEY);
+      document.getElementById('rv-time').textContent = fmtTime(runTime);
+      document.getElementById('rv-sub').textContent = owned > 0
+        ? 'Use a Revive (you own ' + owned + ') — the clock keeps running.'
+        : 'Buy a Revive for ' + REVIVE_PRICE + ' coins — the clock keeps running.';
+      document.getElementById('rv-yes').textContent = owned > 0 ? 'Use revive' : 'Revive · ' + REVIVE_PRICE;
+      setTimeout(() => show('revive'), 300);
+      return;
+    }
+    finishDeath();
+  }
+  async function doRevive(){
+    const btn = document.getElementById('rv-yes');
+    btn.disabled = true;
+    try{
+      if (gc.qty(REVIVE_KEY) <= 0){
+        const r = await gc.buy(REVIVE_KEY);                       // charges the shared wallet
+        if (!r.ok){ document.getElementById('rv-sub').textContent = r.error || 'Could not buy that.'; return; }
+      }
+      await gc.use(REVIVE_KEY);                                   // consume it
+      rings = []; particles = []; lastGap = null; spawnTimer = 1.0;  // brief breather, run continues
+      hideAll(); state = STATE.PLAY; startMusic(); updateMuteVis();
+    } finally { btn.disabled = false; }
+  }
+  function finishDeath(){
     if (mode === 'infinity'){
       const isNew = runTime > save.bestTime;
       if (isNew) save.bestTime = runTime;
@@ -591,11 +642,17 @@
 
   document.getElementById('btn-play').addEventListener('click', () => startPlay(1));
   document.getElementById('btn-infinity').addEventListener('click', startInfinity);
+  const infLvlBtn = document.getElementById('btn-inf-levels');
+  function renderInfLvlBtn(){ infLvlBtn.textContent = 'Show levels in Infinity: ' + (save.showInfLevels ? 'ON' : 'OFF'); }
+  infLvlBtn.addEventListener('click', () => { save.showInfLevels = !save.showInfLevels; persist(); renderInfLvlBtn(); });
+  renderInfLvlBtn();
   document.getElementById('btn-levels').addEventListener('click', () => { renderLevels(); show('levels'); });
   document.getElementById('btn-store').addEventListener('click', openHubStore);
   document.querySelectorAll('[data-back]').forEach(b => b.addEventListener('click', () => show('start')));
   document.getElementById('btn-retry').addEventListener('click', () => { if (mode === 'infinity') startInfinity(); else startPlay(runStartLevel); });
   document.getElementById('il-continue').addEventListener('click', continueRun);
+  document.getElementById('rv-yes').addEventListener('click', doRevive);
+  document.getElementById('rv-no').addEventListener('click', () => { hideAll(); finishDeath(); });
   document.getElementById('il-menu').addEventListener('click', () => {
     // quitting between levels still banks the run's score + coins
     stopMusic();

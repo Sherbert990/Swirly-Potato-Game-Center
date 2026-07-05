@@ -209,6 +209,7 @@
         { "board": "orbit-dodge-infinity", "name": "Orbit Dodge · Infinity", "label": "Orbit · Infinity", "unit": "{n}s", "maxScore": 100000 }
       ],
       "items": [
+        { "key": "orbit_revive", "name": "Revive", "desc": "Get back up mid-run in Infinity — the clock keeps going", "price": 15, "type": "orbit_power" },
         { "key": "orbit_shield", "name": "Shield", "desc": "Start every run with a one-hit shield", "price": 40, "type": "orbit_power", "permanent": true },
         { "key": "orbit_steady", "name": "Steady Hand", "desc": "Every gap is a little wider — more room to thread", "price": 55, "type": "orbit_power", "permanent": true },
         { "key": "orbit_slowstart", "name": "Slow Start", "desc": "Rings crawl for the first 5 seconds of each run", "price": 60, "type": "orbit_power", "permanent": true }
