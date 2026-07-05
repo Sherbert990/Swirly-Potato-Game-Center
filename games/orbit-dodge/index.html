@@ -199,6 +199,18 @@
 
   <!-- Store is the shared hub overlay (GameCenter.openStore); no local store screen. -->
 
+  <!-- Between levels (classic mode) -->
+  <div id="interlevel" class="overlay hidden">
+    <div class="final-label">Level cleared</div>
+    <div class="final-score" id="il-num" style="font-size:clamp(44px,14vmin,84px)">1</div>
+    <div class="tag" id="il-sub">Wanna keep going? The rings get faster and the gaps tighter.</div>
+    <div class="coins" id="il-coins" style="margin-top:10px">+3</div>
+    <div class="menu-btns">
+      <button class="btn primary" id="il-continue">Keep going &#9656;</button>
+      <button class="btn ghost" id="il-menu">Menu</button>
+    </div>
+  </div>
+
   <!-- Game over -->
   <div id="over" class="overlay hidden">
     <div class="final-label">Score</div>
@@ -235,8 +247,9 @@
 
   const startOv = document.getElementById('start');
   const levelsOv = document.getElementById('levels');
+  const interOv = document.getElementById('interlevel');
   const overOv = document.getElementById('over');
-  const screens = { start:startOv, levels:levelsOv, over:overOv };
+  const screens = { start:startOv, levels:levelsOv, interlevel:interOv, over:overOv };
 
   const css = getComputedStyle(document.documentElement);
   const C = {
@@ -445,17 +458,21 @@
   }
 
   function scorePoint(){
-    score++; coinsRun += 1; gapsThisLevel++;
+    score++; gapsThisLevel++;
+    if (score % 2 === 0) coinsRun += 1;        // a coin every OTHER threaded gap (coins are scarcer now)
     const p = playerPos();
     spark(p.x, p.y, C.gap);
     scoreEl.classList.remove('pop'); void scoreEl.offsetWidth; scoreEl.classList.add('pop');
     SFX.score(score);
-    if (gapsThisLevel >= RINGS_PER_LEVEL){ gapsThisLevel = 0; level++; onLevelUp(); }
+    if (gapsThisLevel >= RINGS_PER_LEVEL){
+      gapsThisLevel = 0; level++;
+      if (mode === 'infinity') onLevelUp(); else levelInterstitial();
+    }
     updateHud();
   }
 
   function onLevelUp(){
-    coinsRun += 5;
+    coinsRun += 3;
     if (mode !== 'infinity' && level > save.highestLevel){ save.highestLevel = level; persist(); }
     banner.textContent = 'Level ' + level;
     banner.classList.remove('show'); void banner.offsetWidth; banner.classList.add('show');
@@ -463,6 +480,20 @@
     SFX.level();
     updateHud();
   }
+
+  // Classic mode pauses between levels: "you cleared level N — keep going?"
+  function levelInterstitial(){
+    coinsRun += 3;
+    if (level > save.highestLevel){ save.highestLevel = level; persist(); }
+    SFX.level();
+    rings = []; spawnTimer = 0.8;              // clean slate when the next level starts
+    state = STATE.MENU;                        // pauses the sim (update only runs in PLAY)
+    document.getElementById('il-num').textContent = level - 1;
+    document.getElementById('il-sub').textContent = 'Wanna keep going? Level ' + level + ' rings are faster and the gaps tighter.';
+    updateHud();
+    show('interlevel');
+  }
+  function continueRun(){ hideAll(); state = STATE.PLAY; updateMuteVis(); }
 
   function angDist(a,b){
     let d = (a-b) % (Math.PI*2);
@@ -553,6 +584,7 @@
     if (e.code === 'Space' || e.code === 'ArrowUp' || e.code === 'Enter'){
       e.preventDefault();
       if (state === STATE.PLAY) reverse();
+      else if (currentScreen === 'interlevel') continueRun();
       else if (currentScreen === 'start') startPlay(1);
     }
   });
@@ -563,6 +595,13 @@
   document.getElementById('btn-store').addEventListener('click', openHubStore);
   document.querySelectorAll('[data-back]').forEach(b => b.addEventListener('click', () => show('start')));
   document.getElementById('btn-retry').addEventListener('click', () => { if (mode === 'infinity') startInfinity(); else startPlay(runStartLevel); });
+  document.getElementById('il-continue').addEventListener('click', continueRun);
+  document.getElementById('il-menu').addEventListener('click', () => {
+    // quitting between levels still banks the run's score + coins
+    stopMusic();
+    if (gc) gc.bank(score, coinsRun); else { coins += coinsRun; refreshCoinsUI(); }
+    show('start');
+  });
   document.getElementById('btn-over-levels').addEventListener('click', () => { renderLevels(); show('levels'); });
   document.getElementById('btn-over-store').addEventListener('click', openHubStore);
   document.getElementById('btn-over-menu').addEventListener('click', () => show('start'));

@@ -50,11 +50,18 @@
   .swatch.locked::after { content:attr(data-price); position:absolute; inset:0; display:flex;
     align-items:center; justify-content:center; font-size:10px; font-weight:700; color:#fff;
     background:rgba(0,0,0,.5); border-radius:6px; }
+  /* In-game back-to-menu button (top-right corner, clear of the canvas HUD) */
+  #menuBtn { position:absolute; top:6px; right:6px; z-index:5; display:none;
+    padding:5px 12px; font-size:12px; font-weight:700; letter-spacing:1px;
+    background:rgba(28,37,48,.85); border:1px solid #3a4657; border-radius:999px;
+    color:#c3ccd6; cursor:pointer; }
+  #menuBtn:hover { color:#ffcf5c; border-color:#ffcf5c; filter:none; }
 </style>
 </head>
 <body>
 <div id="wrap">
   <canvas id="c" width="800" height="500"></canvas>
+  <button id="menuBtn">&#10005; MENU</button>
 
   <div id="menu" class="screen">
     <h1>🐱 RIPOSTE 🐶</h1>
@@ -228,6 +235,7 @@ function judgePress(dir,el){ const ph=phaseOf(),hw=p.bd*HITFRAC,pw=p.bd*PERFFRAC
 window.addEventListener('keydown',e=>{
   if(ALLKEYS[e.code])e.preventDefault();
   if(e.code==='KeyM'){muted=!muted;if(masterGain)masterGain.gain.value=muted?0:0.5;return;}
+  if(e.code==='Escape'){if(state!=='menu')quitToMenu();return;}
   if(state==='retry'){if(e.code==='KeyY')doRetry();else if(e.code==='KeyN')declineRetry();return;}
   if(state==='over'){if(e.code==='Enter')gotoMenu();return;}
   if(state!=='playing'||!p)return;
@@ -376,8 +384,11 @@ function draw(){
 
 // ===== SCREENS / LOOP =====
 // Skins & purchases live in the shared Store overlay (GameCenter.openStore).
-function showScreen(name){for(const s of['menu','retry'])$(s).classList.toggle('hidden',s!==name);}
+function showScreen(name){for(const s of['menu','retry'])$(s).classList.toggle('hidden',s!==name);
+  $('menuBtn').style.display = state==='menu' ? 'none' : 'block';}   // back-to-menu visible whenever in a game
 function gotoMenu(){state='menu';p=null;refreshStats();showScreen('menu');}
+// Quit mid-game: bank anything earned this match first so no coins are lost.
+function quitToMenu(){ if(state==='playing'||state==='retry') bankEarned(); gotoMenu(); }
 function startGame(m){ mode=m; if(!actx)initAudio(); actx.resume();
   player=0;rival=0;winner=null;turnIndex=0;earned=0;lunge={side:null,t:0};msg={txt:'',t:0};
   currentBd=BASE_BD;musicStep=0;musicNextTime=actx.currentTime+0.25;
@@ -390,6 +401,7 @@ $('versusBtn').onclick=()=>startGame('versus');
 $('shopBtn').onclick=()=>{ if(window.GameCenter&&GameCenter.openStore) GameCenter.openStore('fencing-riposte'); };
 $('useRetry').onclick=doRetry;
 $('noRetry').onclick=declineRetry;
+$('menuBtn').onclick=quitToMenu;
 $('fastToggle').onclick=()=>{ fastMode=!fastMode; saveV('riposte_fast',fastMode?1:0);
   $('fastToggle').textContent='⚡ Fast Mode: '+(fastMode?'ON':'OFF'); $('fastToggle').classList.toggle('on',fastMode); };
 $('fastToggle').textContent='⚡ Fast Mode: '+(fastMode?'ON':'OFF'); $('fastToggle').classList.toggle('on',fastMode);

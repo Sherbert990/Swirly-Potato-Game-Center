@@ -299,6 +299,7 @@
     else { c.translate(cv.width / 2 - 14, 4); dldAvatar(c, 0, 0, 28, 36, art.data); }
     c.restore();
   }
+  global.GameCenter.renderSkin = renderSkin;   // used by the hub's Profile modal
 
   // ===== Shared store: one store, a tab per game (wallet is shared) =====
   // Opened from the hub or any game via GameCenter.openStore(gameSlug?). Buying

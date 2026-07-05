@@ -120,6 +120,7 @@ h1,.gtitle,.brand,.wm{font-family:Fredoka,sans-serif}
       <span class="coin"><i class="ti ti-coin" aria-hidden="true"></i> <span id="coins">0</span></span>
       <span class="coin" id="streakChip" style="color:#d4730a"><i class="ti ti-flame" aria-hidden="true"></i> <span id="streak">0</span></span>
       <span class="profile"><span class="pav"><i class="ti ti-user" style="font-size:16px;color:var(--accent)" aria-hidden="true"></i></span><b id="who">player</b></span>
+      <button class="nav" id="profileBtn"><i class="ti ti-user-circle" aria-hidden="true"></i> Profile</button>
       <button class="nav" id="storeBtn"><i class="ti ti-shopping-bag" aria-hidden="true"></i> Store</button>
       <button class="nav" id="lbBtn"><i class="ti ti-trophy" aria-hidden="true"></i> Leaderboards</button>
       <button class="nav" id="achBtn"><i class="ti ti-medal" aria-hidden="true"></i> Achievements</button>
@@ -145,6 +146,13 @@ h1,.gtitle,.brand,.wm{font-family:Fredoka,sans-serif}
   <div class="modalCard">
     <div class="modalHead"><span>Achievements</span><button class="nav" id="achClose" aria-label="Close"><i class="ti ti-x"></i></button></div>
     <div id="achList"></div>
+  </div>
+</div>
+
+<div id="profModal" class="modal hidden">
+  <div class="modalCard">
+    <div class="modalHead"><span>Profile</span><button class="nav" id="profClose" aria-label="Close"><i class="ti ti-x"></i></button></div>
+    <div id="profBody">Loading…</div>
   </div>
 </div>
 
@@ -268,6 +276,56 @@ $('achBtn').onclick = async () => {
 };
 $('achClose').onclick = () => $('achModal').classList.add('hidden');
 $('achModal').onclick = (e) => { if (e.target.id === 'achModal') $('achModal').classList.add('hidden'); };
+
+// ---- profile modal: your avatar, name, stats, and owned avatars (click to wear) ----
+async function renderProfile(){
+  const body = $('profBody');
+  const [r, cat] = await Promise.all([GameCenter.me(), GameCenter.catalog()]);
+  if (!r.ok){ body.textContent = 'Could not load your profile.'; return; }
+  const u = r.data;
+  const names = {};
+  (cat.games||[]).forEach(g => (g.avatars||[]).forEach(a => names[a.key] = a.name));
+  const owned = u.ownedAvatars || [];
+  body.innerHTML =
+    `<div style="display:flex;align-items:center;gap:14px;margin-bottom:14px">
+       <canvas id="profAv" width="44" height="48" style="width:66px;height:72px;border-radius:14px;background:var(--toggbg);border:2px solid var(--accent)"></canvas>
+       <div style="flex:1;min-width:0">
+         <div style="display:flex;gap:8px;align-items:center">
+           <input id="profName" value="${u.username.replace(/"/g,'&quot;')}" maxlength="32"
+             style="flex:1;min-width:0;padding:8px 10px;border-radius:10px;border:1px solid var(--line,#ccc);background:var(--toggbg);color:inherit;font:inherit;font-weight:700">
+           <button class="nav" id="profSave">Save</button>
+         </div>
+         <div style="color:var(--muted);font-size:13px;font-weight:700;margin-top:7px">
+           <i class="ti ti-coin"></i> ${u.coins ?? 0} coins &nbsp;·&nbsp; <i class="ti ti-flame"></i> ${u.streak ?? 0}-day streak
+         </div>
+       </div>
+     </div>
+     <div style="color:var(--muted);font-weight:700;font-size:12px;text-transform:uppercase;letter-spacing:.06em;margin-bottom:6px">Your avatars — tap to wear</div>
+     <div id="profAvs" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(64px,1fr));gap:8px">` +
+    owned.map(k =>
+      `<button data-av="${k}" title="${(names[k]||k).replace(/"/g,'&quot;')}"
+         style="display:flex;flex-direction:column;align-items:center;gap:3px;padding:7px 2px;border-radius:12px;cursor:pointer;background:var(--toggbg);
+                border:2px solid ${k === u.avatarKey ? 'var(--accent)' : 'transparent'};color:inherit">
+         <canvas data-avcv="${k}" width="44" height="48" style="width:40px;height:44px"></canvas>
+         <span style="font-size:10px;font-weight:700;max-width:62px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${names[k]||k}</span>
+       </button>`).join('') + `</div>`;
+  GameCenter.renderSkin(u.avatarKey, $('profAv'));
+  body.querySelectorAll('canvas[data-avcv]').forEach(cv => GameCenter.renderSkin(cv.getAttribute('data-avcv'), cv));
+  body.querySelectorAll('[data-av]').forEach(b => b.onclick = async () => {
+    const res = await GameCenter.setProfile({ avatar: b.getAttribute('data-av') });
+    if (res.ok) { toast('Avatar equipped!'); renderProfile(); } else toast(res.error || 'Could not equip that.');
+  });
+  $('profSave').onclick = async () => {
+    const name = $('profName').value.trim();
+    if (!name || name === u.username) return;
+    const res = await GameCenter.setProfile({ username: name });
+    if (res.ok) { toast('Name updated!'); $('who').textContent = name; $('who2').textContent = name; renderProfile(); }
+    else toast(res.error || 'That name is taken.');
+  };
+}
+$('profileBtn').onclick = () => { $('profModal').classList.remove('hidden'); renderProfile(); };
+$('profClose').onclick = () => $('profModal').classList.add('hidden');
+$('profModal').onclick = (e) => { if (e.target.id === 'profModal') $('profModal').classList.add('hidden'); };
 function showAuth(){
   $('hub').classList.add('hidden');
   $('authScreen').classList.remove('hidden');
