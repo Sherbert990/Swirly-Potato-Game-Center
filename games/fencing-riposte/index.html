@@ -256,8 +256,22 @@ function resolvePhrase(){ for(let i=0;i<p.len;i++)if(!p.results[i])p.results[i]=
   } else { if(retries>0&&!p.retried){state='retry';refreshStats();showScreen('retry');return;} applyMiss(); } }
 function applyMiss(){ if(mode==='solo'){rival++;lunge={side:'dog',t:0.5};msg={txt:'Biscuit scores!',t:1.3};}
   else{msg={txt:(p.owner===1?'P1 missed — P2\'s turn':'P2 missed — P1\'s turn'),t:1.3};} checkWinOrNext(); }
-function checkWinOrNext(){ if(player>=TARGET){winner='cat';endGame();}
-  else if(rival>=TARGET){winner='dog';endGame();} else {turnIndex++;makePhrase(turnIndex);} }
+function checkWinOrNext(){
+  if(player>=TARGET){winner='cat';endGame();return;}
+  if(rival>=TARGET){winner='dog';endGame();return;}
+  turnIndex++;
+  // 2P safety valve: once the music passes ~2.5x the base speed it's unfair to
+  // both players, so end the match — whoever's ahead on points wins (tie = draw).
+  if(mode==='versus'){
+    const nb=Math.max(MIN_BD,BASE_BD*Math.pow(SPEEDUP,Math.floor(turnIndex/2)))/speedMult;
+    if(BASE_BD/nb > 2.5){
+      winner = player>rival ? 'cat' : (rival>player ? 'dog' : 'draw');
+      msg={txt:'⚡ Too fast — most points wins!',t:1.8};
+      endGame(); return;
+    }
+  }
+  makePhrase(turnIndex);
+}
 function doRetry(){ if(retries<=0){declineRetry();return;}
   retries--; refreshStats();
   if(gc) gc.use('rip_retry');   // consume server-side; gc.onWallet refreshes retries
@@ -375,9 +389,9 @@ function draw(){
   ctx.fillStyle=C.dim;ctx.font='13px Trebuchet MS';ctx.textAlign='center';
   ctx.fillText(mode==='versus'?'P1: W A S D      P2: ↑ ↓ ← →':'↑ ↓ ← →   or   W A S D',W/2,490);
   if(state==='over'){ ctx.fillStyle='rgba(8,11,17,0.88)';ctx.fillRect(0,0,W,H);
-    const p1win=winner==='cat';
-    ctx.fillStyle=p1win?C.good:C.bad;ctx.font='bold 46px Trebuchet MS';ctx.textAlign='center';
-    ctx.fillText(mode==='versus'?(p1win?'🐱 PLAYER 1 WINS!':'🐶 PLAYER 2 WINS!'):(p1win?'🏆 VICTORY!':'😿 DEFEAT'),W/2,206);
+    const p1win=winner==='cat', draw=winner==='draw';
+    ctx.fillStyle=draw?C.gold:(p1win?C.good:C.bad);ctx.font='bold 46px Trebuchet MS';ctx.textAlign='center';
+    ctx.fillText(draw?'🤝 DRAW!':(mode==='versus'?(p1win?'🐱 PLAYER 1 WINS!':'🐶 PLAYER 2 WINS!'):(p1win?'🏆 VICTORY!':'😿 DEFEAT')),W/2,206);
     ctx.fillStyle=C.text;ctx.font='22px Trebuchet MS';ctx.fillText(player+'  —  '+rival,W/2,248);
     if(p1win){ctx.fillStyle=C.gold;ctx.font='16px Trebuchet MS';ctx.fillText('+5 🪙 bonus!  (total '+coins+')',W/2,278);}
     ctx.fillStyle=C.gold;ctx.font='bold 18px Trebuchet MS';ctx.fillText('Press  ENTER  for the menu',W/2,314);} }
