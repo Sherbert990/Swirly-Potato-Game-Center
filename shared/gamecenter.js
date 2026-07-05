@@ -707,7 +707,8 @@
   function injectAssets() {
     if (document.getElementById('gc-css')) return;
     function link(href, test) { if (!document.querySelector(test)) { var l = document.createElement('link'); l.rel = 'stylesheet'; l.href = href; document.head.appendChild(l); } }
-    link('https://fonts.googleapis.com/css2?family=Fredoka:wght@500;600;700&family=Nunito:wght@400;600;700&display=swap', 'link[href*="fonts.googleapis.com/css2"]');
+    // Fredoka/Nunito are self-hosted so SDK chrome (store, buttons) never falls back to system fonts.
+    link('/assets/fonts/fonts.css', 'link[href*="/assets/fonts/fonts.css"]');
     link('https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@2.47.0/tabler-icons.min.css', 'link[href*="tabler-icons"]');
     var st = document.createElement('style'); st.id = 'gc-css'; st.textContent = GC_TOKENS; document.head.appendChild(st);
   }

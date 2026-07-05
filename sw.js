@@ -1,6 +1,6 @@
 /* The Stickmen Hub service worker — installable + offline app shell.
  * Bump CACHE on any shell change so old caches purge. */
-const CACHE = 'stickmen-v27';
+const CACHE = 'stickmen-v28';
 const SHELL = [
   '/', '/manifest.webmanifest',
   '/shared/gamecenter.js', '/shared/catalog.json',
@@ -16,6 +16,7 @@ const SHELL = [
   '/design/hub/archery-cover.svg', '/design/hub/riposte-cover.svg', '/design/hub/genesis-cover.svg',
   '/design/hub/orbit-dodge-cover.svg',
   '/assets/icons/icon-192.png', '/assets/icons/icon-512.png',
+  '/assets/fonts/fonts.css', '/assets/fonts/fredoka-latin.woff2', '/assets/fonts/nunito-latin.woff2',
 ];
 
 self.addEventListener('install', (e) => {
