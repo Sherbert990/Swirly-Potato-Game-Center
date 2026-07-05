@@ -11,7 +11,8 @@
       "playColor": "p1",
       "play": "/games/lavender-leap/index.html",
       "leaderboards": [
-        { "board": "lavender-leap-time", "name": "Lavender Leap · Time Trial", "label": "Lavender · Time Trial", "unit": "{n} level{s}", "maxScore": 5000 },
+        { "board": "lavender-leap-time", "name": "Lavender Leap · Time Trial (2 min)", "label": "Lavender · Time Trial 2m", "unit": "{n} level{s}", "maxScore": 5000 },
+        { "board": "lavender-leap-time5", "name": "Lavender Leap · Time Trial (5 min)", "label": "Lavender · Time Trial 5m", "unit": "{n} level{s}", "maxScore": 5000 },
         { "board": "lavender-leap-hard", "name": "Lavender Leap · Hard Mode", "label": "Lavender · Hard Mode", "unit": "level {n}", "maxScore": 5000 },
         { "board": "lavender-leap", "label": "Lavender · Freeplay", "unit": "{n} pts" }
       ],

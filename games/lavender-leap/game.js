@@ -70,6 +70,7 @@ const MODE_LABELS = {
   hard: "Hard Mode",
 };
 const TIME_TRIAL_SECONDS = 120;
+const TIME_TRIAL_LONG = 300;         // the 5-minute Time Trial option (own leaderboard)
 const TIME_BOOST_SECONDS = 30;
 
 // Skins 0-3 are free starters; 4-8 are unlocked in the store.
@@ -107,6 +108,7 @@ const world = {
   levelsPassed: 0,
   hardBest: 1,   // highest level reached this Hard Mode session (for the hard board)
   timeLeft: TIME_TRIAL_SECONDS,
+  trialSeconds: TIME_TRIAL_SECONDS,   // 120 (2 min) or 300 (5 min) Time Trial
   touchDir: 0,   // -1/0/1 from the on-screen joystick (added to keyboard input)
 };
 
@@ -355,7 +357,7 @@ function reset() {
   world.levelStartScore = 0;
   if (world.mode === "timetrial") {
     world.levelsPassed = 0;
-    world.timeLeft = TIME_TRIAL_SECONDS;
+    world.timeLeft = world.trialSeconds || TIME_TRIAL_SECONDS;
   }
   if (world.mode === "hard") world.hardBest = 1;
   startLevel(0);
@@ -1192,7 +1194,7 @@ if (hub) hub.onWallet(applyUser);
 // Each mode reports to its own leaderboard with its own score:
 //   timetrial -> levels cleared, hard -> highest level reached, freeplay -> world score.
 function runSlugAndScore() {
-  if (world.mode === "timetrial") return { slug: "lavender-leap-time", score: world.levelsPassed };
+  if (world.mode === "timetrial") return { slug: world.trialSeconds >= TIME_TRIAL_LONG ? "lavender-leap-time5" : "lavender-leap-time", score: world.levelsPassed };
   if (world.mode === "hard") return { slug: "lavender-leap-hard", score: world.hardBest };
   return { slug: LL_GAME, score: world.score | 0 };
 }
@@ -1538,9 +1540,12 @@ async function saveHardLevel() {
   else flashBanner((r && r.error) || "Could not save right now.");
 }
 
-function startMode(mode) {
+function startMode(mode, secs) {
   world.mode = mode;
-  modeTag.textContent = MODE_LABELS[mode] || "";
+  if (mode === "timetrial") world.trialSeconds = secs === TIME_TRIAL_LONG ? TIME_TRIAL_LONG : TIME_TRIAL_SECONDS;
+  modeTag.textContent = mode === "timetrial"
+    ? `Time Trial · ${world.trialSeconds / 60} min`
+    : (MODE_LABELS[mode] || "");
   configureControls();
   showScreen(null);
   reset();
@@ -1778,9 +1783,9 @@ nameInput.addEventListener("keydown", (event) => {
   if (event.key === "Enter") startGameFromMenu();
 });
 modesScreen.querySelectorAll(".mode-btn").forEach((btn) => {
-  btn.addEventListener("click", () => startMode(btn.dataset.mode));
+  btn.addEventListener("click", () => startMode(btn.dataset.mode, btn.dataset.secs ? +btn.dataset.secs : undefined));
 });
-resultsAgainBtn.addEventListener("click", () => startMode("timetrial"));
+resultsAgainBtn.addEventListener("click", () => startMode("timetrial", world.trialSeconds));
 resultsModesBtn.addEventListener("click", showModes);
 visitStoreBtn.addEventListener("click", () => GameCenter.openStore("lavender-leap"));
 visitStoreModesBtn.addEventListener("click", () => GameCenter.openStore("lavender-leap"));
