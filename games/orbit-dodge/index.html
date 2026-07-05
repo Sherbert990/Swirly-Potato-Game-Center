@@ -533,11 +533,11 @@
 
   function renderLevels(){
     const grid = document.getElementById('lvl-grid');
-    const max = Math.min(40, Math.max(12, save.highestLevel + 2));
+    const TOTAL = 40;                 // show every level at once (difficulty plateaus long before this)
     grid.innerHTML = '';
-    for (let i=1;i<=max;i++){
+    for (let i=1;i<=TOTAL;i++){
       const b = document.createElement('button');
-      b.className = 'lvl' + (i <= save.highestLevel ? ' reached' : '');
+      b.className = 'lvl' + (i < save.highestLevel ? ' reached' : '');   // outline only levels you've cleared
       b.textContent = i;
       b.addEventListener('click', () => startPlay(i));
       grid.appendChild(b);
