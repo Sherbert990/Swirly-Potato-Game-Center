@@ -255,6 +255,7 @@ function showHub(user){
   $('streak').textContent = user.streak ?? 0;
   $('who').textContent = user.username;
   $('who2').textContent = user.username;
+  fetchPfp();   // show the custom profile picture in the header chip, if one is set
   if (user.dailyBonus) toast(`+${user.dailyBonus} coins · ${user.streak}-day streak!`);
 }
 $('shareBtn').onclick = async () => {
@@ -276,18 +277,51 @@ $('achBtn').onclick = async () => {
 $('achClose').onclick = () => $('achModal').classList.add('hidden');
 $('achModal').onclick = (e) => { if (e.target.id === 'achModal') $('achModal').classList.add('hidden'); };
 
-// ---- profile modal: your avatar, name, stats, and owned avatars (click to wear) ----
+// ---- profile modal: your picture/avatar, name, stats, and owned avatars (click to wear) ----
+// Draw ANY avatar key: hub starter recipes first, SDK premium art second, and a
+// colour-hashed stickman as a last resort — so no option ever renders blank.
+function drawAnyAvatar(key, cv){
+  const c = cv.getContext('2d');
+  c.clearRect(0, 0, cv.width, cv.height);
+  const st = STARTERS.find(s => s.key === key);
+  if (st){ c.save(); c.translate(4, 5); c.scale(1.15, 1.15); drawAvatar(c, 0, 0, 28, 36, st); c.restore(); return; }
+  GameCenter.renderSkin(key, cv);   // premium skins have SDK art
+  const px = c.getImageData(0, 0, cv.width, cv.height).data;
+  for (let i = 3; i < px.length; i += 4) if (px[i]) return;   // something drew — done
+  const hue = [...key].reduce((a, ch) => a + ch.charCodeAt(0) * 7, 0) % 360;
+  c.save(); c.translate(4, 5); c.scale(1.15, 1.15);
+  drawAvatar(c, 0, 0, 28, 36, { head:`hsl(${hue},72%,72%)`, body:`hsl(${(hue+42)%360},68%,56%)`,
+    legs:`hsl(${(hue+84)%360},60%,44%)`, shape:'round', face:'smile', hat:null });
+  c.restore();
+}
+let myPfp = null;   // current custom picture (data URL) — cached after first fetch
+async function fetchPfp(){
+  try { const r = await fetch('/api/profile/pfp', {credentials:'same-origin'});
+    if (r.ok) myPfp = (await r.json()).data || null; } catch(e){}
+  renderPavPfp();
+  return myPfp;
+}
+function renderPavPfp(){
+  const pav = document.querySelector('.pav');
+  if (!pav) return;
+  pav.innerHTML = myPfp
+    ? `<img src="${myPfp}" alt="" style="width:100%;height:100%;border-radius:50%;object-fit:cover">`
+    : '<i class="ti ti-user" style="font-size:16px;color:var(--accent)" aria-hidden="true"></i>';
+}
 async function renderProfile(){
   const body = $('profBody');
-  const [r, cat] = await Promise.all([GameCenter.me(), GameCenter.catalog()]);
+  const [r, cat] = await Promise.all([GameCenter.me(), GameCenter.catalog(), fetchPfp()]);
   if (!r.ok){ body.textContent = 'Could not load your profile.'; return; }
   const u = r.data;
   const names = {};
   (cat.games||[]).forEach(g => (g.avatars||[]).forEach(a => names[a.key] = a.name));
   const owned = u.ownedAvatars || [];
+  const preview = myPfp
+    ? `<img id="profAvImg" src="${myPfp}" alt="" style="width:66px;height:72px;border-radius:14px;object-fit:cover;border:2px solid var(--accent)">`
+    : `<canvas id="profAv" width="44" height="48" style="width:66px;height:72px;border-radius:14px;background:var(--toggbg);border:2px solid var(--accent)"></canvas>`;
   body.innerHTML =
-    `<div style="display:flex;align-items:center;gap:14px;margin-bottom:14px">
-       <canvas id="profAv" width="44" height="48" style="width:66px;height:72px;border-radius:14px;background:var(--toggbg);border:2px solid var(--accent)"></canvas>
+    `<div style="display:flex;align-items:center;gap:14px;margin-bottom:10px">
+       ${preview}
        <div style="flex:1;min-width:0">
          <div style="display:flex;gap:8px;align-items:center">
            <input id="profName" value="${u.username.replace(/"/g,'&quot;')}" maxlength="32"
@@ -299,6 +333,11 @@ async function renderProfile(){
          </div>
        </div>
      </div>
+     <div style="display:flex;gap:8px;margin-bottom:14px">
+       <button class="nav" id="pfpUpload"><i class="ti ti-photo-up"></i> Upload picture</button>
+       ${myPfp ? '<button class="nav" id="pfpRemove"><i class="ti ti-photo-x"></i> Remove picture</button>' : ''}
+       <input id="pfpFile" type="file" accept="image/*" style="display:none">
+     </div>
      <div style="color:var(--muted);font-weight:700;font-size:12px;text-transform:uppercase;letter-spacing:.06em;margin-bottom:6px">Your avatars — tap to wear</div>
      <div id="profAvs" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(64px,1fr));gap:8px">` +
     owned.map(k =>
@@ -308,8 +347,8 @@ async function renderProfile(){
          <canvas data-avcv="${k}" width="44" height="48" style="width:40px;height:44px"></canvas>
          <span style="font-size:10px;font-weight:700;max-width:62px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${names[k]||k}</span>
        </button>`).join('') + `</div>`;
-  GameCenter.renderSkin(u.avatarKey, $('profAv'));
-  body.querySelectorAll('canvas[data-avcv]').forEach(cv => GameCenter.renderSkin(cv.getAttribute('data-avcv'), cv));
+  if (!myPfp) drawAnyAvatar(u.avatarKey, $('profAv'));
+  body.querySelectorAll('canvas[data-avcv]').forEach(cv => drawAnyAvatar(cv.getAttribute('data-avcv'), cv));
   body.querySelectorAll('[data-av]').forEach(b => b.onclick = async () => {
     const res = await GameCenter.setProfile({ avatar: b.getAttribute('data-av') });
     if (res.ok) { toast('Avatar equipped!'); renderProfile(); } else toast(res.error || 'Could not equip that.');
@@ -320,6 +359,30 @@ async function renderProfile(){
     const res = await GameCenter.setProfile({ username: name });
     if (res.ok) { toast('Name updated!'); $('who').textContent = name; $('who2').textContent = name; renderProfile(); }
     else toast(res.error || 'That name is taken.');
+  };
+  $('pfpUpload').onclick = () => $('pfpFile').click();
+  $('pfpFile').onchange = () => {
+    const f = $('pfpFile').files[0];
+    if (!f) return;
+    const img = new Image();
+    img.onload = async () => {
+      // centre-crop to a square, downscale to 96px, recompress — tiny + uniform
+      const S = 96, cv = document.createElement('canvas'); cv.width = S; cv.height = S;
+      const c = cv.getContext('2d'), side = Math.min(img.width, img.height);
+      c.drawImage(img, (img.width-side)/2, (img.height-side)/2, side, side, 0, 0, S, S);
+      const dataUrl = cv.toDataURL('image/jpeg', 0.85);
+      URL.revokeObjectURL(img.src);
+      const r = await fetch('/api/profile/pfp', {method:'POST', headers:{'Content-Type':'application/json'}, credentials:'same-origin', body: JSON.stringify({data: dataUrl})});
+      if (r.ok){ myPfp = dataUrl; renderPavPfp(); toast('Picture updated!'); renderProfile(); }
+      else toast((await r.json()).detail || 'Could not upload that.');
+    };
+    img.onerror = () => toast('That file is not an image.');
+    img.src = URL.createObjectURL(f);
+  };
+  const rm = $('pfpRemove');
+  if (rm) rm.onclick = async () => {
+    const r = await fetch('/api/profile/pfp', {method:'POST', headers:{'Content-Type':'application/json'}, credentials:'same-origin', body: JSON.stringify({data: null})});
+    if (r.ok){ myPfp = null; renderPavPfp(); toast('Picture removed.'); renderProfile(); }
   };
 }
 $('profileBtn').onclick = () => { $('profModal').classList.remove('hidden'); renderProfile(); };

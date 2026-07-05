@@ -1,4 +1,5 @@
 """Account routes: register, login, logout, me, profile."""
+import re
 import time
 from typing import Optional
 
@@ -7,7 +8,7 @@ from pydantic import BaseModel
 from sqlalchemy.orm import Session as OrmSession
 
 from ..db import get_db
-from ..models import User, Avatar, UserAvatar
+from ..models import User, Avatar, UserAvatar, UserPfp
 from .. import auth, config
 from ._common import public_user, me_payload
 
@@ -140,3 +141,39 @@ def profile(body: ProfileBody, user: User = Depends(auth.current_user), db: OrmS
         user.show_on_leaderboard = bool(body.showName)
     db.commit()
     return public_user(db, user)
+
+
+# ---- custom profile picture (small data-URL image, stored in user_pfp) ----
+_PFP_MAX_CHARS = 60_000  # ~45KB of image — client downscales to 96x96 JPEG first
+_PFP_RE = re.compile(r"^data:image/(png|jpeg|webp);base64,[A-Za-z0-9+/=\s]+$")
+
+
+class PfpBody(BaseModel):
+    data: Optional[str] = None  # data:image/...;base64,...  — empty/None removes the picture
+
+
+@router.get("/profile/pfp")
+def get_pfp(user: User = Depends(auth.current_user), db: OrmSession = Depends(get_db)):
+    row = db.get(UserPfp, user.id)
+    return {"data": row.data if row else None}
+
+
+@router.post("/profile/pfp")
+def set_pfp(body: PfpBody, user: User = Depends(auth.current_user), db: OrmSession = Depends(get_db)):
+    row = db.get(UserPfp, user.id)
+    d = (body.data or "").strip()
+    if not d:  # remove
+        if row:
+            db.delete(row)
+            db.commit()
+        return {"ok": True, "data": None}
+    if len(d) > _PFP_MAX_CHARS:
+        raise HTTPException(status_code=422, detail="Image too large — try a smaller picture")
+    if not _PFP_RE.match(d):
+        raise HTTPException(status_code=422, detail="Not a valid image")
+    if row:
+        row.data = d
+    else:
+        db.add(UserPfp(user_id=user.id, data=d))
+    db.commit()
+    return {"ok": True, "data": d}

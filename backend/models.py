@@ -10,7 +10,7 @@ utf8mb4 so MySQL behaves (eng review). Avatars/items use stable string keys.
 import datetime
 from typing import Optional
 
-from sqlalchemy import String, Integer, Boolean, DateTime, Date, ForeignKey, Index, func
+from sqlalchemy import String, Integer, Boolean, DateTime, Date, ForeignKey, Index, Text, func
 from sqlalchemy.orm import Mapped, mapped_column
 
 from .db import Base
@@ -112,6 +112,17 @@ class UserAchievement(Base):
     user_id: Mapped[int] = mapped_column(ForeignKey("users.id", ondelete="CASCADE"), primary_key=True)
     achievement_key: Mapped[str] = mapped_column(ForeignKey("achievements.key"), primary_key=True)
     unlocked_at: Mapped[datetime.datetime] = mapped_column(DateTime, server_default=func.now())
+
+
+class UserPfp(Base):
+    """Custom profile picture: a small data-URL image the player uploads.
+    Own table (not a users column) so create_all can add it on deploy without
+    an ALTER; base64 is ASCII so 60k chars fit MySQL TEXT (64KB)."""
+    __tablename__ = "user_pfp"
+    __table_args__ = (UTF8,)
+    user_id: Mapped[int] = mapped_column(ForeignKey("users.id", ondelete="CASCADE"), primary_key=True)
+    data: Mapped[str] = mapped_column(Text, nullable=False)  # data:image/...;base64,...
+    updated_at: Mapped[datetime.datetime] = mapped_column(DateTime, server_default=func.now())
 
 
 class UserDaily(Base):
