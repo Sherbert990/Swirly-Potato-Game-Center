@@ -56,9 +56,31 @@
     background:rgba(28,37,48,.85); border:1px solid #3a4657; border-radius:999px;
     color:#c3ccd6; cursor:pointer; }
   #menuBtn:hover { color:#ffcf5c; border-color:#ffcf5c; filter:none; }
+  /* Cover intro (art-forward landing) */
+  #cover-intro { position:fixed; inset:0; z-index:200; background:#0b0e14; overflow:hidden; }
+  #cover-intro.hidden { display:none; }
+  #cover-intro .ca { position:absolute; inset:0; width:100%; height:100%; object-fit:cover; }
+  #cover-intro .cs { position:absolute; inset:0; background:linear-gradient(to bottom,rgba(11,14,20,.06) 32%,rgba(11,14,20,.95) 100%); }
+  #cover-intro .cc { position:absolute; left:50%; transform:translateX(-50%); bottom:0; z-index:2; width:100%; max-width:560px; padding:26px 22px 30px; text-align:center; }
+  #cover-intro .ct { color:#9aa6b4; font-size:14px; line-height:1.5; max-width:32ch; margin:0 auto 18px; }
+  #cover-intro .cb { display:flex; gap:12px; justify-content:center; flex-wrap:wrap; }
+  #cover-intro .cbtn { font-family:'Trebuchet MS',sans-serif; font-size:14px; font-weight:700; letter-spacing:1px; border-radius:8px; padding:13px 30px; cursor:pointer; border:none; }
+  #cover-intro .cbtn.play { background:linear-gradient(90deg,#ffcf5c,#ffb03a); color:#0b0e14; }
+  #cover-intro .cbtn.store { background:#243043; color:#c3ccd6; border:1px solid #3a4657; }
 </style>
 </head>
 <body>
+<div id="cover-intro">
+  <img class="ca" src="/design/hub/riposte-cover.svg" alt="Riposte">
+  <div class="cs"></div>
+  <div class="cc">
+    <div class="ct">Cat vs dog rhythm fencing. Watch the arrows, wait for the beat, then repeat the phrase to score.</div>
+    <div class="cb">
+      <button class="cbtn play" id="cover-play">▶ Play</button>
+      <button class="cbtn store" id="cover-store">🛒 Store</button>
+    </div>
+  </div>
+</div>
 <div id="wrap">
   <canvas id="c" width="800" height="500"></canvas>
   <button id="menuBtn">&#10005; MENU</button>
@@ -413,6 +435,8 @@ function loop(now){const dt=Math.min(0.05,(now-last)/1000);last=now;update(dt);d
 $('soloBtn').onclick=()=>startGame('solo');
 $('versusBtn').onclick=()=>startGame('versus');
 $('shopBtn').onclick=()=>{ if(window.GameCenter&&GameCenter.openStore) GameCenter.openStore('fencing-riposte'); };
+$('cover-play').onclick=()=>$('cover-intro').classList.add('hidden');
+$('cover-store').onclick=()=>{ if(window.GameCenter&&GameCenter.openStore) GameCenter.openStore('fencing-riposte'); };
 $('useRetry').onclick=doRetry;
 $('noRetry').onclick=declineRetry;
 $('menuBtn').onclick=quitToMenu;

@@ -95,6 +95,14 @@
   .overlay.hidden{opacity:0;pointer-events:none;}
   #store,#levels{justify-content:flex-start;overflow-y:auto;padding-top:34px;padding-bottom:34px;}
 
+  /* Cover intro (art-forward landing) */
+  .intro{padding:0;background:#0d0b1f;overflow:hidden;}
+  .cover-art{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;}
+  .cover-scrim{position:absolute;inset:0;background:linear-gradient(to bottom,rgba(13,11,31,.08) 34%,rgba(13,11,31,.95) 100%);}
+  .cover-copy{position:absolute;left:0;right:0;bottom:0;z-index:2;padding:24px 22px 30px;text-align:center;}
+  .cover-tag{color:var(--ink-dim);font-size:14px;line-height:1.5;max-width:30ch;margin:0 auto 16px;}
+  .cover-btns{display:flex;gap:12px;justify-content:center;flex-wrap:wrap;}
+
   .title{font-size:clamp(40px,13vmin,76px);font-weight:700;letter-spacing:-.03em;line-height:.95;}
   .title .o{color:var(--player);}
   .title .d{color:var(--gap);}
@@ -174,8 +182,21 @@
   </div>
   <div id="banner"></div>
 
+  <!-- Cover intro -->
+  <div id="intro" class="overlay intro">
+    <img class="cover-art" src="/design/hub/orbit-dodge-cover.svg" alt="Orbit Dodge">
+    <div class="cover-scrim"></div>
+    <div class="cover-copy">
+      <div class="cover-tag">Circle the core, tap to reverse, and thread every gap before it reaches you.</div>
+      <div class="cover-btns">
+        <button class="btn primary" id="btn-intro-play">Play</button>
+        <button class="btn" id="btn-intro-store">Store</button>
+      </div>
+    </div>
+  </div>
+
   <!-- Main menu -->
-  <div id="start" class="overlay">
+  <div id="start" class="overlay hidden">
     <div class="title"><span class="o">Orbit</span> <span class="d">Dodge</span></div>
     <div class="tag">Circle the core. Tap to reverse and thread each gap before it reaches you.</div>
     <div class="coins" id="coins-menu">0</div>
@@ -261,8 +282,9 @@
   const levelsOv = document.getElementById('levels');
   const interOv = document.getElementById('interlevel');
   const reviveOv = document.getElementById('revive');
+  const introOv = document.getElementById('intro');
   const overOv = document.getElementById('over');
-  const screens = { start:startOv, levels:levelsOv, interlevel:interOv, revive:reviveOv, over:overOv };
+  const screens = { intro:introOv, start:startOv, levels:levelsOv, interlevel:interOv, revive:reviveOv, over:overOv };
 
   const css = getComputedStyle(document.documentElement);
   const C = {
@@ -601,7 +623,7 @@
   }
 
   /* ---------- Screens ---------- */
-  let currentScreen = 'start';
+  let currentScreen = 'intro';
   function show(name){
     for (const k in screens) screens[k].classList.toggle('hidden', k !== name);
     currentScreen = name;
@@ -640,6 +662,8 @@
     }
   });
 
+  document.getElementById('btn-intro-play').addEventListener('click', () => show('start'));
+  document.getElementById('btn-intro-store').addEventListener('click', openHubStore);
   document.getElementById('btn-play').addEventListener('click', () => startPlay(1));
   document.getElementById('btn-infinity').addEventListener('click', startInfinity);
   const infLvlBtn = document.getElementById('btn-inf-levels');

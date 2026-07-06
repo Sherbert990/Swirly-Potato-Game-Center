@@ -278,9 +278,31 @@
   .ach.done .ar{color:var(--accent);}
 
   @media (prefers-reduced-motion: reduce){ .floater{animation-duration:.01s;} .track>i,.stat .mini>i{transition:none;} .eventbtn{animation:evpop .28s ease-out;} }
+  /* Cover intro (art-forward landing) */
+  #cover-intro{position:fixed;inset:0;z-index:400;background:var(--bg);overflow:hidden;}
+  #cover-intro.hidden{display:none;}
+  #cover-intro .ca{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;}
+  #cover-intro .cs{position:absolute;inset:0;background:linear-gradient(to bottom,rgba(7,10,20,.06) 32%,rgba(7,10,20,.95) 100%);}
+  #cover-intro .cc{position:absolute;left:50%;transform:translateX(-50%);bottom:0;z-index:2;width:100%;max-width:560px;padding:26px 22px max(30px,env(safe-area-inset-bottom));text-align:center;}
+  #cover-intro .ct{color:var(--ink-dim);font-size:14px;line-height:1.55;max-width:34ch;margin:0 auto 18px;}
+  #cover-intro .cb{display:flex;gap:12px;justify-content:center;flex-wrap:wrap;}
+  #cover-intro .cbtn{font-family:var(--display);font-size:14px;font-weight:600;letter-spacing:.06em;border-radius:11px;padding:13px 30px;cursor:pointer;border:none;display:inline-flex;align-items:center;gap:7px;}
+  #cover-intro .cbtn.play{background:linear-gradient(92deg,var(--accent),#5ff0d6);color:#062018;}
+  #cover-intro .cbtn.store{background:rgba(120,150,200,.1);border:1px solid rgba(120,150,200,.3);color:var(--ink);}
 </style>
 </head>
 <body>
+<div id="cover-intro" class="hidden">
+  <img class="ca" src="/design/hub/genesis-cover.svg" alt="Genesis">
+  <div class="cs"></div>
+  <div class="cc">
+    <div class="ct">Terraform dead rocks into living worlds, build out your solar systems, and grow a whole galaxy.</div>
+    <div class="cb">
+      <button class="cbtn play" id="cover-play"><i class="ti ti-player-play"></i> Play</button>
+      <button class="cbtn store" id="cover-store"><i class="ti ti-shopping-bag"></i> Store</button>
+    </div>
+  </div>
+</div>
 <div class="wrap">
 
   <!-- ============ AUTH SCREEN ============ -->
@@ -934,7 +956,8 @@ function escapeHtml(s){ return s.replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;',
 
 function enter(name){ CURNAME=name; CUR=loadGalaxy(name); ensureMeta(CUR);
   applyOffline();                       // credit colony earnings from time away (reads old lastSeen)
-  $('whoName').textContent=name; updateDustUI(); checkAchievements(); ensureMissions(); startColonyTick(); scheduleSave(); flushDust(true); show('home'); }
+  $('whoName').textContent=name; updateDustUI(); checkAchievements(); ensureMissions(); startColonyTick(); scheduleSave(); flushDust(true); show('home');
+  $('cover-intro').classList.remove('hidden'); }   // art-forward landing on entry
 $('logoutBtn').onclick=()=>{ dbSave(); flushDust(true);
   if(window.GameCenter&&GameCenter.logout){ GameCenter.logout().finally(()=>{ location.href='/'; }); } else { location.href='/'; } };
 
@@ -1563,6 +1586,8 @@ function buildSwatches(id, sel, cb){ const wrap=$(id); wrap.innerHTML='';
 function updateDustUI(){ const d=dustBalance(); const a=$('dustHome'); if(a)a.textContent=d; }
 // Upgrades/star-spaces are bought in the shared hub Store overlay (one wallet, tab per game).
 function openGenesisStore(){ if(window.GameCenter&&GameCenter.openStore) GameCenter.openStore('genesis'); }
+$('cover-play').onclick=()=>$('cover-intro').classList.add('hidden');
+$('cover-store').onclick=openGenesisStore;
 $('storeBtnHome').onclick=openGenesisStore;
 $('storeBtnSys').onclick=openGenesisStore;
 

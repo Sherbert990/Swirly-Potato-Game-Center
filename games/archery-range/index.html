@@ -243,6 +243,18 @@
   button:focus-visible,.mode-card:focus-visible,.level-btn:focus-visible{outline:2px solid var(--gold);outline-offset:3px}
   .footer{display:flex;justify-content:center;gap:12px;flex-wrap:wrap}
 
+  /* Cover intro (art-forward landing) */
+  #cover-intro{position:fixed;inset:0;z-index:200;background:var(--range-0);overflow:hidden}
+  #cover-intro.hidden{display:none}
+  #cover-intro .ca{position:absolute;inset:0;width:100%;height:100%;object-fit:cover}
+  #cover-intro .cs{position:absolute;inset:0;background:linear-gradient(to bottom,rgba(14,24,19,.06) 32%,rgba(14,24,19,.95) 100%)}
+  #cover-intro .cc{position:absolute;left:50%;transform:translateX(-50%);bottom:0;z-index:2;width:100%;max-width:560px;padding:26px 22px max(30px,env(safe-area-inset-bottom));text-align:center}
+  #cover-intro .ct{color:var(--muted);font-size:14px;line-height:1.5;max-width:32ch;margin:0 auto 18px}
+  #cover-intro .cb{display:flex;gap:12px;justify-content:center;flex-wrap:wrap}
+  #cover-intro .cbtn{font-family:"Oswald",sans-serif;font-size:14px;font-weight:600;letter-spacing:.12em;text-transform:uppercase;border-radius:999px;padding:14px 32px;cursor:pointer;border:none}
+  #cover-intro .cbtn.play{background:var(--gold);color:var(--range-0)}
+  #cover-intro .cbtn.store{background:rgba(236,229,212,.08);border:1px solid rgba(236,229,212,.25);color:var(--cream)}
+
   @media (max-width:430px){
     .levels{grid-template-columns:repeat(3,1fr)}
     .totals{gap:15px}
@@ -251,6 +263,17 @@
 </style>
 </head>
 <body>
+<div id="cover-intro">
+  <img class="ca" src="/design/hub/archery-cover.svg" alt="Archery Range">
+  <div class="cs"></div>
+  <div class="cc">
+    <div class="ct">Draw the bow, judge the wind, and loose. Fifty levels, each windier than the last.</div>
+    <div class="cb">
+      <button class="cbtn play" id="cover-play"><i class="ti ti-player-play"></i> Play</button>
+      <button class="cbtn store" id="cover-store"><i class="ti ti-shopping-bag"></i> Store</button>
+    </div>
+  </div>
+</div>
 <div class="app">
 
   <!-- ==================== MENU ==================== -->
@@ -1066,6 +1089,8 @@
   el.resetLevel.addEventListener('click', () => { if (gameMode === 'streak') startStreak(); else startLevel(level); });
   el.streakBtn.addEventListener('click', startStreak);
   el.openShop.addEventListener('click', () => { if (window.GameCenter && GameCenter.openStore) GameCenter.openStore('archery-range'); });
+  document.getElementById('cover-play').addEventListener('click', () => document.getElementById('cover-intro').classList.add('hidden'));
+  document.getElementById('cover-store').addEventListener('click', () => { if (window.GameCenter && GameCenter.openStore) GameCenter.openStore('archery-range'); });
   el.muteBtn.addEventListener('click', () => {
     muted = !muted;
     if (muted) stopMusic(); else { audio(); ensureMusic(); }
