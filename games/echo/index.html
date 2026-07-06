@@ -69,6 +69,12 @@
     border-radius:5px;background:rgba(255,255,255,.13);overflow:hidden;display:none}
   #phaseBar.show{display:block;box-shadow:0 0 12px rgba(95,230,255,.4)}
   #phaseFill{height:100%;width:100%;border-radius:5px;background:linear-gradient(90deg,#5fe6ff,#a86bff)}
+  /* Floating touch joystick (drag to move · tap to pulse) */
+  #joy{position:absolute;width:110px;height:110px;margin:-55px 0 0 -55px;border-radius:50%;z-index:6;
+    border:2px solid rgba(95,230,255,.4);background:rgba(95,230,255,.08);pointer-events:none;display:none}
+  #joy.show{display:block}
+  #joyk{position:absolute;left:50%;top:50%;width:48px;height:48px;margin:-24px 0 0 -24px;border-radius:50%;
+    background:rgba(95,230,255,.55);box-shadow:0 0 16px rgba(95,230,255,.55)}
   #lvl{top:0;left:0}
   #lvl b{font-family:var(--ff-title);color:var(--ink);font-size:15px}
   #status{top:0;left:50%;transform:translateX(-50%);text-align:center;padding-top:16px}
@@ -141,7 +147,7 @@
 <body>
 <!-- Shared Game Center SDK: adds the "← Home" button, Settings, and PWA service worker -->
 <script src="/shared/gamecenter.js"></script>
-<div id="wrap"><canvas id="c"></canvas></div>
+<div id="wrap"><canvas id="c"></canvas><div id="joy"><div id="joyk"></div></div></div>
 
 <!-- HUD -->
 <div id="hud" class="hidden">
@@ -429,6 +435,7 @@
     setHud();
     let baseHint = mode==='collect' ? `find ${moteCount} motes — then escape` : `reach the exit before your light fades`;
     if(level===1 && ownsPhase()) baseHint += ' · press E to phase through walls';
+    if(level===1 && window.GameCenter && GameCenter.settings && GameCenter.settings.touchControls()) baseHint += ' · drag to move, tap to pulse';
     showHint(baseHint);
   }
 
@@ -744,20 +751,23 @@
   });
   addEventListener('keyup', e=>{ const k=e.key.toLowerCase(); if(k===' ')keys[' ']=false; else keys[k]=false; });
 
-  // touch: drag to move, tap to pulse
+  // touch: drag to move (with a visible floating joystick), tap to pulse
+  const joy=document.getElementById('joy'), joyk=document.getElementById('joyk');
   let touchId=null, tStart=null;
-  canvas.addEventListener('touchstart', e=>{ audio(); const t=e.changedTouches[0]; touchId=t.identifier; tStart={x:t.clientX,y:t.clientY}; }, {passive:true});
+  canvas.addEventListener('touchstart', e=>{ audio(); const t=e.changedTouches[0]; touchId=t.identifier; tStart={x:t.clientX,y:t.clientY};
+    const r=canvas.getBoundingClientRect(); joy.style.left=(t.clientX-r.left)+'px'; joy.style.top=(t.clientY-r.top)+'px'; joyk.style.transform=''; joy.classList.add('show'); }, {passive:true});
   canvas.addEventListener('touchmove', e=>{
     for(const t of e.changedTouches){ if(t.identifier!==touchId) continue;
       const dx=t.clientX-tStart.x, dy=t.clientY-tStart.y;
       keys['a']=dx<-12; keys['d']=dx>12; keys['w']=dy<-12; keys['s']=dy>12;
+      const d=Math.hypot(dx,dy)||1, c=d>42?42/d:1; joyk.style.transform=`translate(${dx*c}px,${dy*c}px)`;
     }
   }, {passive:true});
   canvas.addEventListener('touchend', e=>{
     for(const t of e.changedTouches){ if(t.identifier!==touchId) continue;
       const moved = Math.hypot(t.clientX-tStart.x, t.clientY-tStart.y);
       if(moved<14 && running && !pulseAuto()){ manualTimer=MANUAL_CD; pulse(true); if(mode==='dark') game.meter=Math.max(0,game.meter-1.2); }
-      keys['a']=keys['d']=keys['w']=keys['s']=false; touchId=null;
+      keys['a']=keys['d']=keys['w']=keys['s']=false; touchId=null; joy.classList.remove('show');
     }
   }, {passive:true});
 

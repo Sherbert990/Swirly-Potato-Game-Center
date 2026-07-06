@@ -254,6 +254,12 @@
   #cover-intro .cbtn{font-family:"Oswald",sans-serif;font-size:14px;font-weight:600;letter-spacing:.12em;text-transform:uppercase;border-radius:999px;padding:14px 32px;cursor:pointer;border:none}
   #cover-intro .cbtn.play{background:var(--gold);color:var(--range-0)}
   #cover-intro .cbtn.store{background:rgba(236,229,212,.08);border:1px solid rgba(236,229,212,.25);color:var(--cream)}
+  /* Touch draw button: aim on the target, then hold this to draw & loose */
+  #drawBtn{display:none;width:100%;max-width:360px;margin:8px auto 0;padding:16px;border-radius:14px;border:none;
+    background:var(--gold);color:var(--range-0);font-family:"Oswald",sans-serif;font-weight:600;letter-spacing:.06em;
+    text-transform:uppercase;font-size:14px;cursor:pointer;user-select:none;-webkit-user-select:none;touch-action:none}
+  #drawBtn.show{display:block}
+  #drawBtn:active{filter:brightness(1.08)}
 
   @media (max-width:430px){
     .levels{grid-template-columns:repeat(3,1fr)}
@@ -359,6 +365,7 @@
     </div>
 
     <div class="hint" id="hint">Move to aim, then <b>press and hold</b> to draw the bow.</div>
+    <button id="drawBtn">Hold to draw &middot; release to loose</button>
 
     <div class="footer">
       <button class="link-btn" id="resetLevel">Restart level</button>
@@ -953,6 +960,7 @@
     screen = name;
     menu.classList.toggle('hidden', name !== 'menu');
     game.classList.toggle('hidden', name !== 'game');
+    if (typeof applyArcheryTouch === 'function') applyArcheryTouch();
   }
   function startLevel(L){
     gameMode = 'levels';
@@ -1051,9 +1059,20 @@
     if (state !== 'ready') return;
     e.preventDefault();
     const p = pt(e); aim.x = p.x; aim.y = p.y;
+    if (touchControlsOn()) return;   // touch: this only aims — draw with the button (finger won't cover the target)
     beginDraw();
     try { stage.setPointerCapture(e.pointerId); } catch(_){}
   });
+  // Touch draw button: press-hold to draw (steadiness builds), release to loose.
+  function touchControlsOn(){ return !!(window.GameCenter && GameCenter.settings && GameCenter.settings.touchControls()); }
+  const drawBtn = document.getElementById('drawBtn');
+  drawBtn.addEventListener('pointerdown', (e) => { e.preventDefault(); audio(); if (state === 'ready') beginDraw(); });
+  const looseFromBtn = (e) => { if (e) e.preventDefault(); if (state === 'drawing') fire(performance.now()); };
+  drawBtn.addEventListener('pointerup', looseFromBtn);
+  drawBtn.addEventListener('pointerleave', looseFromBtn);
+  drawBtn.addEventListener('pointercancel', looseFromBtn);
+  function applyArcheryTouch(){ drawBtn.classList.toggle('show', touchControlsOn() && screen === 'game'); }
+  window.addEventListener('gc:settings', applyArcheryTouch);
   window.addEventListener('pointerup', () => { if (state === 'drawing') fire(performance.now()); });
 
   function beginDraw(){
