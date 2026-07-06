@@ -67,6 +67,20 @@
   #cover-intro .cbtn { font-family:'Trebuchet MS',sans-serif; font-size:14px; font-weight:700; letter-spacing:1px; border-radius:8px; padding:13px 30px; cursor:pointer; border:none; }
   #cover-intro .cbtn.play { background:linear-gradient(90deg,#ffcf5c,#ffb03a); color:#0b0e14; }
   #cover-intro .cbtn.store { background:#243043; color:#c3ccd6; border:1px solid #3a4657; }
+  /* On-screen arrow pad (iPad / touch) */
+  #pad{ position:absolute; inset:0; pointer-events:none; z-index:4; }
+  #pad.hidden{ display:none; }
+  #pad .dpad{ position:absolute; bottom:14px; width:158px; height:158px; pointer-events:auto; }
+  #pad .dpad.solo{ left:50%; transform:translateX(-50%); }
+  #pad .dpad.p1{ left:14px; } #pad .dpad.p2{ right:14px; }
+  #pad .dpad.off{ display:none; }
+  #pad .dpad button{ position:absolute; width:50px; height:50px; border-radius:13px; background:rgba(20,27,40,.82);
+    border:1px solid #3a4657; color:#dfe6f0; font-size:20px; line-height:1; display:flex; align-items:center;
+    justify-content:center; user-select:none; -webkit-user-select:none; touch-action:none; cursor:pointer; }
+  #pad .dpad button:active{ background:#ffcf5c; border-color:#ffcf5c; color:#0b0e14; }
+  #pad .dpad .u{ left:54px; top:0; } #pad .dpad .l{ left:0; top:54px; }
+  #pad .dpad .r{ left:108px; top:54px; } #pad .dpad .d{ left:54px; top:108px; }
+  #pad .lab{ position:absolute; top:-20px; left:0; right:0; text-align:center; font-size:12px; font-weight:700; color:#8494a6; }
 </style>
 </head>
 <body>
@@ -84,6 +98,22 @@
 <div id="wrap">
   <canvas id="c" width="800" height="500"></canvas>
   <button id="menuBtn">&#10005; MENU</button>
+  <div id="pad" class="hidden">
+    <div class="dpad p1 solo">
+      <span class="lab" id="pad-lab1"></span>
+      <button class="u" data-d="up" data-p="1">&#9650;</button>
+      <button class="l" data-d="left" data-p="1">&#9664;</button>
+      <button class="r" data-d="right" data-p="1">&#9654;</button>
+      <button class="d" data-d="down" data-p="1">&#9660;</button>
+    </div>
+    <div class="dpad p2 off">
+      <span class="lab">P2 &#128054;</span>
+      <button class="u" data-d="up" data-p="2">&#9650;</button>
+      <button class="l" data-d="left" data-p="2">&#9664;</button>
+      <button class="r" data-d="right" data-p="2">&#9654;</button>
+      <button class="d" data-d="down" data-p="2">&#9660;</button>
+    </div>
+  </div>
 
   <div id="menu" class="screen">
     <h1>🐱 RIPOSTE 🐶</h1>
@@ -421,13 +451,35 @@ function draw(){
 // ===== SCREENS / LOOP =====
 // Skins & purchases live in the shared Store overlay (GameCenter.openStore).
 function showScreen(name){for(const s of['menu','retry'])$(s).classList.toggle('hidden',s!==name);
-  $('menuBtn').style.display = state==='menu' ? 'none' : 'block';}   // back-to-menu visible whenever in a game
+  $('menuBtn').style.display = state==='menu' ? 'none' : 'block';   // back-to-menu visible whenever in a game
+  $('pad').classList.toggle('hidden', !(name===null && touchOn()));}   // arrow pad only during active play
+
+// ---- Touch arrow pad ----
+function touchOn(){ return !!(window.GameCenter && GameCenter.settings && GameCenter.settings.touchControls()); }
+function pressDir(dir, fromP){
+  if(state!=='playing' || !p) return;
+  if(mode==='versus' && p.owner!==fromP) return;      // in 2P only the current player's pad counts
+  const el=actx.currentTime-p.start, ph=phaseOf();
+  if(el<ph.respStart-p.bd*HITFRAC) return;
+  judgePress(dir, el);
+}
+function layoutPad(){
+  const versus = mode==='versus';
+  $('pad').querySelector('.p1').classList.toggle('solo', !versus);
+  $('pad').querySelector('.p2').classList.toggle('off', !versus);
+  $('pad-lab1').textContent = versus ? 'P1 🐱' : '';
+}
+$('pad').querySelectorAll('button[data-d]').forEach(b=>{
+  b.addEventListener('pointerdown', e=>{ e.preventDefault(); e.stopPropagation(); if(!actx)initAudio(); pressDir(b.dataset.d, +b.dataset.p); });
+});
+addEventListener('gc:settings', ()=>{ if(state!=='menu') $('pad').classList.toggle('hidden', !touchOn()); });
 function gotoMenu(){state='menu';p=null;refreshStats();showScreen('menu');}
 // Quit mid-game: bank anything earned this match first so no coins are lost.
 function quitToMenu(){ if(state==='playing'||state==='retry') bankEarned(); gotoMenu(); }
 function startGame(m){ mode=m; if(!actx)initAudio(); actx.resume();
   player=0;rival=0;winner=null;turnIndex=0;earned=0;lunge={side:null,t:0};msg={txt:'',t:0};
   currentBd=BASE_BD;musicStep=0;musicNextTime=actx.currentTime+0.25;
+  layoutPad();
   makePhrase(0);state='playing';showScreen(null); }
 let last=performance.now();
 function loop(now){const dt=Math.min(0.05,(now-last)/1000);last=now;update(dt);draw();requestAnimationFrame(loop);}
