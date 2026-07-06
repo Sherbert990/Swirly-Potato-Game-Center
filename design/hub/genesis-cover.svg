@@ -1,29 +1,56 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 560 300" width="560" height="300" role="img" aria-label="Genesis">
   <defs>
-    <radialGradient id="ge-bg" cx="30%" cy="20%" r="110%">
-      <stop offset="0%" stop-color="#1b1440"/><stop offset="60%" stop-color="#0d0a24"/><stop offset="100%" stop-color="#06040f"/>
+    <radialGradient id="ge-bg" cx="60%" cy="70%" r="120%">
+      <stop offset="0%" stop-color="#241a54"/><stop offset="45%" stop-color="#120e30"/><stop offset="100%" stop-color="#05040f"/>
     </radialGradient>
-    <radialGradient id="ge-planet" cx="38%" cy="34%" r="72%">
-      <stop offset="0%" stop-color="#7fe3b0"/><stop offset="45%" stop-color="#3aa6d6"/><stop offset="100%" stop-color="#1b3a6b"/>
+    <radialGradient id="ge-neb" cx="50%" cy="50%" r="50%">
+      <stop offset="0%" stop-color="#a86bff" stop-opacity=".45"/><stop offset="60%" stop-color="#5a3aa0" stop-opacity=".15"/><stop offset="100%" stop-color="#5a3aa0" stop-opacity="0"/>
+    </radialGradient>
+    <radialGradient id="ge-neb2" cx="50%" cy="50%" r="50%">
+      <stop offset="0%" stop-color="#3aa6d6" stop-opacity=".4"/><stop offset="100%" stop-color="#3aa6d6" stop-opacity="0"/>
+    </radialGradient>
+    <radialGradient id="ge-planet" cx="36%" cy="30%" r="78%">
+      <stop offset="0%" stop-color="#b8ffcf"/><stop offset="30%" stop-color="#57d99a"/><stop offset="62%" stop-color="#2f9fd0"/><stop offset="100%" stop-color="#15315f"/>
+    </radialGradient>
+    <radialGradient id="ge-atmo" cx="50%" cy="50%" r="50%">
+      <stop offset="70%" stop-color="#7fe3b0" stop-opacity="0"/><stop offset="90%" stop-color="#8ff0c0" stop-opacity=".5"/><stop offset="100%" stop-color="#8ff0c0" stop-opacity="0"/>
     </radialGradient>
     <radialGradient id="ge-star" cx="50%" cy="50%" r="50%">
-      <stop offset="0%" stop-color="#fff3c4"/><stop offset="55%" stop-color="#ffc861"/><stop offset="100%" stop-color="#ff9b3c" stop-opacity="0"/>
+      <stop offset="0%" stop-color="#fff6d0"/><stop offset="50%" stop-color="#ffc861"/><stop offset="100%" stop-color="#ff9b3c" stop-opacity="0"/>
     </radialGradient>
+    <linearGradient id="ge-ttl" x1="0" y1="0" x2="1" y2="0"><stop offset="0%" stop-color="#ffe08a"/><stop offset="100%" stop-color="#ff9b3c"/></linearGradient>
+    <radialGradient id="ge-vig" cx="50%" cy="46%" r="72%"><stop offset="60%" stop-color="#000" stop-opacity="0"/><stop offset="100%" stop-color="#000" stop-opacity=".5"/></radialGradient>
   </defs>
   <rect width="560" height="300" fill="url(#ge-bg)"/>
-  <g fill="#fff" opacity=".8">
-    <circle cx="70" cy="60" r="1.6"/><circle cx="120" cy="120" r="1.1"/><circle cx="200" cy="40" r="1.4"/>
-    <circle cx="470" cy="70" r="1.2"/><circle cx="510" cy="150" r="1.6"/><circle cx="90" cy="210" r="1.2"/>
-    <circle cx="250" cy="250" r="1.1"/><circle cx="430" cy="230" r="1.4"/><circle cx="330" cy="30" r="1.1"/>
+  <ellipse cx="160" cy="90" rx="220" ry="150" fill="url(#ge-neb)"/>
+  <ellipse cx="470" cy="240" rx="160" ry="120" fill="url(#ge-neb2)"/>
+  <!-- starfield -->
+  <g fill="#fff"><circle cx="60" cy="52" r="1.6" opacity=".9"/><circle cx="120" cy="120" r="1" opacity=".6"/><circle cx="210" cy="46" r="1.3" opacity=".8"/><circle cx="330" cy="34" r="1" opacity=".6"/><circle cx="500" cy="70" r="1.5" opacity=".9"/><circle cx="530" cy="150" r="1.1" opacity=".6"/><circle cx="96" cy="220" r="1.2" opacity=".7"/><circle cx="250" cy="262" r="1" opacity=".6"/><circle cx="150" cy="180" r="1.3" opacity=".7"/><circle cx="410" cy="260" r="1.1" opacity=".6"/></g>
+  <g fill="#fff" opacity=".5"><circle cx="80" cy="90" r="0.7"/><circle cx="300" cy="90" r="0.7"/><circle cx="450" cy="120" r="0.7"/><circle cx="200" cy="220" r="0.7"/></g>
+
+  <!-- distant sun -->
+  <circle cx="96" cy="70" r="40" fill="url(#ge-star)"/>
+
+  <!-- hero terraformed planet with rings + atmosphere + moons -->
+  <g transform="translate(370,166)">
+    <ellipse cx="0" cy="0" rx="150" ry="38" fill="none" stroke="#c8b3ff" stroke-width="7" opacity=".35"/>
+    <circle r="98" fill="url(#ge-atmo)"/>
+    <circle r="88" fill="url(#ge-planet)"/>
+    <!-- continents -->
+    <path d="M -46 -30 q 20 -14 40 -4 q 14 8 4 24 q -18 16 -40 6 q -18 -10 -4 -26 z" fill="#3fbf7e" opacity=".7"/>
+    <path d="M 10 26 q 24 -6 34 12 q 4 18 -18 24 q -26 4 -30 -18 q -2 -14 14 -18 z" fill="#2f9d6a" opacity=".65"/>
+    <ellipse cx="-24" cy="34" rx="16" ry="9" fill="#eafff4" opacity=".5"/>
+    <ellipse cx="30" cy="-40" rx="20" ry="10" fill="#eafff4" opacity=".45"/>
+    <!-- rim highlight -->
+    <path d="M -62 -62 A 88 88 0 0 1 40 -78" fill="none" stroke="#e9fff4" stroke-opacity=".5" stroke-width="3"/>
+    <!-- front ring arc -->
+    <path d="M -150 6 A 150 38 0 0 0 150 6" fill="none" stroke="#e7d8ff" stroke-width="4" opacity=".8"/>
+    <!-- moons -->
+    <circle cx="-128" cy="-30" r="10" fill="#cbd3ea"/><circle cx="-131" cy="-33" r="3" fill="#fff" opacity=".6"/>
+    <circle cx="120" cy="60" r="6" fill="#9fb0d6"/>
   </g>
-  <circle cx="486" cy="52" r="34" fill="url(#ge-star)"/>
-  <g transform="translate(360,168)">
-    <ellipse cx="0" cy="0" rx="138" ry="34" fill="none" stroke="#c8b3ff" stroke-width="6" opacity=".55"/>
-    <circle r="82" fill="url(#ge-planet)"/>
-    <ellipse cx="0" cy="0" rx="138" ry="34" fill="none" stroke="#e7d8ff" stroke-width="3" opacity=".85"
-      stroke-dasharray="120 400"/>
-    <circle cx="-30" cy="-24" r="16" fill="#8ff0c0" opacity=".6"/><circle cx="24" cy="18" r="22" fill="#2f7fb8" opacity=".5"/>
-  </g>
-  <text x="34" y="66" font-family="'Trebuchet MS', sans-serif" font-size="46" font-weight="800" letter-spacing="8" fill="#ffc861">GENESIS</text>
-  <text x="36" y="94" font-family="'Trebuchet MS', sans-serif" font-size="15" letter-spacing="3" fill="#b6a8e0">TERRAFORM WORLDS · BUILD A GALAXY</text>
+
+  <rect width="560" height="300" fill="url(#ge-vig)"/>
+  <text x="280" y="56" text-anchor="middle" font-family="'Trebuchet MS', sans-serif" font-size="46" font-weight="800" letter-spacing="9" fill="url(#ge-ttl)">GENESIS</text>
+  <text x="280" y="80" text-anchor="middle" font-family="'Trebuchet MS', sans-serif" font-size="13.5" letter-spacing="3" fill="#c3b6ea">TERRAFORM WORLDS · BUILD A GALAXY</text>
 </svg>

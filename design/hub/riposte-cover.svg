@@ -1,32 +1,62 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 560 300" width="560" height="300" role="img" aria-label="Riposte">
   <defs>
-    <linearGradient id="rp-bg" x1="0" y1="0" x2="0" y2="1">
-      <stop offset="0%" stop-color="#141b2e"/><stop offset="100%" stop-color="#0b0e14"/>
+    <radialGradient id="rp-bg" cx="50%" cy="24%" r="100%">
+      <stop offset="0%" stop-color="#1f2740"/><stop offset="55%" stop-color="#121828"/><stop offset="100%" stop-color="#080b14"/>
+    </radialGradient>
+    <linearGradient id="rp-spot" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="#ffe7b0" stop-opacity=".28"/><stop offset="100%" stop-color="#ffe7b0" stop-opacity="0"/>
     </linearGradient>
+    <radialGradient id="rp-clash" cx="50%" cy="50%" r="50%">
+      <stop offset="0%" stop-color="#fffbe6"/><stop offset="30%" stop-color="#ffd25c" stop-opacity=".9"/><stop offset="100%" stop-color="#ffcf5c" stop-opacity="0"/>
+    </radialGradient>
     <linearGradient id="rp-ttl" x1="0" y1="0" x2="1" y2="0">
       <stop offset="0%" stop-color="#ff7a4d"/><stop offset="50%" stop-color="#ffcf5c"/><stop offset="100%" stop-color="#7ad67a"/>
     </linearGradient>
+    <radialGradient id="rp-vig" cx="50%" cy="46%" r="72%"><stop offset="60%" stop-color="#000" stop-opacity="0"/><stop offset="100%" stop-color="#000" stop-opacity=".55"/></radialGradient>
   </defs>
   <rect width="560" height="300" fill="url(#rp-bg)"/>
-  <rect x="46" y="214" width="468" height="60" fill="#20293a" stroke="#3a4a63"/>
-  <line x1="280" y1="214" x2="280" y2="274" stroke="#2b3648"/>
+  <polygon points="230,0 330,0 400,300 160,300" fill="url(#rp-spot)"/>
+  <!-- arena floor with a centre piste line -->
+  <polygon points="70,262 490,262 540,300 20,300" fill="#1a2233"/>
+  <ellipse cx="280" cy="264" rx="220" ry="16" fill="#20293c"/>
+  <line x1="280" y1="252" x2="280" y2="300" stroke="#33405a" stroke-width="2"/>
+  <ellipse cx="280" cy="272" rx="150" ry="18" fill="#000" opacity=".3"/>
+
   <!-- cat (left) -->
-  <g transform="translate(150,150)">
-    <circle cx="0" cy="-26" r="30" fill="#eb8f42"/>
-    <polygon points="-24,-46 -14,-64 -6,-44" fill="#eb8f42"/><polygon points="24,-46 14,-64 6,-44" fill="#eb8f42"/>
-    <rect x="-26" y="-4" width="52" height="58" rx="8" fill="#eef1f6"/>
-    <circle cx="-9" cy="-30" r="4" fill="#171009"/><circle cx="9" cy="-30" r="4" fill="#171009"/>
+  <g transform="translate(176,158)">
+    <ellipse cx="0" cy="98" rx="48" ry="10" fill="#000" opacity=".3"/>
+    <circle cx="0" cy="-30" r="32" fill="#eb8f42"/>
+    <polygon points="-26,-50 -14,-70 -5,-46" fill="#eb8f42"/><polygon points="26,-50 14,-70 5,-46" fill="#eb8f42"/>
+    <polygon points="-22,-46 -15,-58 -8,-44" fill="#f8c98f"/><polygon points="22,-46 15,-58 8,-44" fill="#f8c98f"/>
+    <rect x="-28" y="-4" width="56" height="66" rx="9" fill="#eef1f6"/>
+    <rect x="-28" y="-4" width="56" height="18" rx="9" fill="#ffcf5c" opacity=".9"/>
+    <circle cx="-10" cy="-33" r="4.5" fill="#171009"/><circle cx="10" cy="-33" r="4.5" fill="#171009"/>
+    <path d="M -6 -22 Q 0 -17 6 -22" fill="none" stroke="#171009" stroke-width="2" stroke-linecap="round"/>
   </g>
   <!-- dog (right) -->
-  <g transform="translate(410,150)">
-    <circle cx="0" cy="-26" r="30" fill="#b07b45"/>
-    <ellipse cx="-26" cy="-30" rx="10" ry="20" fill="#7c4f28"/><ellipse cx="26" cy="-30" rx="10" ry="20" fill="#7c4f28"/>
-    <rect x="-26" y="-4" width="52" height="58" rx="8" fill="#eef1f6"/>
-    <circle cx="-9" cy="-30" r="4" fill="#171009"/><circle cx="9" cy="-30" r="4" fill="#171009"/>
+  <g transform="translate(384,158)">
+    <ellipse cx="0" cy="98" rx="48" ry="10" fill="#000" opacity=".3"/>
+    <circle cx="0" cy="-30" r="32" fill="#b07b45"/>
+    <ellipse cx="-28" cy="-32" rx="11" ry="22" fill="#7c4f28"/><ellipse cx="28" cy="-32" rx="11" ry="22" fill="#7c4f28"/>
+    <rect x="-28" y="-4" width="56" height="66" rx="9" fill="#eef1f6"/>
+    <rect x="-28" y="-4" width="56" height="18" rx="9" fill="#7ad67a" opacity=".9"/>
+    <circle cx="-10" cy="-33" r="4.5" fill="#171009"/><circle cx="10" cy="-33" r="4.5" fill="#171009"/>
+    <ellipse cx="0" cy="-20" rx="5" ry="4" fill="#171009"/>
   </g>
-  <!-- crossed blades -->
-  <line x1="176" y1="120" x2="300" y2="150" stroke="#ffcf5c" stroke-width="4" stroke-linecap="round"/>
-  <line x1="384" y1="120" x2="260" y2="150" stroke="#d7dde6" stroke-width="4" stroke-linecap="round"/>
-  <text x="280" y="58" text-anchor="middle" font-family="'Trebuchet MS', sans-serif" font-size="46" font-weight="800" letter-spacing="6" fill="url(#rp-ttl)">RIPOSTE</text>
-  <text x="280" y="86" text-anchor="middle" font-family="'Trebuchet MS', sans-serif" font-size="15" letter-spacing="2" fill="#c3ccd6">CAT vs DOG · RHYTHM FENCING</text>
+
+  <!-- crossed blades + clash spark -->
+  <g stroke-linecap="round">
+    <line x1="196" y1="120" x2="300" y2="150" stroke="#ffcf5c" stroke-width="4"/>
+    <line x1="364" y1="120" x2="260" y2="150" stroke="#dfe6f0" stroke-width="4"/>
+  </g>
+  <circle cx="280" cy="135" r="34" fill="url(#rp-clash)"/>
+  <g stroke="#fff8dc" stroke-width="2" stroke-linecap="round" opacity=".9">
+    <line x1="280" y1="118" x2="280" y2="106"/><line x1="280" y1="152" x2="280" y2="164"/>
+    <line x1="263" y1="135" x2="251" y2="135"/><line x1="297" y1="135" x2="309" y2="135"/>
+    <line x1="268" y1="123" x2="260" y2="115"/><line x1="292" y1="147" x2="300" y2="155"/>
+  </g>
+
+  <rect width="560" height="300" fill="url(#rp-vig)"/>
+  <text x="280" y="52" text-anchor="middle" font-family="'Trebuchet MS', sans-serif" font-size="48" font-weight="800" letter-spacing="7" fill="url(#rp-ttl)">RIPOSTE</text>
+  <text x="280" y="76" text-anchor="middle" font-family="'Trebuchet MS', sans-serif" font-size="13.5" letter-spacing="3" fill="#aeb8c8">CAT vs DOG · RHYTHM FENCING</text>
 </svg>

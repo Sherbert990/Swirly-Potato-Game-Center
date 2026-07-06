@@ -1,47 +1,38 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 560 300" width="560" height="300" role="img" aria-label="Orbit Dodge">
   <defs>
-    <radialGradient id="od-bg" cx="50%" cy="42%" r="78%">
-      <stop offset="0%" stop-color="#17122e"/><stop offset="72%" stop-color="#0d0b1f"/>
+    <radialGradient id="od-bg" cx="50%" cy="40%" r="82%">
+      <stop offset="0%" stop-color="#1c1640"/><stop offset="55%" stop-color="#120e2a"/><stop offset="100%" stop-color="#08060f"/>
+    </radialGradient>
+    <radialGradient id="od-neb" cx="50%" cy="50%" r="50%">
+      <stop offset="0%" stop-color="#6ff0d0" stop-opacity=".18"/><stop offset="100%" stop-color="#6ff0d0" stop-opacity="0"/>
     </radialGradient>
     <radialGradient id="od-core" cx="50%" cy="50%" r="50%">
-      <stop offset="0%" stop-color="#8fe4ff"/><stop offset="45%" stop-color="rgba(143,228,255,0.35)"/><stop offset="100%" stop-color="rgba(143,228,255,0)"/>
+      <stop offset="0%" stop-color="#eaffff"/><stop offset="30%" stop-color="#8fe4ff"/><stop offset="60%" stop-color="#8fe4ff" stop-opacity=".35"/><stop offset="100%" stop-color="#8fe4ff" stop-opacity="0"/>
     </radialGradient>
-    <linearGradient id="od-ttl" x1="0" y1="0" x2="1" y2="0">
-      <stop offset="0%" stop-color="#ffcb6b"/><stop offset="100%" stop-color="#ff9d5c"/>
-    </linearGradient>
+    <linearGradient id="od-ttl" x1="0" y1="0" x2="1" y2="0"><stop offset="0%" stop-color="#ffcb6b"/><stop offset="100%" stop-color="#ff9d5c"/></linearGradient>
+    <radialGradient id="od-vig" cx="50%" cy="42%" r="72%"><stop offset="60%" stop-color="#000" stop-opacity="0"/><stop offset="100%" stop-color="#000" stop-opacity=".5"/></radialGradient>
   </defs>
   <rect width="560" height="300" fill="url(#od-bg)"/>
+  <ellipse cx="280" cy="118" rx="220" ry="150" fill="url(#od-neb)"/>
+  <g fill="#fff"><circle cx="70" cy="60" r="1.4" opacity=".8"/><circle cx="130" cy="150" r="1" opacity=".5"/><circle cx="480" cy="80" r="1.5" opacity=".8"/><circle cx="510" cy="180" r="1" opacity=".5"/><circle cx="80" cy="210" r="1.1" opacity=".6"/><circle cx="450" cy="230" r="1.2" opacity=".6"/></g>
 
-  <!-- orbit ring (player path) -->
-  <circle cx="280" cy="122" r="82" fill="none" stroke="rgba(234,230,255,0.10)" stroke-width="1"/>
-
-  <!-- closing rings, each with a gap -->
-  <g transform="rotate(35 280 122)">
-    <circle cx="280" cy="122" r="78" fill="none" stroke="hsl(218,72%,64%)" stroke-width="7" stroke-linecap="round" stroke-dasharray="428 62" opacity="0.9"/>
+  <g transform="translate(280,120)">
+    <!-- orbit guide -->
+    <circle r="92" fill="none" stroke="rgba(234,230,255,0.10)" stroke-width="1"/>
+    <!-- closing rings (glowing arcs with gaps) -->
+    <g transform="rotate(35)"><circle r="88" fill="none" stroke="hsl(218,72%,64%)" stroke-width="8" stroke-linecap="round" stroke-dasharray="470 82" opacity=".92"/></g>
+    <g transform="rotate(150)"><circle r="66" fill="none" stroke="hsl(238,72%,66%)" stroke-width="8" stroke-linecap="round" stroke-dasharray="352 60" opacity=".94"/></g>
+    <g transform="rotate(255)"><circle r="46" fill="none" stroke="hsl(258,74%,70%)" stroke-width="8" stroke-linecap="round" stroke-dasharray="240 48" opacity=".96"/></g>
+    <!-- gap markers -->
+    <circle cx="60" cy="-64" r="5" fill="#6ff0d0"/><circle cx="34" cy="-80" r="5" fill="#6ff0d0"/>
+    <!-- glowing core -->
+    <circle r="30" fill="url(#od-core)"/><circle r="12" fill="#8fe4ff"/>
+    <!-- player with trail -->
+    <circle cx="0" cy="-92" r="4" fill="#ff9d5c" opacity=".25"/><circle cx="-13" cy="-88" r="3" fill="#ff9d5c" opacity=".18"/>
+    <circle cx="0" cy="-92" r="9" fill="#ffcb6b"/>
   </g>
-  <g transform="rotate(150 280 122)">
-    <circle cx="280" cy="122" r="58" fill="none" stroke="hsl(238,72%,66%)" stroke-width="7" stroke-linecap="round" stroke-dasharray="314 50" opacity="0.92"/>
-  </g>
-  <g transform="rotate(255 280 122)">
-    <circle cx="280" cy="122" r="40" fill="none" stroke="hsl(258,74%,68%)" stroke-width="7" stroke-linecap="round" stroke-dasharray="213 38" opacity="0.95"/>
-  </g>
 
-  <!-- gap markers on the outer ring -->
-  <circle cx="338" cy="70" r="4.5" fill="#6ff0d0"/>
-  <circle cx="319" cy="55" r="4.5" fill="#6ff0d0"/>
-
-  <!-- glowing core -->
-  <circle cx="280" cy="122" r="28" fill="url(#od-core)"/>
-  <circle cx="280" cy="122" r="11" fill="#8fe4ff"/>
-
-  <!-- player at top of the orbit, with a little trail -->
-  <circle cx="280" cy="44" r="4" fill="#ff9d5c" opacity="0.25"/>
-  <circle cx="268" cy="49" r="3" fill="#ff9d5c" opacity="0.18"/>
-  <circle cx="280" cy="44" r="9" fill="#ffcb6b"/>
-
-  <!-- title (centred so it survives the card's mobile centre-crop) -->
-  <text x="280" y="238" text-anchor="middle" font-family="'Space Grotesk', sans-serif" font-size="36" font-weight="700" letter-spacing="0.5">
-    <tspan fill="url(#od-ttl)">ORBIT</tspan><tspan fill="#6ff0d0"> DODGE</tspan>
-  </text>
-  <text x="280" y="261" text-anchor="middle" font-family="'Space Grotesk', sans-serif" font-size="12" letter-spacing="2" fill="#9891c4">TAP TO REVERSE</text>
+  <rect width="560" height="300" fill="url(#od-vig)"/>
+  <text x="280" y="244" text-anchor="middle" font-family="'Space Grotesk', sans-serif" font-size="42" font-weight="700" letter-spacing="1"><tspan fill="url(#od-ttl)">ORBIT</tspan><tspan fill="#6ff0d0"> DODGE</tspan></text>
+  <text x="280" y="268" text-anchor="middle" font-family="'Space Grotesk', sans-serif" font-size="12.5" letter-spacing="3" fill="#9891c4">TAP TO REVERSE · THREAD THE GAP</text>
 </svg>

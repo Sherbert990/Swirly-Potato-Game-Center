@@ -1,24 +1,47 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 560 300" width="560" height="300" role="img" aria-label="Archery Range">
   <defs>
-    <radialGradient id="ar-bg" cx="50%" cy="30%" r="90%">
-      <stop offset="0%" stop-color="#1a2b22"/><stop offset="100%" stop-color="#0e1813"/>
+    <radialGradient id="ar-bg" cx="50%" cy="34%" r="95%">
+      <stop offset="0%" stop-color="#213a2c"/><stop offset="55%" stop-color="#142418"/><stop offset="100%" stop-color="#0a130d"/>
     </radialGradient>
-    <radialGradient id="ar-glow" cx="50%" cy="50%" r="50%">
-      <stop offset="0%" stop-color="#ecbe3c" stop-opacity=".22"/><stop offset="100%" stop-color="#ecbe3c" stop-opacity="0"/>
+    <radialGradient id="ar-bloom" cx="50%" cy="50%" r="50%">
+      <stop offset="0%" stop-color="#ffe9a6" stop-opacity=".55"/><stop offset="45%" stop-color="#ecbe3c" stop-opacity=".22"/><stop offset="100%" stop-color="#ecbe3c" stop-opacity="0"/>
     </radialGradient>
+    <radialGradient id="ar-r1" cx="42%" cy="36%" r="70%"><stop offset="0%" stop-color="#fbf7ec"/><stop offset="100%" stop-color="#d9d2bf"/></radialGradient>
+    <radialGradient id="ar-r2" cx="42%" cy="36%" r="70%"><stop offset="0%" stop-color="#3a352f"/><stop offset="100%" stop-color="#211d18"/></radialGradient>
+    <radialGradient id="ar-r3" cx="42%" cy="36%" r="70%"><stop offset="0%" stop-color="#6fc0e8"/><stop offset="100%" stop-color="#3a8fc4"/></radialGradient>
+    <radialGradient id="ar-r4" cx="42%" cy="36%" r="70%"><stop offset="0%" stop-color="#ff6f60"/><stop offset="100%" stop-color="#d8382c"/></radialGradient>
+    <radialGradient id="ar-r5" cx="42%" cy="34%" r="70%"><stop offset="0%" stop-color="#ffe07a"/><stop offset="100%" stop-color="#e0a52a"/></radialGradient>
+    <linearGradient id="ar-ttl" x1="0" y1="0" x2="1" y2="0"><stop offset="0%" stop-color="#ece5d4"/><stop offset="100%" stop-color="#ffd569"/></linearGradient>
+    <radialGradient id="ar-vig" cx="50%" cy="50%" r="72%"><stop offset="62%" stop-color="#000" stop-opacity="0"/><stop offset="100%" stop-color="#000" stop-opacity=".5"/></radialGradient>
   </defs>
   <rect width="560" height="300" fill="url(#ar-bg)"/>
-  <ellipse cx="330" cy="150" rx="150" ry="150" fill="url(#ar-glow)"/>
-  <g transform="translate(330,150)">
-    <circle r="120" fill="#efe9da"/><circle r="98" fill="#2a2622"/>
-    <circle r="76" fill="#4aa6d6"/><circle r="54" fill="#e6483c"/><circle r="30" fill="#ecbe3c"/>
-    <circle r="9" fill="#c99a26"/>
+  <!-- soft godrays -->
+  <g opacity=".07" fill="#efe3a0"><polygon points="360,-20 420,-20 320,320 300,320"/><polygon points="410,-20 450,-20 400,320 380,320"/></g>
+  <!-- drifting leaves/motes -->
+  <g fill="#8fe0a0" opacity=".5"><circle cx="120" cy="70" r="2"/><circle cx="90" cy="150" r="1.5"/><circle cx="150" cy="220" r="2.2"/><circle cx="470" cy="120" r="1.6"/><circle cx="500" cy="210" r="2"/></g>
+
+  <ellipse cx="360" cy="152" rx="168" ry="168" fill="url(#ar-bloom)"/>
+  <g transform="translate(360,152)">
+    <ellipse cx="0" cy="128" rx="120" ry="20" fill="#000" opacity=".35"/>
+    <circle r="118" fill="url(#ar-r1)"/><circle r="96" fill="url(#ar-r2)"/>
+    <circle r="74" fill="url(#ar-r3)"/><circle r="52" fill="url(#ar-r4)"/><circle r="29" fill="url(#ar-r5)"/>
+    <circle r="9" fill="#b98418"/>
+    <circle r="118" fill="none" stroke="#fff" stroke-opacity=".25" stroke-width="1"/>
+    <!-- top-left rim light -->
+    <path d="M -84 -84 A 118 118 0 0 1 84 -84" fill="none" stroke="#fff" stroke-opacity=".22" stroke-width="3"/>
   </g>
-  <g stroke="#e6483c" stroke-width="6" stroke-linecap="round">
-    <line x1="60" y1="250" x2="342" y2="138"/>
+
+  <!-- arrow in flight with motion trail + wind streaks -->
+  <g stroke-linecap="round">
+    <line x1="120" y1="232" x2="352" y2="150" stroke="#ffcf7a" stroke-width="2" opacity=".35"/>
+    <line x1="150" y1="238" x2="360" y2="150" stroke="#e6483c" stroke-width="6"/>
+    <line x1="360" y1="150" x2="384" y2="141" stroke="#cfcabb" stroke-width="6"/>
   </g>
-  <polygon points="352,134 334,140 342,150" fill="#cfcabb"/>
-  <g fill="#e6483c"><polygon points="60,250 46,246 54,258"/><polygon points="60,250 64,236 72,248"/></g>
-  <text x="34" y="52" font-family="Oswald, sans-serif" font-size="40" font-weight="700" letter-spacing="4" fill="#ece5d4">ARCHERY <tspan fill="#ecbe3c">RANGE</tspan></text>
-  <text x="36" y="80" font-family="Oswald, sans-serif" font-size="15" letter-spacing="3" fill="#7f9084">JUDGE THE WIND · LOOSE THE ARROW</text>
+  <polygon points="392,138 372,142 380,153" fill="#f2ede0"/>
+  <g fill="#e6483c"><polygon points="150,238 134,232 142,246"/><polygon points="150,238 156,222 165,236"/></g>
+  <g stroke="#bfe6cf" stroke-width="2" stroke-linecap="round" opacity=".4"><line x1="70" y1="120" x2="110" y2="116"/><line x1="60" y1="180" x2="104" y2="176"/></g>
+
+  <rect width="560" height="300" fill="url(#ar-vig)"/>
+  <text x="280" y="52" text-anchor="middle" font-family="Oswald, sans-serif" font-size="42" font-weight="700" letter-spacing="5" fill="url(#ar-ttl)">ARCHERY RANGE</text>
+  <text x="280" y="78" text-anchor="middle" font-family="Oswald, sans-serif" font-size="14" letter-spacing="4" fill="#9fb0a2">JUDGE THE WIND · LOOSE THE ARROW</text>
 </svg>
