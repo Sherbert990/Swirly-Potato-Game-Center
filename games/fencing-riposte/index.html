@@ -70,9 +70,14 @@
   /* On-screen arrow pad (iPad / touch) */
   #pad{ position:absolute; inset:0; pointer-events:none; z-index:4; }
   #pad.hidden{ display:none; }
-  #pad .dpad{ position:absolute; bottom:14px; width:158px; height:158px; pointer-events:auto; }
-  #pad .dpad.solo{ left:50%; transform:translateX(-50%); }
-  #pad .dpad.p1{ left:14px; } #pad .dpad.p2{ right:14px; }
+  /* Anchored with safe-area insets so the pad never slides under a screen edge or
+     the iPad home indicator. No transform here: the solo pad carries both .p1 and
+     .solo, and a stray translateX(-50%) used to shove it ~65px off the left edge,
+     clipping the ◀ arrow entirely off-screen. */
+  #pad .dpad{ position:absolute; width:158px; height:158px; pointer-events:auto;
+    bottom:calc(16px + env(safe-area-inset-bottom, 0px)); transform:none; }
+  #pad .dpad.p1, #pad .dpad.solo{ left:calc(16px + env(safe-area-inset-left, 0px)); right:auto; }
+  #pad .dpad.p2{ right:calc(16px + env(safe-area-inset-right, 0px)); left:auto; }
   #pad .dpad.off{ display:none; }
   #pad .dpad button{ position:absolute; width:50px; height:50px; border-radius:13px; background:rgba(20,27,40,.82);
     border:1px solid #3a4657; color:#dfe6f0; font-size:20px; line-height:1; display:flex; align-items:center;
