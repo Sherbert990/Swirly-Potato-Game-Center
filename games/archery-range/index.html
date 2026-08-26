@@ -808,7 +808,7 @@
   // ---------- UI ----------
   function readyHint(){
     if (touchControlsOn())
-      return 'Pull back to aim &mdash; the shot launches <b>opposite</b> your pull. Hold for <b>Steady</b>, then release.';
+      return '<b>Hold</b> the target to draw &middot; a <b>second finger</b> aims &middot; <b>let go</b> to shoot.';
     return 'Aim off into the wind, hold for <b>Steady</b>, then loose.';
   }
   function setHint(html){ el.hint.innerHTML = html; }
@@ -1052,66 +1052,87 @@
     return { x: clamp(p.clientX - rect.left, 0, W), y: clamp(p.clientY - rect.top, 0, H) };
   }
 
-  // ----- Slingshot controls (iPad / touch) -----
-  // Touch anywhere and pull back like a bowstring. The aim launches OPPOSITE the pull,
-  // so your finger sits low and never hides the target. Release to loose.
-  const SLING_SENS = 1.35;      // how far the aim travels per pixel pulled
-  let sling = null;             // {ax,ay,cx,cy,pull} anchor + current finger, in canvas coords
-  function applySling(p){
-    const dx = p.x - sling.ax, dy = p.y - sling.ay;
-    sling.cx = p.x; sling.cy = p.y; sling.pull = Math.hypot(dx, dy);
-    aim.x = clamp(cx - dx * SLING_SENS, 0, W);   // launch opposite the pull
-    aim.y = clamp(cy - dy * SLING_SENS, 0, H);
-  }
-  function drawSling(){
-    if (!sling) return;
+  // ----- Touch controls (iPad): hold to draw, second finger to aim, release to loose -----
+  // Press and hold anywhere on the target to draw the bow (steadiness builds). Use a
+  // second finger to slide the aim around — the hold finger keeps the draw alive. Lift
+  // the hold finger to loose. No button, no scrolling: it's all on the target itself.
+  const touchPts = new Map();     // pointerId -> {x,y} in canvas coords
+  let drawPid = null;             // the finger holding the draw
+  let aimPid = null;              // the finger currently steering the aim
+  function resetTouch(){ touchPts.clear(); drawPid = null; aimPid = null; }
+  function drawHold(){
+    // a soft marker under the hold finger so you can see the draw is registered
+    if (drawPid == null) return;
+    const p = touchPts.get(drawPid); if (!p) return;
     const skin = getSkin();
     ctx.save();
-    ctx.setLineDash([]);
-    ctx.strokeStyle = hexToRgba(skin.accent, 0.5); ctx.lineWidth = 2;   // the pulled string
-    ctx.beginPath(); ctx.moveTo(sling.ax, sling.ay); ctx.lineTo(sling.cx, sling.cy); ctx.stroke();
-    ctx.fillStyle = hexToRgba(skin.accent, 0.85);                       // nock at your finger
-    ctx.beginPath(); ctx.arc(sling.cx, sling.cy, 7, 0, Math.PI * 2); ctx.fill();
-    ctx.strokeStyle = 'rgba(236,229,212,0.35)'; ctx.lineWidth = 1.5;    // where you first touched
-    ctx.beginPath(); ctx.arc(sling.ax, sling.ay, 5, 0, Math.PI * 2); ctx.stroke();
+    ctx.strokeStyle = hexToRgba(skin.accent, 0.45); ctx.lineWidth = 2;
+    ctx.beginPath(); ctx.arc(p.x, p.y, 16, 0, Math.PI * 2); ctx.stroke();
+    ctx.fillStyle = hexToRgba(skin.accent, 0.5);
+    ctx.beginPath(); ctx.arc(p.x, p.y, 4, 0, Math.PI * 2); ctx.fill();
     ctx.restore();
   }
 
   stage.addEventListener('pointermove', (e) => {
     if (state === 'flying' || state === 'ended') return;
-    keyboardAim = false;
     const p = pt(e);
     if (touchControlsOn()){
-      if (sling && state === 'drawing') applySling(p);   // touch aims only while pulling
+      if (!touchPts.has(e.pointerId)) return;
+      touchPts.set(e.pointerId, p);
+      if (e.pointerId === aimPid && state === 'drawing'){ aim.x = p.x; aim.y = p.y; }
       return;
     }
+    keyboardAim = false;
     aim.x = p.x; aim.y = p.y;                             // mouse: hover to aim
   });
   stage.addEventListener('pointerdown', (e) => {
     audio();                       // unlock audio on first gesture
-    if (state !== 'ready') return;
-    e.preventDefault();
     const p = pt(e);
-    try { stage.setPointerCapture(e.pointerId); } catch(_){}
     if (touchControlsOn()){
-      sling = { ax:p.x, ay:p.y, cx:p.x, cy:p.y, pull:0 };
-      aim.x = cx; aim.y = cy;      // pull is measured from where you first touched
-      beginDraw();
+      if (state === 'ready'){
+        e.preventDefault();
+        try { stage.setPointerCapture(e.pointerId); } catch(_){}
+        keyboardAim = false;
+        touchPts.set(e.pointerId, p);
+        drawPid = aimPid = e.pointerId;   // first finger: hold to draw AND aim
+        aim.x = p.x; aim.y = p.y;
+        beginDraw();
+      } else if (state === 'drawing'){
+        e.preventDefault();
+        try { stage.setPointerCapture(e.pointerId); } catch(_){}
+        touchPts.set(e.pointerId, p);
+        aimPid = e.pointerId;             // extra finger: takes over aiming
+        aim.x = p.x; aim.y = p.y;
+      }
+      // else (ended / flying): let the tap fall through to the overlay buttons
       return;
     }
+    if (state !== 'ready') return;
+    e.preventDefault();
+    try { stage.setPointerCapture(e.pointerId); } catch(_){}
     aim.x = p.x; aim.y = p.y;
     beginDraw();
   });
-  window.addEventListener('pointerup', () => {
+  function endTouchPointer(pid){
+    if (!touchPts.has(pid) && pid !== drawPid) return;
+    touchPts.delete(pid);
+    if (pid === drawPid){
+      if (state === 'drawing') fire(performance.now());   // released the hold finger -> shoot
+      resetTouch();
+    } else if (pid === aimPid){
+      aimPid = drawPid;                                    // aim finger up: hold finger steers again
+    }
+  }
+  window.addEventListener('pointerup', (e) => {
+    if (touchControlsOn()){ endTouchPointer(e.pointerId); return; }
     if (state === 'drawing') fire(performance.now());
-    sling = null;
   });
-  window.addEventListener('pointercancel', () => {
+  window.addEventListener('pointercancel', (e) => {
+    if (touchControlsOn()){ endTouchPointer(e.pointerId); return; }
     if (state === 'drawing') fire(performance.now());
-    sling = null;
   });
 
-  // The old hold-to-draw button is superseded by the slingshot; keep it hidden.
+  // The old hold-to-draw button is superseded by on-target touch; keep it hidden.
   const drawBtn = document.getElementById('drawBtn');
   function applyArcheryTouch(){ drawBtn.classList.remove('show'); }
   window.addEventListener('gc:settings', applyArcheryTouch);
@@ -1302,7 +1323,7 @@
       ctx.save();
       if (shake > 0) ctx.translate((Math.random()-0.5)*shake, (Math.random()-0.5)*shake);
       drawTarget(); drawStuck(); drawImpact();
-      if (state === 'ready' || state === 'drawing'){ drawGhost(); drawReticle(now); drawSling(); }
+      if (state === 'ready' || state === 'drawing'){ drawGhost(); drawReticle(now); drawHold(); }
       if (state === 'flying' && flight) drawFlying();
       ctx.restore();
     }
