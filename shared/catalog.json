@@ -72,11 +72,12 @@
       "name": "Echo",
       "cover": "/design/hub/echo-cover.png",
       "blurb": "See with sound. Send out a pulse, watch the cave flicker into view, then feel your way to the exit.",
-      "chips": ["Collect & Escape", "Beat the Dark"],
+      "chips": ["Collect & Escape", "Beat the Dark", "Coin Rush"],
       "playColor": "p3",
       "play": "/games/echo/index.html",
       "leaderboards": [
-        { "board": "echo", "label": "Echo", "unit": "cave {n}", "maxScore": 100000 }
+        { "board": "echo", "label": "Echo", "unit": "cave {n}", "maxScore": 100000 },
+        { "board": "echo-coins", "name": "Echo · Coin Rush", "label": "Echo · Coin Rush", "unit": "{n} coin{s}", "maxScore": 100000 }
       ],
       "items": [
         { "key": "echo_big_waves", "name": "Bigger Waves", "desc": "Your pulses travel much farther through the cave", "price": 40, "permanent": true, "type": "echo_powerup" },

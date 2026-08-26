@@ -365,7 +365,7 @@
     </div>
 
     <div class="hint" id="hint">Move to aim, then <b>press and hold</b> to draw the bow.</div>
-    <button id="drawBtn">Hold to draw &middot; release to loose</button>
+    <button id="drawBtn" aria-hidden="true">Hold to draw &middot; release to loose</button>
 
     <div class="footer">
       <button class="link-btn" id="resetLevel">Restart level</button>
@@ -807,6 +807,8 @@
 
   // ---------- UI ----------
   function readyHint(){
+    if (touchControlsOn())
+      return '<b>Hold</b> the target to draw &middot; a <b>second finger</b> aims &middot; <b>let go</b> to shoot.';
     return 'Aim off into the wind, hold for <b>Steady</b>, then loose.';
   }
   function setHint(html){ el.hint.innerHTML = html; }
@@ -1042,38 +1044,98 @@
   // under 'archerySkin' and updated live when equipped in the Store.
 
   // ---------- input ----------
+  function touchControlsOn(){ return !!(window.GameCenter && GameCenter.settings && GameCenter.settings.touchControls()); }
+  const clamp = (v,a,b) => v < a ? a : v > b ? b : v;
   function pt(e){
     const rect = cv.getBoundingClientRect();
     const p = (e.touches && e.touches[0]) || e;
     return { x: clamp(p.clientX - rect.left, 0, W), y: clamp(p.clientY - rect.top, 0, H) };
   }
-  const clamp = (v,a,b) => v < a ? a : v > b ? b : v;
+
+  // ----- Touch controls (iPad): hold to draw, second finger to aim, release to loose -----
+  // Press and hold anywhere on the target to draw the bow (steadiness builds). Use a
+  // second finger to slide the aim around — the hold finger keeps the draw alive. Lift
+  // the hold finger to loose. No button, no scrolling: it's all on the target itself.
+  const touchPts = new Map();     // pointerId -> {x,y} in canvas coords
+  let drawPid = null;             // the finger holding the draw
+  let aimPid = null;              // the finger currently steering the aim
+  function resetTouch(){ touchPts.clear(); drawPid = null; aimPid = null; }
+  function drawHold(){
+    // a soft marker under the hold finger so you can see the draw is registered
+    if (drawPid == null) return;
+    const p = touchPts.get(drawPid); if (!p) return;
+    const skin = getSkin();
+    ctx.save();
+    ctx.strokeStyle = hexToRgba(skin.accent, 0.45); ctx.lineWidth = 2;
+    ctx.beginPath(); ctx.arc(p.x, p.y, 16, 0, Math.PI * 2); ctx.stroke();
+    ctx.fillStyle = hexToRgba(skin.accent, 0.5);
+    ctx.beginPath(); ctx.arc(p.x, p.y, 4, 0, Math.PI * 2); ctx.fill();
+    ctx.restore();
+  }
 
   stage.addEventListener('pointermove', (e) => {
     if (state === 'flying' || state === 'ended') return;
+    const p = pt(e);
+    if (touchControlsOn()){
+      if (!touchPts.has(e.pointerId)) return;
+      touchPts.set(e.pointerId, p);
+      if (e.pointerId === aimPid && state === 'drawing'){ aim.x = p.x; aim.y = p.y; }
+      return;
+    }
     keyboardAim = false;
-    const p = pt(e); aim.x = p.x; aim.y = p.y;
+    aim.x = p.x; aim.y = p.y;                             // mouse: hover to aim
   });
   stage.addEventListener('pointerdown', (e) => {
     audio();                       // unlock audio on first gesture
+    const p = pt(e);
+    if (touchControlsOn()){
+      if (state === 'ready'){
+        e.preventDefault();
+        try { stage.setPointerCapture(e.pointerId); } catch(_){}
+        keyboardAim = false;
+        touchPts.set(e.pointerId, p);
+        drawPid = aimPid = e.pointerId;   // first finger: hold to draw AND aim
+        aim.x = p.x; aim.y = p.y;
+        beginDraw();
+      } else if (state === 'drawing'){
+        e.preventDefault();
+        try { stage.setPointerCapture(e.pointerId); } catch(_){}
+        touchPts.set(e.pointerId, p);
+        aimPid = e.pointerId;             // extra finger: takes over aiming
+        aim.x = p.x; aim.y = p.y;
+      }
+      // else (ended / flying): let the tap fall through to the overlay buttons
+      return;
+    }
     if (state !== 'ready') return;
     e.preventDefault();
-    const p = pt(e); aim.x = p.x; aim.y = p.y;
-    if (touchControlsOn()) return;   // touch: this only aims — draw with the button (finger won't cover the target)
-    beginDraw();
     try { stage.setPointerCapture(e.pointerId); } catch(_){}
+    aim.x = p.x; aim.y = p.y;
+    beginDraw();
   });
-  // Touch draw button: press-hold to draw (steadiness builds), release to loose.
-  function touchControlsOn(){ return !!(window.GameCenter && GameCenter.settings && GameCenter.settings.touchControls()); }
+  function endTouchPointer(pid){
+    if (!touchPts.has(pid) && pid !== drawPid) return;
+    touchPts.delete(pid);
+    if (pid === drawPid){
+      if (state === 'drawing') fire(performance.now());   // released the hold finger -> shoot
+      resetTouch();
+    } else if (pid === aimPid){
+      aimPid = drawPid;                                    // aim finger up: hold finger steers again
+    }
+  }
+  window.addEventListener('pointerup', (e) => {
+    if (touchControlsOn()){ endTouchPointer(e.pointerId); return; }
+    if (state === 'drawing') fire(performance.now());
+  });
+  window.addEventListener('pointercancel', (e) => {
+    if (touchControlsOn()){ endTouchPointer(e.pointerId); return; }
+    if (state === 'drawing') fire(performance.now());
+  });
+
+  // The old hold-to-draw button is superseded by on-target touch; keep it hidden.
   const drawBtn = document.getElementById('drawBtn');
-  drawBtn.addEventListener('pointerdown', (e) => { e.preventDefault(); audio(); if (state === 'ready') beginDraw(); });
-  const looseFromBtn = (e) => { if (e) e.preventDefault(); if (state === 'drawing') fire(performance.now()); };
-  drawBtn.addEventListener('pointerup', looseFromBtn);
-  drawBtn.addEventListener('pointerleave', looseFromBtn);
-  drawBtn.addEventListener('pointercancel', looseFromBtn);
-  function applyArcheryTouch(){ drawBtn.classList.toggle('show', touchControlsOn() && screen === 'game'); }
+  function applyArcheryTouch(){ drawBtn.classList.remove('show'); }
   window.addEventListener('gc:settings', applyArcheryTouch);
-  window.addEventListener('pointerup', () => { if (state === 'drawing') fire(performance.now()); });
 
   function beginDraw(){
     state = 'drawing'; drawStart = performance.now();
@@ -1261,7 +1323,7 @@
       ctx.save();
       if (shake > 0) ctx.translate((Math.random()-0.5)*shake, (Math.random()-0.5)*shake);
       drawTarget(); drawStuck(); drawImpact();
-      if (state === 'ready' || state === 'drawing'){ drawGhost(); drawReticle(now); }
+      if (state === 'ready' || state === 'drawing'){ drawGhost(); drawReticle(now); drawHold(); }
       if (state === 'flying' && flight) drawFlying();
       ctx.restore();
     }

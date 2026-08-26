@@ -41,9 +41,26 @@
   .mode:hover,.mode:focus{border-color:var(--cyan);background:rgba(95,230,255,.1);transform:translateY(-2px);outline:none}
   .mode.dark{border-color:rgba(255,179,95,.22);background:rgba(255,179,95,.04)}
   .mode.dark:hover,.mode.dark:focus{border-color:var(--amber);background:rgba(255,179,95,.1)}
+  .mode.coin{border-color:rgba(255,210,90,.24);background:rgba(255,210,90,.05)}
+  .mode.coin:hover,.mode.coin:focus{border-color:#ffd23f;background:rgba(255,210,90,.12)}
   .mode h3{font-family:var(--ff-title);font-size:16px;letter-spacing:.02em;margin-bottom:8px;color:#eaf7ff}
   .mode.dark h3{color:#ffe0c0}
+  .mode.coin h3{color:#ffe9a8}
   .mode p{font-size:12px;line-height:1.5;color:var(--dim)}
+
+  /* ---- level select grid ---- */
+  #lsGrid{display:grid;grid-template-columns:repeat(6,1fr);gap:10px;width:100%;max-width:420px;
+    max-height:56vh;overflow-y:auto;padding:6px 8px 6px 2px;-webkit-overflow-scrolling:touch}
+  .lvlcell{position:relative;aspect-ratio:1/1;cursor:pointer;border:1px solid rgba(95,230,255,.28);
+    border-radius:12px;background:rgba(95,230,255,.05);color:var(--ink);font-family:var(--ff-title);
+    font-size:16px;font-weight:700;display:flex;align-items:center;justify-content:center;transition:.14s}
+  .lvlcell:hover,.lvlcell:focus{border-color:var(--cyan);background:rgba(95,230,255,.14);transform:translateY(-1px);outline:none}
+  .lvlcell.cleared{border-color:rgba(125,255,192,.5);background:rgba(125,255,192,.1)}
+  .lvlcell.locked{cursor:not-allowed;opacity:.4;border-color:rgba(91,114,144,.35);background:rgba(91,114,144,.06)}
+  .lvlcell .ln{line-height:1}
+  .lvlcell .lc{position:absolute;top:3px;right:5px;font-size:9px;opacity:.85}
+  .lvlcell.cleared .lc{color:var(--mote)}
+  @media(max-width:520px){ #lsGrid{grid-template-columns:repeat(5,1fr)} }
 
   .controls{margin-top:30px;color:var(--dim);font-size:11.5px;letter-spacing:.08em;line-height:1.9}
   .key{display:inline-block;border:1px solid rgba(95,230,255,.3);border-radius:5px;padding:1px 7px;
@@ -181,7 +198,7 @@
 <div id="menu" class="overlay hidden">
   <button class="backLink" id="introBack" type="button">← back</button>
   <div class="menu-head">Choose how to play</div>
-  <div class="menu-sub">two ways through the dark</div>
+  <div class="menu-sub">three ways through the dark</div>
   <div class="modes">
     <div class="mode" id="modeCollect" tabindex="0" role="button">
       <h3>◇ Collect &amp; Escape</h3>
@@ -191,6 +208,10 @@
       <h3>◈ Beat the Dark</h3>
       <p>Your light is running out. Race to the exit before it fades to nothing. A warm beacon ripples from the way out — follow it home.</p>
     </div>
+    <div class="mode coin" id="modeCoins" tabindex="0" role="button">
+      <h3>◉ Coin Rush</h3>
+      <p>Thirty seconds. Coins are scattered through the cave, pinging gold when you're close. Grab as many as you can — best count hits the leaderboard.</p>
+    </div>
   </div>
   <div class="menu-opts">
     <button class="ebtn" id="pulseToggle">Pulse: Auto</button>
@@ -198,6 +219,14 @@
   <div class="controls">
     move <span class="key">W A S D</span> / <span class="key">↑ ← ↓ →</span> &nbsp;·&nbsp; pulse <span class="key">space</span> &nbsp;·&nbsp; restart <span class="key">R</span>
   </div>
+</div>
+
+<!-- LEVEL SELECT (scroll through caves, jump to any you've unlocked) -->
+<div id="levelSelect" class="overlay hidden">
+  <button class="backLink" id="lsBack" type="button">← modes</button>
+  <div class="menu-head" id="lsTitle">Beat the Dark</div>
+  <div class="menu-sub">pick a cave — ✓ cleared · 🔒 locked</div>
+  <div id="lsGrid"></div>
 </div>
 
 <!-- LEVEL CLEARED -->
@@ -234,10 +263,12 @@
   const MANUAL_CD = 0.6;         // min gap between manual pulses — stops space-spamming for light
   const FADE = 0.963;            // per-frame-at-60fps light decay
   const COLLECT_DIST = 0.75 * CELL;
+  const MAX_LEVEL = 50;          // Collect & Beat-the-Dark run caves 1..50
+  const COIN_TIME = 30;          // Coin Rush: seconds on the clock
 
   // ---------- state ----------
   let W = 0, H = 0;
-  let mode = null;               // 'collect' | 'dark'
+  let mode = null;               // 'collect' | 'dark' | 'coins'
   let level = 1;
   let game = null;               // current level object
   let running = false;
@@ -246,6 +277,59 @@
 
   const keys = {};
   let manualTimer = 0, autoTimer = 0;
+
+  // ---------- seeded levels ----------
+  // Each cave is generated from a fixed per-level seed, so cave N is the SAME maze
+  // every visit. That makes the level-select meaningful and lets us guarantee every
+  // Beat-the-Dark cave is beatable (we size the light budget from the real path).
+  function makeRng(seed){
+    let s = seed >>> 0;
+    return function(){
+      s = (s + 0x6D2B79F5) | 0;
+      let t = Math.imul(s ^ (s >>> 15), 1 | s);
+      t = (t + Math.imul(t ^ (t >>> 7), 61 | t)) ^ t;
+      return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
+    };
+  }
+  const levelSeed = L => (0x9E3779B1 ^ Math.imul(L, 2654435761)) >>> 0;
+
+  // Gentle early curve ramping to a real challenge by cave 50. Tiny mazes + a big
+  // light budget up front fix "even the first levels are far too hard."
+  function levelSpec(L){
+    L = Math.max(1, Math.min(MAX_LEVEL, L));
+    const f = (L - 1) / (MAX_LEVEL - 1);      // 0..1 across the whole set
+    const cols = Math.round(5 + f * 18);      // 5 -> 23
+    const rows = Math.round(4 + f * 13);      // 4 -> 17
+    const motes = Math.min(2 + Math.floor((L - 1) / 6), 7);   // 2 -> 7
+    return { cols, rows, motes, f };
+  }
+  // Dark-mode light budget in SECONDS. Always >= the optimal walk to the exit, so
+  // every cave is physically beatable; early caves get a huge cushion.
+  function darkBudget(maxDcells, f){
+    const optimal = maxDcells * CELL / SPEED;    // shortest-path seconds
+    const mult = 5.0 - f * 2.4;                  // ~5x optimal early -> ~2.6x late
+    return Math.max(14, 6 + optimal * mult);
+  }
+
+  // ---------- progress (cleared / unlocked caves, on-device) ----------
+  const PROG_KEY = 'echoProgress.v1';
+  let progress = { maxUnlocked: 1, cleared: {} };
+  function loadProgress(){
+    try {
+      const d = JSON.parse(localStorage.getItem(PROG_KEY));
+      if (d && typeof d === 'object'){
+        progress.maxUnlocked = Math.max(1, Math.min(MAX_LEVEL, d.maxUnlocked || 1));
+        progress.cleared = d.cleared || {};
+      }
+    } catch(e){}
+  }
+  function saveProgress(){ try { localStorage.setItem(PROG_KEY, JSON.stringify(progress)); } catch(e){} }
+  function markCleared(L){
+    progress.cleared[L] = true;
+    if (L + 1 <= MAX_LEVEL) progress.maxUnlocked = Math.max(progress.maxUnlocked, L + 1);
+    saveProgress();
+  }
+  loadProgress();
 
   // ---------- cosmetics + power-ups ----------
   // Light colors ("avatars"). Ownership lives on the server (store items); the
@@ -336,7 +420,8 @@
   };
 
   // ---------- maze ----------
-  function buildMaze(cols, rows){
+  function buildMaze(cols, rows, rnd){
+    rnd = rnd || Math.random;
     const gw = 2*cols+1, gh = 2*rows+1;
     const g = Array.from({length:gh}, () => new Array(gw).fill(1));
     const visited = Array.from({length:rows}, () => new Array(cols).fill(false));
@@ -355,7 +440,7 @@
     // dead-ends — a real maze that's easy to get lost in. (The old DFS backtracker
     // made one long winding hallway, which felt like a single obvious path.)
     while(frontier.length){
-      const i = (Math.random()*frontier.length)|0;
+      const i = (rnd()*frontier.length)|0;
       const [cx,cy,nx,ny] = frontier[i];
       frontier.splice(i,1);
       if(visited[ny][nx]) continue;
@@ -383,10 +468,28 @@
   }
 
   // ---------- level setup ----------
+  // Shared level-object shape for every mode.
+  function makeGame(g, gw, gh, sx, sy, ex, ey, motes, totalMotes, budget){
+    return {
+      g, gw, gh,
+      light: Array.from({length:gh}, () => new Float32Array(gw)),
+      px:(sx+0.5)*CELL, py:(sy+0.5)*CELL, vx:0, vy:0,
+      exit:{ x:(ex+0.5)*CELL, y:(ey+0.5)*CELL, t:0 },
+      motes, collected:0, totalMotes,
+      coins:[], coinsGot:0,               // Coin Rush
+      pulses:[],
+      camX:0, camY:0,
+      meter:100, budget, drain: budget>0 ? 100/budget : 0,
+      beaconTimer: 0,
+      time:0, timeLeft:0,
+      won:false, lost:false, flash:0,
+    };
+  }
+
   function newLevel(){
-    const cols = Math.min(8 + level*2, 28);
-    const rows = Math.min(6 + level*2, 20);
-    const {g, gw, gh} = buildMaze(cols, rows);
+    const spec = levelSpec(level);
+    const rnd = makeRng(levelSeed(level));           // seeded -> cave N is always the same
+    const {g, gw, gh} = buildMaze(spec.cols, spec.rows, rnd);
 
     const sx = 1, sy = 1;                       // start grid cell
     const dist = bfsDist(g, gw, gh, sx, sy);
@@ -401,42 +504,55 @@
     }
 
     // motes: spread across mid-to-far floor cells (collect mode)
-    const moteCount = mode==='collect' ? Math.min(3 + Math.floor(level/2), 7) : 0;
+    const moteCount = mode==='collect' ? Math.min(spec.motes, floors.length-2) : 0;
     const motes = [];
-    if(moteCount){
+    if(moteCount > 0){
       const candidates = floors.filter(([x,y]) =>
         dist[y][x] > maxD*0.2 && !(x===ex&&y===ey) && !(x===sx&&y===sy));
-      // shuffle
-      for(let i=candidates.length-1;i>0;i--){ const j=(Math.random()*(i+1))|0; [candidates[i],candidates[j]]=[candidates[j],candidates[i]]; }
+      for(let i=candidates.length-1;i>0;i--){ const j=(rnd()*(i+1))|0; [candidates[i],candidates[j]]=[candidates[j],candidates[i]]; }
       for(let i=0;i<moteCount && i<candidates.length;i++){
         const [x,y] = candidates[i];
-        motes.push({ x:(x+0.5)*CELL, y:(y+0.5)*CELL, t:Math.random()*6, got:false });
+        motes.push({ x:(x+0.5)*CELL, y:(y+0.5)*CELL, t:rnd()*6, got:false });
       }
     }
 
-    // dark-mode light budget scaled to distance to exit
-    const budget = mode==='dark' ? Math.min(16 + maxD*1.05 + level, 60) : 0;
+    // dark-mode light budget = seconds, sized from the real path so it's always beatable
+    const budget = mode==='dark' ? darkBudget(maxD, spec.f) : 0;
 
-    game = {
-      g, gw, gh,
-      light: Array.from({length:gh}, () => new Float32Array(gw)),
-      px:(sx+0.5)*CELL, py:(sy+0.5)*CELL, vx:0, vy:0,
-      exit:{ x:(ex+0.5)*CELL, y:(ey+0.5)*CELL, t:0 },
-      motes, collected:0, totalMotes:moteCount,
-      pulses:[],
-      camX:0, camY:0,
-      meter:100, budget, drain: budget>0 ? 100/budget : 0,
-      beaconTimer: 0,
-      time:0,
-      won:false, lost:false, flash:0,
-    };
+    game = makeGame(g, gw, gh, sx, sy, ex, ey, motes, moteCount, budget);
     phaseUntil = 0; phaseReadyAt = 0;   // fresh Wall Pass each level (not mid-phase on spawn)
     pulse(false); // initial reveal
     setHud();
     let baseHint = mode==='collect' ? `find ${moteCount} motes — then escape` : `reach the exit before your light fades`;
     if(level===1 && ownsPhase()) baseHint += ' · press E to phase through walls';
-    if(level===1 && window.GameCenter && GameCenter.settings && GameCenter.settings.touchControls()) baseHint += ' · drag to move, tap to pulse';
+    if(level<=2 && window.GameCenter && GameCenter.settings && GameCenter.settings.touchControls()) baseHint += ' · drag to move, tap to pulse';
     showHint(baseHint);
+  }
+
+  // Coin Rush: an open-ish cave with coins scattered around and a 30-second clock.
+  function newCoinRush(){
+    const cols = 15, rows = 11;
+    const {g, gw, gh} = buildMaze(cols, rows, Math.random);   // fresh each run for variety
+    const sx = 1, sy = 1;
+    const floors = [];
+    for(let y=0;y<gh;y++) for(let x=0;x<gw;x++) if(g[y][x]===0) floors.push([x,y]);
+
+    game = makeGame(g, gw, gh, sx, sy, sx, sy, [], 0, 0);     // no exit / no meter
+
+    // scatter coins — enough to chase, never so many you can grab them all in 30s
+    const candidates = floors.filter(([x,y]) => !(x===sx&&y===sy));
+    for(let i=candidates.length-1;i>0;i--){ const j=(Math.random()*(i+1))|0; [candidates[i],candidates[j]]=[candidates[j],candidates[i]]; }
+    const coinCount = Math.min(48, candidates.length);
+    for(let i=0;i<coinCount;i++){
+      const [x,y] = candidates[i];
+      game.coins.push({ x:(x+0.5)*CELL, y:(y+0.5)*CELL, t:Math.random()*6, got:false });
+    }
+    game.timeLeft = COIN_TIME;
+
+    phaseUntil = 0; phaseReadyAt = 0;
+    pulse(false); pulse(false);   // bright opening reveal
+    setHud();
+    showHint('grab every coin you can in 30 seconds!');
   }
 
   function pulse(manual){
@@ -463,7 +579,7 @@
       if(isWall(px+Math.cos(ang)*r, py+Math.sin(ang)*r)) return true; }
     return false;
   }
-  const exitActive = () => mode==='dark' || game.collected>=game.totalMotes;
+  const exitActive = () => mode==='dark' || (mode==='collect' && game.collected>=game.totalMotes);
 
   // ---------- update ----------
   function update(dt){
@@ -487,12 +603,13 @@
 
     // pulses (manual + auto)
     manualTimer -= dt; autoTimer -= dt;
-    // Manual pulse only in Manual mode — in Auto mode, space makes no extra light.
-    if(!pulseAuto() && (keys[' ']||keys['space']) && manualTimer<=0){
+    // Manual pulse in Manual mode (and always in Coin Rush) — in Auto mode, space makes no extra light.
+    if((mode==='coins' || !pulseAuto()) && (keys[' ']||keys['space']) && manualTimer<=0){
       manualTimer = MANUAL_CD; pulse(true);
       if(mode==='dark') gm.meter = Math.max(0, gm.meter - 1.2);   // gentle: manual mode needs to pulse to see
     }
-    if(pulseAuto() && autoTimer<=0){ autoTimer = autoInterval(); pulse(false); }
+    // Coin Rush keeps the cave well-lit with frequent auto pulses so you can route fast.
+    if((pulseAuto() || mode==='coins') && autoTimer<=0){ autoTimer = (mode==='coins' ? 0.8 : autoInterval()); pulse(false); }
 
     // beacon from the exit once it's active
     if(exitActive()){
@@ -529,7 +646,7 @@
       }
     }
     // permanent glow around the player
-    const glowR = mode==='dark' ? GLOW_BASE*(0.5+0.5*gm.meter/100) : GLOW_BASE;
+    const glowR = mode==='dark' ? GLOW_BASE*(0.5+0.5*gm.meter/100) : (mode==='coins' ? GLOW_BASE*1.5 : GLOW_BASE);
     const grC = Math.ceil(glowR/CELL);
     const pgx = (gm.px/CELL)|0, pgy=(gm.py/CELL)|0;
     for(let y=Math.max(0,pgy-grC);y<=Math.min(gm.gh-1,pgy+grC);y++)
@@ -553,6 +670,17 @@
         setHud();
       }
     }
+    // coins (Coin Rush) — glow, gold ping, collect
+    for(const c of gm.coins){
+      if(c.got) continue;
+      c.t += dt;
+      const cgx=(c.x/CELL)|0, cgy=(c.y/CELL)|0;
+      const ping = 0.35 + 0.3*(0.5+0.5*Math.sin(c.t*3));
+      gm.light[cgy][cgx] = Math.max(gm.light[cgy][cgx], ping);
+      if(Math.hypot(c.x-gm.px, c.y-gm.py) < COLLECT_DIST){
+        c.got = true; gm.coinsGot++; gm.flash=1; sfx.mote(); setHud();
+      }
+    }
     // exit glow
     gm.exit.t += dt;
     if(exitActive()){
@@ -564,10 +692,14 @@
       winLevel(); return;
     }
 
-    // dark meter drain
+    // dark meter drain / coin-rush clock / collect timer
     if(mode==='dark'){
       gm.meter = Math.max(0, gm.meter - gm.drain*dt);
       if(gm.meter<=0){ loseGame(); return; }
+      setHud();
+    } else if(mode==='coins'){
+      gm.timeLeft -= dt;
+      if(gm.timeLeft<=0){ gm.timeLeft=0; endCoinRush(); return; }
       setHud();
     } else { gm.time += dt; setHud(); }
 
@@ -622,8 +754,19 @@
       ctx.fillStyle='#d6ffe9'; ctx.beginPath(); ctx.arc(m.x,m.y,r*0.6,0,Math.PI*2); ctx.fill();
     }
 
-    // exit
+    // coins (Coin Rush) — gold
+    for(const c of gm.coins){ if(c.got) continue;
+      const r = 5 + 1.6*Math.sin(c.t*3);
+      const grd = ctx.createRadialGradient(c.x,c.y,0,c.x,c.y,r*4);
+      grd.addColorStop(0,'rgba(255,210,90,.95)'); grd.addColorStop(1,'rgba(255,210,90,0)');
+      ctx.fillStyle=grd; ctx.beginPath(); ctx.arc(c.x,c.y,r*4,0,Math.PI*2); ctx.fill();
+      ctx.fillStyle='#ffe08a'; ctx.beginPath(); ctx.arc(c.x,c.y,r*0.75,0,Math.PI*2); ctx.fill();
+      ctx.strokeStyle='rgba(120,80,10,.85)'; ctx.lineWidth=1; ctx.stroke();
+    }
+
+    // exit (not used in Coin Rush)
     const e = gm.exit, on = exitActive();
+    if(mode!=='coins'){
     const col = on ? '255,179,95' : '90,114,144';
     const er = 16 + (on?4*Math.sin(e.t*4):0);
     if(on){
@@ -634,6 +777,7 @@
     ctx.strokeStyle=`rgba(${col},${on?0.95:0.5})`; ctx.lineWidth=3;
     ctx.beginPath(); ctx.arc(e.x,e.y,er,0,Math.PI*2); ctx.stroke();
     ctx.beginPath(); ctx.arc(e.x,e.y,er*0.5,0,Math.PI*2); ctx.stroke();
+    }
 
     // player — the light source (its colour is the player's chosen "avatar")
     const C = curColor();
@@ -690,17 +834,57 @@
   }
 
   // ---------- flow ----------
+  const ALL_SCREENS = ['intro','menu','levelSelect','over','cleared','hud'];
+  function hideScreens(except){ ALL_SCREENS.forEach(id => { if(id!==except) document.getElementById(id).classList.add('hidden'); }); }
+
   function startMode(m){
-    mode = m; level = 1;
-    ['menu','over','cleared'].forEach(id => document.getElementById(id).classList.add('hidden'));
-    document.getElementById('hud').classList.remove('hidden');
-    audio();
-    beginLevel();
+    mode = m;
+    if(m==='coins'){                       // arcade mode — straight in, no levels
+      hideScreens('hud'); document.getElementById('hud').classList.remove('hidden');
+      audio(); level = 1; beginCoinRush(); return;
+    }
+    showLevelSelect(m);                    // Collect / Dark -> pick a cave first
   }
+
+  // ---------- level select ----------
+  function showLevelSelect(m){
+    mode = m; running = false; runToken++;
+    hideScreens('levelSelect');
+    document.getElementById('lsTitle').textContent = m==='dark' ? 'Beat the Dark' : 'Collect & Escape';
+    buildLevelGrid();
+    document.getElementById('levelSelect').classList.remove('hidden');
+  }
+  function buildLevelGrid(){
+    const grid = document.getElementById('lsGrid');
+    grid.innerHTML = '';
+    for(let L=1; L<=MAX_LEVEL; L++){
+      const unlocked = L <= progress.maxUnlocked;
+      const cleared = !!progress.cleared[L];
+      const b = document.createElement('button');
+      b.className = 'lvlcell' + (unlocked?'':' locked') + (cleared?' cleared':'');
+      b.innerHTML = `<span class="ln">${L}</span>` +
+        (cleared ? '<span class="lc">✓</span>' : (unlocked ? '' : '<span class="lc">🔒</span>'));
+      if(unlocked) b.onclick = ()=>startAtLevel(mode, L);
+      else b.disabled = true;
+      grid.appendChild(b);
+    }
+  }
+  function startAtLevel(m, L){
+    mode = m; level = Math.max(1, Math.min(MAX_LEVEL, L));
+    hideScreens('hud'); document.getElementById('hud').classList.remove('hidden');
+    audio(); beginLevel();
+  }
+
   function beginLevel(){
     resize();   // make sure the canvas matches the viewport before laying out the level
                 // (otherwise a stale/zero size renders only the top-left sliver)
     newLevel();
+    running = true; lastT = performance.now();
+    startLoop();
+  }
+  function beginCoinRush(){
+    resize();
+    newCoinRush();
     running = true; lastT = performance.now();
     startLoop();
   }
@@ -709,25 +893,47 @@
     // Best-effort: record caves-cleared on the shared leaderboard + a few coins.
     // No-ops when played outside the hub (not signed in).
     if (gc) { try { gc.bank(level, 3); } catch(e){} }   // caves-cleared board + a few coins
+    markCleared(level);
+    const last = level >= MAX_LEVEL;
     const sub = mode==='collect'
       ? `cave ${level} cleared in ${game.time.toFixed(1)}s`
       : `escaped with ${Math.round(game.meter)}% light to spare`;
-    document.getElementById('clearedSub').textContent = sub;
+    document.getElementById('clearedSub').textContent = last ? 'all 50 caves cleared — you are the light!' : sub;
     const c = document.getElementById('cleared'); c.classList.remove('hidden');
-    setTimeout(()=>{ c.classList.add('hidden'); level++; beginLevel(); }, 1500);
+    setTimeout(()=>{
+      c.classList.add('hidden');
+      if(last) showLevelSelect(mode);      // finished the set -> back to the map
+      else { level++; beginLevel(); }
+    }, 1500);
   }
   function loseGame(){
     running = false; sfx.lose();
+    const big = document.querySelector('#over .big');
+    big.textContent = 'THE DARK WON'; big.classList.remove('win'); big.classList.add('lose');
     document.getElementById('overSub').textContent = `you reached cave ${level}`;
+    document.getElementById('over').classList.remove('hidden');
+  }
+  function endCoinRush(){
+    running = false; sfx.win();
+    const got = game.coinsGot;
+    // Score = coins collected -> its own leaderboard. Also drops a few into the wallet.
+    if (gc) { try { gc.bank(got, Math.min(got, 60), 'echo-coins'); } catch(e){} }
+    const big = document.querySelector('#over .big');
+    big.textContent = "TIME'S UP"; big.classList.remove('lose'); big.classList.add('win');
+    document.getElementById('overSub').textContent =
+      `you grabbed ${got} coin${got===1?'':'s'} in 30s · on the leaderboard`;
     document.getElementById('over').classList.remove('hidden');
   }
 
   // ---------- HUD ----------
   function setHud(){
-    document.querySelector('#lvl b').textContent = level;
+    const lvlEl = document.getElementById('lvl');
+    lvlEl.innerHTML = mode==='coins' ? 'Coin Rush' : ('Cave <b>'+level+'</b>');
     const s = document.getElementById('status');
     if(mode==='collect'){
       s.innerHTML = `<div class="label">MOTES</div><div class="val">${game.collected} / ${game.totalMotes}</div>`;
+    } else if(mode==='coins'){
+      s.innerHTML = `<div class="label">TIME ${Math.ceil(game.timeLeft)}s</div><div class="val">${game.coinsGot} coins</div>`;
     } else {
       s.innerHTML = `<div class="label">LIGHT</div><div id="meterwrap"><div id="meter"></div></div>`;
       const mEl = document.getElementById('meter'); if(mEl) mEl.style.width = game.meter+'%';
@@ -745,7 +951,7 @@
   addEventListener('keydown', e=>{
     const k = e.key.toLowerCase();
     if(k===' '){ keys[' ']=true; e.preventDefault(); } else keys[k]=true;
-    if(k==='r' && mode){ if(running){ beginLevel(); } }
+    if(k==='r' && mode && running){ if(mode==='coins') beginCoinRush(); else beginLevel(); }
     if(k==='e' && running){ tryPhase(); }
     audio();
   });
@@ -766,7 +972,7 @@
   canvas.addEventListener('touchend', e=>{
     for(const t of e.changedTouches){ if(t.identifier!==touchId) continue;
       const moved = Math.hypot(t.clientX-tStart.x, t.clientY-tStart.y);
-      if(moved<14 && running && !pulseAuto()){ manualTimer=MANUAL_CD; pulse(true); if(mode==='dark') game.meter=Math.max(0,game.meter-1.2); }
+      if(moved<14 && running && (mode==='coins' || !pulseAuto())){ manualTimer=MANUAL_CD; pulse(true); if(mode==='dark') game.meter=Math.max(0,game.meter-1.2); }
       keys['a']=keys['d']=keys['w']=keys['s']=false; touchId=null; joy.classList.remove('show');
     }
   }, {passive:true});
@@ -774,9 +980,12 @@
   // buttons
   document.getElementById('modeCollect').onclick = ()=>startMode('collect');
   document.getElementById('modeDark').onclick = ()=>startMode('dark');
+  document.getElementById('modeCoins').onclick = ()=>startMode('coins');
   document.getElementById('modeCollect').onkeydown = e=>{ if(e.key==='Enter'||e.key===' ')startMode('collect'); };
   document.getElementById('modeDark').onkeydown = e=>{ if(e.key==='Enter'||e.key===' ')startMode('dark'); };
-  document.getElementById('retry').onclick = ()=>{ document.getElementById('over').classList.add('hidden'); beginLevel(); };
+  document.getElementById('modeCoins').onkeydown = e=>{ if(e.key==='Enter'||e.key===' ')startMode('coins'); };
+  document.getElementById('lsBack').onclick = ()=>showModePicker();
+  document.getElementById('retry').onclick = ()=>{ document.getElementById('over').classList.add('hidden'); if(mode==='coins') beginCoinRush(); else beginLevel(); };
   document.getElementById('toMenu').onclick = ()=>{ running=false; document.getElementById('over').classList.add('hidden'); document.getElementById('hud').classList.add('hidden'); document.getElementById('menu').classList.remove('hidden'); };
   document.getElementById('mute').onclick = ()=>{ muted=!muted; document.getElementById('mute').textContent = muted?'♪ sound off':'♪ sound on'; };
 
@@ -786,12 +995,13 @@
   // The art-forward intro is Echo's home screen (like the other hub games).
   function showIntro(){
     running = false; runToken++;
-    ['menu','over','cleared','hud'].forEach(id => $(id).classList.add('hidden'));
+    ['menu','levelSelect','over','cleared','hud'].forEach(id => $(id).classList.add('hidden'));
     setIntroCoins();
     $('intro').classList.remove('hidden');
   }
   function showModePicker(){
-    ['intro','over','cleared','hud'].forEach(id => $(id).classList.add('hidden'));
+    running = false; runToken++;
+    ['intro','levelSelect','over','cleared','hud'].forEach(id => $(id).classList.add('hidden'));
     $('menu').classList.remove('hidden');
     syncPulseLabel();
   }
