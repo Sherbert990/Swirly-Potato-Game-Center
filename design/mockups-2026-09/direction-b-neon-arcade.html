@@ -1,0 +1,212 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Direction B — Neon Arcade · The Stickmen Hub</title>
+<!--
+  DIRECTION B — "Neon Arcade" · five key design decisions
+  1. Dark-first chrome: app ground #0e1226 with the blue-sky plate kept but dimmed to 18% so the world is still
+     "there" behind the glass. Everything sits on rgba(22,28,48,.85) panels with backdrop blur and a 1px luminous edge.
+  2. Light comes from the games, not the chrome: every glow (box-shadow at 25–45% alpha) borrows the game's own
+     accent — hub purple on the bar, lavender on the hero, a coloured underline on each shelf tile.
+  3. Type = uppercase Fredoka with .06em tracking for titles and labels (arcade cabinet lettering), Nunito 600/700
+     sentence case for body. Coins stay gold #ffd166 on dark.
+  4. Motion drawn as static: a progress ring on the hero (best-level 12/16), luminous particle dots, a scanline
+     highlight on the Play button. Cues that things move, without JS.
+  5. Per-game theming = same dark panel, same header/tabs/rows; only the light source changes. The Echo store swaps
+     purple for cave-cyan: cyan border glow, cyan-filled buttons with dark text, cyan-tinted item tiles.
+-->
+<link rel="stylesheet" href="/assets/fonts/fonts.css">
+<style>
+:root{--bg:#0e1226;--panel:rgba(22,28,48,.85);--line:rgba(160,180,255,.18);--ink:#e7edfb;--muted:#9aa8c6;--accent:#9b6bff;--accent2:#2bbf95;--coin:#ffd166;
+--g1:#8b5cf6;--g2:#38bdf8;--g3:#5fe6ff;--g4:#ecbe3c;--g5:#ff9b3c;--g6:#f6b445;--g7:#7c6cff}
+*{box-sizing:border-box}html,body{margin:0}
+body{font-family:Nunito,system-ui,sans-serif;font-weight:600;color:var(--ink);background:var(--bg);position:relative}
+body::before{content:"";position:fixed;inset:0;background:url(/design/hub/background.png) center/cover no-repeat;opacity:.18;z-index:-1}
+.ff,h1,h2,h3,h4,.play,.buy,.tab,.pill,.nav{font-family:Fredoka,sans-serif;font-weight:700}
+.cap{text-transform:uppercase;letter-spacing:.06em}
+.i{width:1.1em;height:1.1em;fill:none;stroke:currentColor;stroke-width:2;stroke-linecap:round;stroke-linejoin:round;flex:none}
+.panel{background:var(--panel);border:1px solid var(--line);border-radius:22px;backdrop-filter:blur(14px);box-shadow:0 10px 40px rgba(0,0,0,.45)}
+.wrap{max-width:1326px;margin:0 auto;padding:18px 20px 28px;min-height:100vh;display:flex;flex-direction:column;gap:18px}
+/* top bar */
+.bar{display:flex;align-items:center;gap:10px;padding:10px 16px;box-shadow:0 10px 40px rgba(0,0,0,.45),0 0 0 1px rgba(155,107,255,.15),0 0 40px rgba(155,107,255,.18)}
+.logo{display:flex;align-items:center;gap:10px;font-size:20px;color:#fff;margin-right:auto}
+.mark{width:40px;height:40px;border-radius:12px;background:linear-gradient(135deg,#9b6bff,#5b2ed6);display:grid;place-items:center;color:#fff;box-shadow:0 0 18px rgba(155,107,255,.6)}
+.pill{display:inline-flex;align-items:center;gap:6px;background:rgba(255,255,255,.06);border:1px solid var(--line);border-radius:999px;padding:7px 13px;font-size:15px;line-height:1;white-space:nowrap}
+.pill.coin{color:var(--coin);border-color:rgba(255,209,102,.35);box-shadow:0 0 14px rgba(255,209,102,.18)}
+.pill.lvl{color:var(--ink);font-family:Nunito;font-weight:700}.pill .fl{color:#ff9b3c}.pill .st{color:var(--accent)}
+.nav{display:inline-flex;align-items:center;gap:6px;color:var(--muted);font-size:13px;padding:8px 11px;border-radius:11px;text-decoration:none}
+.nav:hover{color:#fff;background:rgba(255,255,255,.06)}
+.who{display:flex;align-items:center;gap:8px;font-size:14px;margin:0 6px;font-weight:700}
+.av{width:36px;height:36px;border-radius:50%;border:2px solid var(--accent);background:#231d44;display:grid;place-items:center;color:var(--accent);box-shadow:0 0 12px rgba(155,107,255,.5)}
+.tgl{display:inline-flex;border:1px solid var(--line);border-radius:999px;background:rgba(0,0,0,.35);padding:3px;gap:2px}
+.tgl span{width:30px;height:26px;border-radius:999px;display:grid;place-items:center;color:var(--muted)}
+.tgl .on{background:var(--accent);color:#fff;box-shadow:0 0 10px rgba(155,107,255,.7)}
+/* hero */
+.hero{position:relative;height:400px;overflow:hidden;background:#1b1633 url(/design/hub/lavender-cover.png) center 35%/cover no-repeat;box-shadow:0 10px 40px rgba(0,0,0,.45),0 0 0 1px rgba(139,92,246,.35),0 0 60px rgba(139,92,246,.28)}
+.scrim{position:absolute;inset:0;background:linear-gradient(90deg,rgba(14,18,38,.97) 0,rgba(14,18,38,.88) 38%,rgba(14,18,38,.25) 68%,rgba(14,18,38,.05) 100%),linear-gradient(0deg,rgba(14,18,38,.7),transparent 40%)}
+.txt{position:absolute;left:36px;top:0;bottom:0;width:520px;display:flex;flex-direction:column;justify-content:center;gap:12px}
+.eyebrow{font-size:12px;color:var(--g1);text-shadow:0 0 12px rgba(139,92,246,.8)}
+.hero h1{margin:0;font-size:50px;line-height:1;text-shadow:0 4px 30px rgba(0,0,0,.6)}
+.hero p{margin:0;font-size:16px;color:#cbd3ea;line-height:1.45;max-width:460px}
+.chips{display:flex;gap:8px;flex-wrap:wrap}
+.chip{border:1px solid rgba(139,92,246,.6);border-radius:11px;padding:6px 11px;font-size:12px;background:rgba(139,92,246,.14);color:#e0d4ff;font-family:Fredoka;letter-spacing:.06em;text-transform:uppercase}
+.cta{display:flex;align-items:center;gap:16px;margin-top:6px}
+.play{position:relative;display:inline-flex;align-items:center;gap:8px;background:linear-gradient(180deg,#a47dff,#7d2ae8);color:#fff;border-radius:16px;padding:12px 30px;font-size:20px;text-decoration:none;box-shadow:0 0 28px rgba(139,92,246,.6),inset 0 1px 0 rgba(255,255,255,.35);overflow:hidden}
+.play::after{content:"";position:absolute;left:-40%;top:0;bottom:0;width:30%;background:linear-gradient(90deg,transparent,rgba(255,255,255,.28),transparent);transform:skewX(-20deg)}
+.best{font-size:13px;color:var(--muted)}
+.ring{position:absolute;right:36px;bottom:28px;width:104px;height:104px;display:grid;place-items:center;text-align:center;line-height:1}
+.ring svg{position:absolute;inset:0;transform:rotate(-90deg);filter:drop-shadow(0 0 8px rgba(139,92,246,.8))}
+.ring b{font-size:24px;color:#fff}.ring small{font-size:10px;color:var(--muted);letter-spacing:.08em;text-transform:uppercase}
+.dot{position:absolute;width:6px;height:6px;border-radius:50%;background:#e0d4ff;box-shadow:0 0 10px 3px rgba(139,92,246,.8)}
+/* shelf */
+.shelfHd{display:flex;align-items:center;gap:12px;padding:0 6px;margin-bottom:-6px}
+.shelfHd h2{margin:0;font-size:18px}.shelfHd small{color:var(--muted);font-size:12px;border:1px solid var(--line);border-radius:999px;padding:3px 9px}
+.shelfHd a{margin-left:auto;font-size:12px;color:var(--accent);text-decoration:none;display:flex;align-items:center;gap:4px}
+.shelf{display:flex;gap:16px;overflow-x:auto;padding:12px 6px 16px;scrollbar-width:none}
+.tile{flex:0 0 176px;padding:8px 8px 12px;border-radius:16px;position:relative;text-decoration:none;color:var(--ink);overflow:hidden;box-shadow:0 10px 40px rgba(0,0,0,.45)}
+.tile::after{content:"";position:absolute;left:14px;right:14px;bottom:0;height:3px;border-radius:3px 3px 0 0;background:var(--c);box-shadow:0 0 14px 2px var(--c)}
+.tile img{width:100%;height:120px;object-fit:cover;border-radius:11px;display:block;background:#101427;filter:saturate(1.1)}
+.tile b{display:block;font-size:14px;margin:9px 2px 3px;line-height:1.15;font-family:Fredoka;letter-spacing:.05em;text-transform:uppercase}
+.tile small{display:block;color:var(--muted);font-size:11px;margin:0 2px}
+.tile .n{position:absolute;top:14px;left:14px;font-size:10px;font-family:Fredoka;letter-spacing:.1em;background:rgba(14,18,38,.75);border:1px solid var(--c);color:var(--c);border-radius:999px;padding:3px 7px;backdrop-filter:blur(4px)}
+/* journey + streak */
+.row{display:grid;grid-template-columns:1fr 360px;gap:18px}
+.journey{padding:8px;overflow:hidden}.journey img{width:100%;height:96px;object-fit:cover;border-radius:16px;display:block;filter:brightness(.85) saturate(1.1)}
+.streak{padding:12px 16px;display:flex;align-items:center;gap:14px}
+.streak .big{font-size:30px;color:#fff;line-height:1;text-shadow:0 0 16px rgba(155,107,255,.8)}
+.streak .sub{font-size:12px;color:var(--muted);margin-top:4px}
+.meter{height:8px;border-radius:999px;background:rgba(255,255,255,.08);overflow:hidden;margin-top:6px}
+.meter i{display:block;height:100%;width:60%;background:linear-gradient(90deg,#2bbf95,#5fe6ff);box-shadow:0 0 12px rgba(95,230,255,.8)}
+/* store stage */
+.stage{background:rgba(6,8,20,.7);border-top:1px solid var(--line);padding:36px 20px 48px}
+.stage .in{max-width:1326px;margin:0 auto}
+.stage h3{color:#fff;margin:0 0 6px;font-size:20px}.stage p{color:var(--muted);margin:0 0 20px;font-size:14px}
+.stores{display:grid;grid-template-columns:1fr 1fr;gap:28px;align-items:start}
+.store{overflow:hidden;--sk:var(--accent);--skrgb:155,107,255;--btnink:#fff;--edge:rgba(155,107,255,.45);box-shadow:0 10px 40px rgba(0,0,0,.45),0 0 0 1px var(--edge),0 0 50px rgba(var(--skrgb),.25)}
+.store.echo{--sk:#5fe6ff;--skrgb:95,230,255;--btnink:#0b2a33;--edge:rgba(95,230,255,.55);background:rgba(11,42,51,.88)}
+.sHd{display:flex;align-items:center;gap:12px;padding:14px 18px;border-bottom:1px solid var(--edge);background:linear-gradient(90deg,rgba(var(--skrgb),.22),rgba(var(--skrgb),0) 70%)}
+.sHd h4{margin:0;font-size:18px;color:#fff}.sHd h4 small{font-size:11px;color:var(--sk);margin-left:8px;text-shadow:0 0 10px rgba(var(--skrgb),.8)}
+.sHd .pill{margin-left:auto}
+.x{width:34px;height:34px;border-radius:50%;background:rgba(255,255,255,.06);border:1px solid var(--line);display:grid;place-items:center;color:var(--ink)}
+.tabs{display:flex;gap:8px;padding:14px 18px 6px}
+.tab{border:1px solid var(--line);border-radius:11px;padding:6px 12px;font-size:12px;background:rgba(255,255,255,.05);color:var(--muted);letter-spacing:.06em;text-transform:uppercase}
+.tab.on{background:var(--sk);color:var(--btnink);border-color:transparent;box-shadow:0 0 16px rgba(var(--skrgb),.6)}
+.items{padding:10px 18px;display:grid;gap:8px}
+.it{display:flex;align-items:center;gap:12px;padding:8px;border:1px solid rgba(var(--skrgb),.22);border-radius:16px;background:rgba(var(--skrgb),.06)}
+.it .ic{width:44px;height:44px;border-radius:11px;background:rgba(var(--skrgb),.16);display:grid;place-items:center;color:var(--sk);flex:none;box-shadow:inset 0 0 0 1px rgba(var(--skrgb),.35),0 0 14px rgba(var(--skrgb),.3)}
+.it b{display:block;font-size:14px;font-weight:800}.it small{color:var(--muted);font-size:12px;display:block}
+.buy{margin-left:auto;display:inline-flex;align-items:center;gap:5px;background:var(--sk);color:var(--btnink);border-radius:11px;padding:8px 13px;font-size:14px;white-space:nowrap;box-shadow:0 0 16px rgba(var(--skrgb),.55)}
+.own{margin-left:auto;color:var(--accent2);font-size:12px;display:inline-flex;gap:4px;align-items:center;padding-right:6px;white-space:nowrap;font-weight:800}
+.sec{padding:8px 18px 4px;font-size:11px;letter-spacing:.1em;text-transform:uppercase;color:var(--muted);font-family:Fredoka}
+.sw{display:flex;gap:14px;padding:4px 18px 18px;align-items:flex-end}
+.sw div{display:grid;justify-items:center;gap:5px;font-size:11px;color:var(--muted)}
+.sw span{width:38px;height:38px;border-radius:50%;display:grid;place-items:center;color:#0b2a33;box-shadow:0 0 14px 2px color-mix(in srgb,var(--swc) 45%,transparent);background:var(--swc)}
+.sw .eq span{outline:2px solid #fff;outline-offset:3px}
+.lbl{position:fixed;left:14px;bottom:14px;z-index:9;background:#fff;color:var(--bg);font-size:12px;padding:6px 10px;border-radius:8px;letter-spacing:.04em;font-weight:800}
+@media(max-height:880px){.hero{height:330px}.hero h1{font-size:42px}.tile img{height:100px}.journey img{height:80px}}
+@media(max-width:1240px){.nav span{display:none}.txt{width:470px;left:28px}}
+</style></head>
+<body>
+<svg style="position:absolute;width:0;height:0" aria-hidden="true">
+<symbol id="coin" viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M14.8 9A2 2 0 0 0 13 8h-2a2 2 0 0 0 0 4h2a2 2 0 0 1 0 4h-2a2 2 0 0 1-1.8-1M12 6v2m0 8v2"/></symbol>
+<symbol id="trophy" viewBox="0 0 24 24"><path d="M8 21h8M12 17v4M7 4h10v6a5 5 0 0 1-10 0zM7 6H4v2a3 3 0 0 0 3 3M17 6h3v2a3 3 0 0 1-3 3"/></symbol>
+<symbol id="bag" viewBox="0 0 24 24"><path d="M6 8h12l1 12H5zM9 8V6a3 3 0 0 1 6 0v2"/></symbol>
+<symbol id="gear" viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/><path d="M12 2v3m0 14v3M2 12h3m14 0h3M4.9 4.9l2.1 2.1m10 10l2.1 2.1M4.9 19.1L7 17m10-10l2.1-2.1"/></symbol>
+<symbol id="sun" viewBox="0 0 24 24"><circle cx="12" cy="12" r="4"/><path d="M12 2v2m0 16v2M2 12h2m16 0h2M4.9 4.9l1.4 1.4m11.4 11.4l1.4 1.4M4.9 19.1l1.4-1.4M17.7 6.3l1.4-1.4"/></symbol>
+<symbol id="moon" viewBox="0 0 24 24"><path d="M12 3a9 9 0 1 0 9 9 7 7 0 0 1-9-9z"/></symbol>
+<symbol id="x" viewBox="0 0 24 24"><path d="M18 6L6 18M6 6l12 12"/></symbol>
+<symbol id="play" viewBox="0 0 24 24"><path d="M7 4v16l13-8z" fill="currentColor"/></symbol>
+<symbol id="flame" viewBox="0 0 24 24"><path d="M12 3c1 4 5 5 5 10a5 5 0 0 1-10 0c0-2 1-3 1-3s0 3 2 3c1-3-1-6 2-10z"/></symbol>
+<symbol id="star" viewBox="0 0 24 24"><path d="M12 3l2.8 5.7 6.2.9-4.5 4.4 1 6.2L12 17.3 6.5 20.2l1-6.2L3 9.6l6.2-.9z" fill="currentColor"/></symbol>
+<symbol id="check" viewBox="0 0 24 24"><path d="M5 12l5 5L20 7"/></symbol>
+<symbol id="chev" viewBox="0 0 24 24"><path d="M9 6l6 6-6 6"/></symbol>
+<symbol id="man" viewBox="0 0 40 52"><circle cx="20" cy="8" r="6"/><path d="M20 14l-1 17M20 18l14-14M20 18L8 24M19 31L9 49M19 31l10 16"/></symbol>
+<symbol id="waves" viewBox="0 0 24 24"><circle cx="12" cy="12" r="2"/><path d="M7 7a7 7 0 0 0 0 10M17 7a7 7 0 0 1 0 10M4 4a11 11 0 0 0 0 16M20 4a11 11 0 0 1 0 16"/></symbol>
+<symbol id="bolt" viewBox="0 0 24 24"><path d="M13 2L4 14h7l-1 8 9-12h-7z"/></symbol>
+<symbol id="pulse" viewBox="0 0 24 24"><path d="M3 12h4l3-7 4 14 3-7h4"/></symbol>
+<symbol id="wall" viewBox="0 0 24 24"><path d="M4 3v18M20 3v18M8 12h8m-3-3l3 3-3 3"/></symbol>
+<symbol id="heart" viewBox="0 0 24 24"><path d="M12 20s-7-4.5-7-10a4 4 0 0 1 7-2.5A4 4 0 0 1 19 10c0 5.5-7 10-7 10z"/></symbol>
+<symbol id="clock" viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></symbol>
+<symbol id="jump" viewBox="0 0 24 24"><path d="M4 20h16M12 16V5m-4 4l4-4 4 4"/></symbol>
+</svg>
+<div class="lbl">Direction B — Neon Arcade</div>
+
+<div class="wrap">
+  <header class="bar panel">
+    <div class="logo cap"><span class="mark"><svg class="i" style="width:22px;height:26px;stroke-width:3" viewBox="0 0 40 52"><use href="#man"/></svg></span>The Stickmen Hub</div>
+    <span class="pill coin"><svg class="i"><use href="#coin"/></svg>128</span>
+    <span class="pill lvl"><svg class="i st"><use href="#star"/></svg>Level 3 <span style="color:var(--muted)">·</span> <svg class="i fl"><use href="#flame"/></svg>2-day streak</span>
+    <span class="who"><span class="av"><svg class="i" style="stroke-width:3;width:16px;height:20px" viewBox="0 0 40 52"><use href="#man"/></svg></span>Swirly</span>
+    <a class="nav cap" href="#"><svg class="i"><use href="#bag"/></svg><span>Store</span></a>
+    <a class="nav cap" href="#"><svg class="i"><use href="#trophy"/></svg><span>Leaderboards</span></a>
+    <a class="nav cap" href="#"><svg class="i"><use href="#gear"/></svg><span>Settings</span></a>
+    <span class="tgl"><span><svg class="i"><use href="#sun"/></svg></span><span class="on"><svg class="i"><use href="#moon"/></svg></span></span>
+  </header>
+
+  <section class="hero panel">
+    <div class="scrim"></div>
+    <i class="dot" style="left:58%;top:22%"></i><i class="dot" style="left:71%;top:58%;width:4px;height:4px"></i><i class="dot" style="left:86%;top:30%;width:5px;height:5px"></i><i class="dot" style="left:64%;top:78%;width:3px;height:3px"></i><i class="dot" style="left:92%;top:70%;width:4px;height:4px"></i>
+    <div class="txt">
+      <div class="eyebrow cap">Featured · Parkour · 3 modes</div>
+      <h1 class="cap">Lavender Leap<br>of Doom</h1>
+      <p>A leveled parkour game with Time Trial, Freeplay and Hard Mode. Chain your jumps, beat the clock, and don't touch the lava.</p>
+      <div class="chips"><span class="chip">Time Trial</span><span class="chip">Freeplay</span><span class="chip">Hard Mode</span></div>
+      <div class="cta"><a class="play cap" href="#"><svg class="i"><use href="#play"/></svg>Play</a><span class="best">Best · Level 12 in Time Trial 2m</span></div>
+    </div>
+    <div class="ring">
+      <svg viewBox="0 0 104 104"><circle cx="52" cy="52" r="46" fill="rgba(14,18,38,.7)" stroke="rgba(255,255,255,.1)" stroke-width="6"/><circle cx="52" cy="52" r="46" fill="none" stroke="#8b5cf6" stroke-width="6" stroke-linecap="round" stroke-dasharray="217 289"/></svg>
+      <div><b class="ff">12<span style="font-size:13px;color:var(--muted)">/16</span></b><br><small>levels</small></div>
+    </div>
+  </section>
+
+  <div>
+    <div class="shelfHd"><h2 class="cap">All games</h2><small>7</small><a class="cap ff" href="#">Leaderboards <svg class="i"><use href="#chev"/></svg></a></div>
+    <div class="shelf">
+      <a class="tile panel" href="#" style="--c:var(--g1)"><img src="/design/hub/lavender-cover.png" alt=""><span class="n">01</span><b>Lavender Leap of Doom</b><small>Time Trial · Hard Mode</small></a>
+      <a class="tile panel" href="#" style="--c:var(--g2)"><img src="/design/hub/dontlookdown-cover.png" alt=""><span class="n">02</span><b>Don't Look Down</b><small>Endless · Beat your best</small></a>
+      <a class="tile panel" href="#" style="--c:var(--g3)"><img src="/design/hub/echo-cover.png" alt=""><span class="n">03</span><b>Echo</b><small>Collect &amp; Escape · Coin Rush</small></a>
+      <a class="tile panel" href="#" style="--c:var(--g4)"><img src="/design/hub/archery-cover.svg" alt=""><span class="n">04</span><b>Archery Range</b><small>16 Levels · Wind &amp; Nerve</small></a>
+      <a class="tile panel" href="#" style="--c:var(--g5)"><img src="/design/hub/riposte-cover.svg" alt=""><span class="n">05</span><b>Riposte</b><small>1 or 2 Players · Fast Mode</small></a>
+      <a class="tile panel" href="#" style="--c:var(--g6)"><img src="/design/hub/genesis-cover.svg" alt=""><span class="n">06</span><b>Genesis</b><small>Idle Builder · Terraform</small></a>
+      <a class="tile panel" href="#" style="--c:var(--g7)"><img src="/design/hub/orbit-dodge-cover.svg" alt=""><span class="n">07</span><b>Orbit Dodge</b><small>Endless · One-tap</small></a>
+    </div>
+  </div>
+
+  <div class="row">
+    <div class="journey panel"><img src="/design/hub/journey-strip.png" alt="Play games, earn coins, climb leaderboards, become a legend"></div>
+    <div class="streak panel">
+      <div class="big ff cap">Lv 3</div>
+      <div style="flex:1"><div style="font-size:13px">240 / 400 XP to Level 4</div><div class="meter"><i></i></div><div class="sub"><svg class="i" style="color:#ff9b3c"><use href="#flame"/></svg> 2-day streak — play once today to keep it</div></div>
+    </div>
+  </div>
+</div>
+
+<section class="stage"><div class="in">
+  <h3 class="cap">Store overlay — same skeleton, per-game skin</h3>
+  <p>Left: the Store opened from the hub (purple light). Right: the identical panel opened from inside Echo — the light source turns cave-cyan; nothing else moves.</p>
+  <div class="stores">
+    <div class="store panel">
+      <div class="sHd"><h4 class="cap">Store<small>Lavender Leap</small></h4><span class="pill coin"><svg class="i"><use href="#coin"/></svg>128</span><span class="x"><svg class="i"><use href="#x"/></svg></span></div>
+      <div class="tabs"><span class="tab on">Power-ups</span><span class="tab">Avatars</span><span class="tab">All games</span></div>
+      <div class="items">
+        <div class="it"><span class="ic"><svg class="i" style="width:22px;height:22px"><use href="#heart"/></svg></span><div><b>Extra Life</b><small>Survive a fall in Hard Mode</small></div><span class="buy"><svg class="i"><use href="#coin"/></svg>15</span></div>
+        <div class="it"><span class="ic"><svg class="i" style="width:22px;height:22px"><use href="#clock"/></svg></span><div><b>+30s Time Boost</b><small>Adds 30s to your next Time Trial</small></div><span class="buy"><svg class="i"><use href="#coin"/></svg>15</span></div>
+        <div class="it"><span class="ic"><svg class="i" style="width:22px;height:22px"><use href="#jump"/></svg></span><div><b>Double Jump Pack</b><small>10 mid-air jumps · works in any mode</small></div><span class="own"><svg class="i"><use href="#check"/></svg>Owned ×4</span></div>
+      </div>
+      <div class="sec">Starter avatars</div>
+      <div class="sw"><div class="eq"><span style="--swc:#9b6bff"></span>Ninja</div><div><span style="--swc:#4aa6d6"></span>Mecha</div><div><span style="--swc:#50e696"></span>Slime</div><div><span style="--swc:#ff7a3c"></span>Fox</div><div><span style="--swc:#ffd23f"></span>Cadet · 20</div></div>
+    </div>
+    <div class="store panel echo">
+      <div class="sHd"><h4 class="cap">Store<small>Echo</small></h4><span class="pill coin"><svg class="i"><use href="#coin"/></svg>128</span><span class="x"><svg class="i"><use href="#x"/></svg></span></div>
+      <div class="tabs"><span class="tab on">Power-ups</span><span class="tab">Light colours</span><span class="tab">All games</span></div>
+      <div class="items">
+        <div class="it"><span class="ic"><svg class="i" style="width:22px;height:22px"><use href="#waves"/></svg></span><div><b>Bigger Waves</b><small>Your pulses travel much farther through the cave</small></div><span class="buy"><svg class="i"><use href="#coin"/></svg>40</span></div>
+        <div class="it"><span class="ic"><svg class="i" style="width:22px;height:22px"><use href="#bolt"/></svg></span><div><b>Faster Light</b><small>Glide through the cave noticeably faster</small></div><span class="buy"><svg class="i"><use href="#coin"/></svg>80</span></div>
+        <div class="it"><span class="ic"><svg class="i" style="width:22px;height:22px"><use href="#pulse"/></svg></span><div><b>Rapid Pulse</b><small>Less time between auto pulses (Auto mode)</small></div><span class="buy"><svg class="i"><use href="#coin"/></svg>60</span></div>
+        <div class="it"><span class="ic"><svg class="i" style="width:22px;height:22px"><use href="#wall"/></svg></span><div><b>Wall Pass</b><small>Press E to slip through walls for 2s (long cooldown)</small></div><span class="buy"><svg class="i"><use href="#coin"/></svg>200</span></div>
+      </div>
+      <div class="sec">Light colours</div>
+      <div class="sw"><div class="eq"><span style="--swc:#5fe6ff"><svg class="i"><use href="#check"/></svg></span>Cyan</div><div><span style="--swc:#a86bff"></span>Purple · 20</div><div><span style="--swc:#5a9bff"></span>Blue · 20</div><div><span style="--swc:#50e696"></span>Green · 20</div><div><span style="--swc:#ffd23f"></span>Yellow · 25</div></div>
+    </div>
+  </div>
+</div></section>
+</body></html>

@@ -1,0 +1,200 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Direction C — Clean Console · The Stickmen Hub</title>
+<!--
+  DIRECTION C — "Clean Console" · five key design decisions
+  1. Calm surface: near-white #f7f8fc ground with the blue-sky plate reduced to an 8% wash at the very top only,
+     so the page feels like a console storefront (Apple Arcade / eShop) rather than an illustrated scene.
+  2. One big radius (28px) on every tile, generous whitespace (24px gutters), 1px hairlines (#e6e9f2) and one
+     restrained shadow. No borders on buttons; hierarchy comes from size and weight, not outlines.
+  3. Big bold Fredoka in ink (#243a5e) for titles — hero 56px — with Nunito 600 body in muted. Sentence case
+     everywhere; no tracking, no uppercase. The app reads as quiet and confident.
+  4. One accent per game, used as a solid colour block behind the cover on the shelf and as the hero's Play pill.
+     Hub purple is reserved for account chrome (avatar ring, level pill, active tab); coin gold never changes.
+  5. Per-game theming of shared chrome = same white panel, same header/tabs/rows. The Echo store paints the header
+     band cave-navy with cyan text, makes primary buttons cyan-on-navy, and tints item rows 6% cyan. That is all.
+-->
+<link rel="stylesheet" href="/assets/fonts/fonts.css">
+<style>
+:root{--bg:#f7f8fc;--panel:#fff;--line:#e6e9f2;--ink:#243a5e;--muted:#5a6b86;--accent:#7d2ae8;--accent2:#1d9e75;--coin:#c8920c;--sh:0 2px 10px rgba(36,58,94,.06),0 8px 28px rgba(36,58,94,.06);
+--g1:#8b5cf6;--g2:#38bdf8;--g3:#5fe6ff;--g4:#ecbe3c;--g5:#ff9b3c;--g6:#f6b445;--g7:#7c6cff}
+*{box-sizing:border-box}html,body{margin:0}
+body{font-family:Nunito,system-ui,sans-serif;font-weight:600;color:var(--ink);background:var(--bg)}
+body::before{content:"";position:absolute;left:0;right:0;top:0;height:420px;background:url(/design/hub/background.png) center top/cover no-repeat;opacity:.08;-webkit-mask:linear-gradient(#000,transparent);mask:linear-gradient(#000,transparent);z-index:0;pointer-events:none}
+.ff,h1,h2,h3,h4,.play,.buy,.big{font-family:Fredoka,sans-serif;font-weight:700}
+.i{width:1.1em;height:1.1em;fill:none;stroke:currentColor;stroke-width:2;stroke-linecap:round;stroke-linejoin:round;flex:none}
+.tile,.panel{background:var(--panel);border:1px solid var(--line);border-radius:28px;box-shadow:var(--sh)}
+.wrap{position:relative;z-index:1;max-width:1326px;margin:0 auto;padding:14px 24px 32px;min-height:100vh;display:flex;flex-direction:column;gap:24px}
+/* top bar */
+.bar{display:flex;align-items:center;gap:8px;padding:8px 4px 14px;border-bottom:1px solid var(--line)}
+.logo{display:flex;align-items:center;gap:10px;font-size:22px;color:var(--ink);margin-right:auto}
+.mark{width:40px;height:40px;border-radius:14px;background:var(--accent);display:grid;place-items:center;color:#fff}
+.pill{display:inline-flex;align-items:center;gap:6px;background:#fff;border:1px solid var(--line);border-radius:999px;padding:8px 14px;font-size:14px;line-height:1;white-space:nowrap;font-weight:700}
+.pill.coin{color:var(--coin);font-family:Fredoka;font-size:15px}.pill.lvl{color:var(--accent)}.pill .fl{color:#e2731a}
+.nav{display:inline-flex;align-items:center;gap:6px;color:var(--muted);font-size:14px;padding:9px 12px;border-radius:999px;text-decoration:none;font-weight:700}
+.nav:hover{background:#eef0f6;color:var(--ink)}
+.who{display:flex;align-items:center;gap:8px;font-size:14px;margin:0 8px;font-weight:700}
+.av{width:36px;height:36px;border-radius:50%;border:2px solid var(--accent);background:#f1e9ff;display:grid;place-items:center;color:var(--accent)}
+.tgl{display:inline-flex;border:1px solid var(--line);border-radius:999px;background:#fff;padding:3px;gap:2px;margin-left:6px}
+.tgl span{width:30px;height:26px;border-radius:999px;display:grid;place-items:center;color:var(--muted)}
+.tgl .on{background:var(--ink);color:#fff}
+/* hero */
+.hero{display:grid;grid-template-columns:1fr 1fr;height:400px;overflow:hidden}
+.hero img{width:100%;height:100%;object-fit:cover;display:block;border-right:1px solid var(--line)}
+.txt{display:flex;flex-direction:column;justify-content:center;gap:14px;padding:36px 44px}
+.eyebrow{font-size:13px;color:var(--g1);font-weight:800}
+.hero h1{margin:0;font-size:56px;line-height:1}
+.hero p{margin:0;font-size:16px;color:var(--muted);line-height:1.5;max-width:460px}
+.chips{display:flex;gap:8px;flex-wrap:wrap}
+.chip{border:1px solid var(--line);border-radius:999px;padding:6px 12px;font-size:13px;background:#fff;color:var(--ink);font-weight:700}
+.cta{display:flex;align-items:center;gap:18px;margin-top:8px}
+.play{display:inline-flex;align-items:center;gap:8px;background:var(--g1);color:#fff;border-radius:999px;padding:13px 32px;font-size:20px;text-decoration:none;box-shadow:0 6px 18px rgba(139,92,246,.35)}
+.best{font-size:13px;color:var(--muted)}
+/* shelf */
+.shelfHd{display:flex;align-items:baseline;gap:12px;padding:0 4px;margin-bottom:-10px}
+.shelfHd h2{margin:0;font-size:24px}.shelfHd small{color:var(--muted);font-size:14px}
+.shelfHd a{margin-left:auto;font-size:14px;color:var(--accent);text-decoration:none;display:flex;align-items:center;gap:4px;font-weight:800}
+.shelf{display:flex;gap:18px;overflow-x:auto;padding:8px 4px 14px;scrollbar-width:none}
+.gt{flex:0 0 176px;text-decoration:none;color:var(--ink)}
+.blk{height:150px;border-radius:22px;background:var(--c);padding:14px 14px 0;overflow:hidden;box-shadow:var(--sh)}
+.blk img{width:100%;height:100%;object-fit:cover;object-position:top;border-radius:12px 12px 0 0;display:block;background:#fff}
+.gt b{display:block;font-size:16px;margin:10px 4px 2px;line-height:1.15;font-family:Fredoka}
+.gt small{display:block;color:var(--muted);font-size:12px;margin:0 4px}
+/* journey + streak */
+.row{display:grid;grid-template-columns:1fr 380px;gap:24px}
+.journey{padding:10px;overflow:hidden}.journey img{width:100%;height:96px;object-fit:cover;border-radius:20px;display:block}
+.streak{padding:14px 22px;display:flex;align-items:center;gap:16px}
+.streak .big{font-size:30px;color:var(--accent);line-height:1}
+.streak .sub{font-size:12px;color:var(--muted);margin-top:4px}
+.meter{height:8px;border-radius:999px;background:#eef0f6;overflow:hidden;margin-top:6px}
+.meter i{display:block;height:100%;width:60%;background:var(--accent2)}
+/* store stage */
+.stage{background:#e9ecf4;border-top:1px solid var(--line);padding:40px 24px 52px}
+.stage .in{max-width:1326px;margin:0 auto}
+.stage h3{margin:0 0 6px;font-size:24px}.stage p{color:var(--muted);margin:0 0 22px;font-size:14px}
+.stores{display:grid;grid-template-columns:1fr 1fr;gap:32px;align-items:start}
+.store{overflow:hidden;--sk:var(--accent);--band:#fff;--bandink:var(--ink);--bandsub:var(--accent);--btn:var(--accent);--btnink:#fff;--rowbg:#fff;--tile:#f1e9ff;--ic:var(--accent)}
+.store.echo{--sk:#5fe6ff;--band:#0b2a33;--bandink:#e8fbff;--bandsub:#5fe6ff;--btn:#5fe6ff;--btnink:#0b2a33;--rowbg:rgba(95,230,255,.06);--tile:#0b2a33;--ic:#5fe6ff;border-color:rgba(11,42,51,.25)}
+.sHd{display:flex;align-items:center;gap:12px;padding:16px 20px;border-bottom:1px solid var(--line);background:var(--band);color:var(--bandink)}
+.sHd h4{margin:0;font-size:24px}.sHd h4 small{font-size:13px;color:var(--bandsub);margin-left:8px;font-family:Nunito;font-weight:800}
+.sHd .pill{margin-left:auto}
+.x{width:36px;height:36px;border-radius:50%;background:rgba(127,127,127,.12);display:grid;place-items:center;color:var(--bandink)}
+.tabs{display:flex;gap:8px;padding:16px 20px 8px}
+.tab{border:1px solid var(--line);border-radius:999px;padding:7px 14px;font-size:13px;background:#fff;color:var(--muted);font-weight:700}
+.tab.on{background:var(--btn);color:var(--btnink);border-color:transparent}
+.items{padding:8px 20px 4px;display:grid}
+.it{display:flex;align-items:center;gap:14px;padding:10px 8px;border-bottom:1px solid var(--line);background:var(--rowbg);border-radius:14px}
+.it:last-child{border-bottom:none}
+.it .ic{width:44px;height:44px;border-radius:14px;background:var(--tile);display:grid;place-items:center;color:var(--ic);flex:none}
+.it b{display:block;font-size:15px;font-weight:800}.it small{color:var(--muted);font-size:12px;display:block}
+.buy{margin-left:auto;display:inline-flex;align-items:center;gap:5px;background:var(--btn);color:var(--btnink);border-radius:999px;padding:8px 14px;font-size:15px;white-space:nowrap}
+.own{margin-left:auto;color:var(--accent2);font-size:13px;display:inline-flex;gap:4px;align-items:center;padding-right:6px;white-space:nowrap;font-weight:800}
+.sec{padding:12px 20px 4px;font-size:13px;color:var(--muted);font-weight:800}
+.sw{display:flex;gap:14px;padding:6px 20px 20px;align-items:flex-end}
+.sw div{display:grid;justify-items:center;gap:5px;font-size:11px;color:var(--muted)}
+.sw span{width:40px;height:40px;border-radius:50%;display:grid;place-items:center;color:#0b2a33;border:1px solid rgba(0,0,0,.08)}
+.sw .eq span{outline:2px solid var(--sk);outline-offset:3px}
+.lbl{position:fixed;left:16px;bottom:16px;z-index:9;background:var(--ink);color:#fff;font-size:12px;padding:6px 10px;border-radius:999px;letter-spacing:.02em;font-weight:800}
+@media(max-height:880px){.hero{height:330px}.hero h1{font-size:46px}.blk{height:120px}.journey img{height:80px}}
+@media(max-width:1240px){.nav span{display:none}.txt{padding:28px 32px}.hero h1{font-size:48px}}
+</style></head>
+<body>
+<svg style="position:absolute;width:0;height:0" aria-hidden="true">
+<symbol id="coin" viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M14.8 9A2 2 0 0 0 13 8h-2a2 2 0 0 0 0 4h2a2 2 0 0 1 0 4h-2a2 2 0 0 1-1.8-1M12 6v2m0 8v2"/></symbol>
+<symbol id="trophy" viewBox="0 0 24 24"><path d="M8 21h8M12 17v4M7 4h10v6a5 5 0 0 1-10 0zM7 6H4v2a3 3 0 0 0 3 3M17 6h3v2a3 3 0 0 1-3 3"/></symbol>
+<symbol id="bag" viewBox="0 0 24 24"><path d="M6 8h12l1 12H5zM9 8V6a3 3 0 0 1 6 0v2"/></symbol>
+<symbol id="gear" viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/><path d="M12 2v3m0 14v3M2 12h3m14 0h3M4.9 4.9l2.1 2.1m10 10l2.1 2.1M4.9 19.1L7 17m10-10l2.1-2.1"/></symbol>
+<symbol id="sun" viewBox="0 0 24 24"><circle cx="12" cy="12" r="4"/><path d="M12 2v2m0 16v2M2 12h2m16 0h2M4.9 4.9l1.4 1.4m11.4 11.4l1.4 1.4M4.9 19.1l1.4-1.4M17.7 6.3l1.4-1.4"/></symbol>
+<symbol id="moon" viewBox="0 0 24 24"><path d="M12 3a9 9 0 1 0 9 9 7 7 0 0 1-9-9z"/></symbol>
+<symbol id="x" viewBox="0 0 24 24"><path d="M18 6L6 18M6 6l12 12"/></symbol>
+<symbol id="play" viewBox="0 0 24 24"><path d="M7 4v16l13-8z" fill="currentColor"/></symbol>
+<symbol id="flame" viewBox="0 0 24 24"><path d="M12 3c1 4 5 5 5 10a5 5 0 0 1-10 0c0-2 1-3 1-3s0 3 2 3c1-3-1-6 2-10z"/></symbol>
+<symbol id="star" viewBox="0 0 24 24"><path d="M12 3l2.8 5.7 6.2.9-4.5 4.4 1 6.2L12 17.3 6.5 20.2l1-6.2L3 9.6l6.2-.9z" fill="currentColor"/></symbol>
+<symbol id="check" viewBox="0 0 24 24"><path d="M5 12l5 5L20 7"/></symbol>
+<symbol id="chev" viewBox="0 0 24 24"><path d="M9 6l6 6-6 6"/></symbol>
+<symbol id="man" viewBox="0 0 40 52"><circle cx="20" cy="8" r="6"/><path d="M20 14l-1 17M20 18l14-14M20 18L8 24M19 31L9 49M19 31l10 16"/></symbol>
+<symbol id="waves" viewBox="0 0 24 24"><circle cx="12" cy="12" r="2"/><path d="M7 7a7 7 0 0 0 0 10M17 7a7 7 0 0 1 0 10M4 4a11 11 0 0 0 0 16M20 4a11 11 0 0 1 0 16"/></symbol>
+<symbol id="bolt" viewBox="0 0 24 24"><path d="M13 2L4 14h7l-1 8 9-12h-7z"/></symbol>
+<symbol id="pulse" viewBox="0 0 24 24"><path d="M3 12h4l3-7 4 14 3-7h4"/></symbol>
+<symbol id="wall" viewBox="0 0 24 24"><path d="M4 3v18M20 3v18M8 12h8m-3-3l3 3-3 3"/></symbol>
+<symbol id="heart" viewBox="0 0 24 24"><path d="M12 20s-7-4.5-7-10a4 4 0 0 1 7-2.5A4 4 0 0 1 19 10c0 5.5-7 10-7 10z"/></symbol>
+<symbol id="clock" viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></symbol>
+<symbol id="jump" viewBox="0 0 24 24"><path d="M4 20h16M12 16V5m-4 4l4-4 4 4"/></symbol>
+</svg>
+<div class="lbl">Direction C — Clean Console</div>
+
+<div class="wrap">
+  <header class="bar">
+    <div class="logo ff"><span class="mark"><svg class="i" style="width:22px;height:26px;stroke-width:3" viewBox="0 0 40 52"><use href="#man"/></svg></span>The Stickmen Hub</div>
+    <span class="pill coin"><svg class="i"><use href="#coin"/></svg>128</span>
+    <span class="pill lvl"><svg class="i"><use href="#star"/></svg>Level 3 <span style="color:var(--muted)">·</span> <svg class="i fl"><use href="#flame"/></svg>2-day streak</span>
+    <span class="who"><span class="av"><svg class="i" style="stroke-width:3;width:16px;height:20px" viewBox="0 0 40 52"><use href="#man"/></svg></span>Swirly</span>
+    <a class="nav" href="#"><svg class="i"><use href="#bag"/></svg><span>Store</span></a>
+    <a class="nav" href="#"><svg class="i"><use href="#trophy"/></svg><span>Leaderboards</span></a>
+    <a class="nav" href="#"><svg class="i"><use href="#gear"/></svg><span>Settings</span></a>
+    <span class="tgl"><span class="on"><svg class="i"><use href="#sun"/></svg></span><span><svg class="i"><use href="#moon"/></svg></span></span>
+  </header>
+
+  <section class="hero tile">
+    <img src="/design/hub/lavender-cover.png" alt="Lavender Leap of Doom cover">
+    <div class="txt">
+      <div class="eyebrow">Featured · Parkour · 3 modes</div>
+      <h1>Lavender Leap of Doom</h1>
+      <p>A leveled parkour game with Time Trial, Freeplay and Hard Mode. Chain your jumps, beat the clock, and don't touch the lava.</p>
+      <div class="chips"><span class="chip">Time Trial</span><span class="chip">Freeplay</span><span class="chip">Hard Mode</span></div>
+      <div class="cta"><a class="play" href="#"><svg class="i"><use href="#play"/></svg>Play</a><span class="best">Your best · Level 12 in Time Trial 2m</span></div>
+    </div>
+  </section>
+
+  <div>
+    <div class="shelfHd"><h2>All games</h2><small>7 games</small><a href="#">See leaderboards <svg class="i"><use href="#chev"/></svg></a></div>
+    <div class="shelf">
+      <a class="gt" href="#" style="--c:var(--g1)"><div class="blk"><img src="/design/hub/lavender-cover.png" alt=""></div><b>Lavender Leap of Doom</b><small>Time Trial · Hard Mode</small></a>
+      <a class="gt" href="#" style="--c:var(--g2)"><div class="blk"><img src="/design/hub/dontlookdown-cover.png" alt=""></div><b>Don't Look Down</b><small>Endless · Beat your best</small></a>
+      <a class="gt" href="#" style="--c:var(--g3)"><div class="blk"><img src="/design/hub/echo-cover.png" alt=""></div><b>Echo</b><small>Collect &amp; Escape · Coin Rush</small></a>
+      <a class="gt" href="#" style="--c:var(--g4)"><div class="blk"><img src="/design/hub/archery-cover.svg" alt=""></div><b>Archery Range</b><small>16 Levels · Wind &amp; Nerve</small></a>
+      <a class="gt" href="#" style="--c:var(--g5)"><div class="blk"><img src="/design/hub/riposte-cover.svg" alt=""></div><b>Riposte</b><small>1 or 2 Players · Fast Mode</small></a>
+      <a class="gt" href="#" style="--c:var(--g6)"><div class="blk"><img src="/design/hub/genesis-cover.svg" alt=""></div><b>Genesis</b><small>Idle Builder · Terraform</small></a>
+      <a class="gt" href="#" style="--c:var(--g7)"><div class="blk"><img src="/design/hub/orbit-dodge-cover.svg" alt=""></div><b>Orbit Dodge</b><small>Endless · One-tap</small></a>
+    </div>
+  </div>
+
+  <div class="row">
+    <div class="journey tile"><img src="/design/hub/journey-strip.png" alt="Play games, earn coins, climb leaderboards, become a legend"></div>
+    <div class="streak tile">
+      <div class="big">Lv 3</div>
+      <div style="flex:1"><div style="font-size:13px;font-weight:700">240 / 400 XP to Level 4</div><div class="meter"><i></i></div><div class="sub"><svg class="i" style="color:#e2731a"><use href="#flame"/></svg> 2-day streak — play once today to keep it</div></div>
+    </div>
+  </div>
+</div>
+
+<section class="stage"><div class="in">
+  <h3>Store overlay — same skeleton, per-game skin</h3>
+  <p>Left: the Store opened from the hub (white header, purple actions). Right: the identical panel opened from inside Echo — header band goes cave-navy with cyan, buttons go cyan, rows tint 6% cyan.</p>
+  <div class="stores">
+    <div class="store panel">
+      <div class="sHd"><h4>Store<small>Lavender Leap</small></h4><span class="pill coin"><svg class="i"><use href="#coin"/></svg>128</span><span class="x"><svg class="i"><use href="#x"/></svg></span></div>
+      <div class="tabs"><span class="tab on">Power-ups</span><span class="tab">Avatars</span><span class="tab">All games</span></div>
+      <div class="items">
+        <div class="it"><span class="ic"><svg class="i" style="width:22px;height:22px"><use href="#heart"/></svg></span><div><b>Extra Life</b><small>Survive a fall in Hard Mode</small></div><span class="buy"><svg class="i"><use href="#coin"/></svg>15</span></div>
+        <div class="it"><span class="ic"><svg class="i" style="width:22px;height:22px"><use href="#clock"/></svg></span><div><b>+30s Time Boost</b><small>Adds 30s to your next Time Trial</small></div><span class="buy"><svg class="i"><use href="#coin"/></svg>15</span></div>
+        <div class="it"><span class="ic"><svg class="i" style="width:22px;height:22px"><use href="#jump"/></svg></span><div><b>Double Jump Pack</b><small>10 mid-air jumps · works in any mode</small></div><span class="own"><svg class="i"><use href="#check"/></svg>Owned ×4</span></div>
+      </div>
+      <div class="sec">Starter avatars</div>
+      <div class="sw"><div class="eq"><span style="background:#7d2ae8"></span>Ninja</div><div><span style="background:#4aa6d6"></span>Mecha</div><div><span style="background:#50e696"></span>Slime</div><div><span style="background:#ff7a3c"></span>Fox</div><div><span style="background:#ffd23f"></span>Cadet · 20</div></div>
+    </div>
+    <div class="store panel echo">
+      <div class="sHd"><h4>Store<small>Echo</small></h4><span class="pill coin"><svg class="i"><use href="#coin"/></svg>128</span><span class="x"><svg class="i"><use href="#x"/></svg></span></div>
+      <div class="tabs"><span class="tab on">Power-ups</span><span class="tab">Light colours</span><span class="tab">All games</span></div>
+      <div class="items">
+        <div class="it"><span class="ic"><svg class="i" style="width:22px;height:22px"><use href="#waves"/></svg></span><div><b>Bigger Waves</b><small>Your pulses travel much farther through the cave</small></div><span class="buy"><svg class="i"><use href="#coin"/></svg>40</span></div>
+        <div class="it"><span class="ic"><svg class="i" style="width:22px;height:22px"><use href="#bolt"/></svg></span><div><b>Faster Light</b><small>Glide through the cave noticeably faster</small></div><span class="buy"><svg class="i"><use href="#coin"/></svg>80</span></div>
+        <div class="it"><span class="ic"><svg class="i" style="width:22px;height:22px"><use href="#pulse"/></svg></span><div><b>Rapid Pulse</b><small>Less time between auto pulses (Auto mode)</small></div><span class="buy"><svg class="i"><use href="#coin"/></svg>60</span></div>
+        <div class="it"><span class="ic"><svg class="i" style="width:22px;height:22px"><use href="#wall"/></svg></span><div><b>Wall Pass</b><small>Press E to slip through walls for 2s (long cooldown)</small></div><span class="buy"><svg class="i"><use href="#coin"/></svg>200</span></div>
+      </div>
+      <div class="sec">Light colours</div>
+      <div class="sw"><div class="eq"><span style="background:#5fe6ff"><svg class="i"><use href="#check"/></svg></span>Cyan</div><div><span style="background:#a86bff"></span>Purple · 20</div><div><span style="background:#5a9bff"></span>Blue · 20</div><div><span style="background:#50e696"></span>Green · 20</div><div><span style="background:#ffd23f"></span>Yellow · 25</div></div>
+    </div>
+  </div>
+</div></section>
+</body></html>
