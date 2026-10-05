@@ -1,0 +1,202 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>1B-B — Bigger wordmark in bar only · The Stickmen Hub</title>
+<!--
+  DIRECTION D — Direction A's layout wearing Direction B's colours · the dark-mode skin. Five skin decisions
+  (markup, sizes, copy and layout are byte-for-byte Direction A; only the CSS tokens/skin below changed)
+  1. Ground: app bg #0e1226 with the same blue-sky plate kept behind everything but dimmed to 18% (body::before),
+     so light mode and dark mode share one world. Paper grain is dropped — panels are glass, not paper.
+  2. Panels: rgba(22,28,48,.85) glass with backdrop blur. Direction A's 2px ink outline + 4px hard ink drop becomes a
+     1px luminous border in the panel's accent at ~45% alpha plus a soft outer glow. No hard drops anywhere.
+  3. Light comes from the games: every glow borrows an accent — hub purple (155,107,255) on bar/hero/streak, each
+     shelf tile's own --c on its border, glow and sticker. Coins are gold #ffd166 in a gold-lit pill.
+  4. Type stays Direction A: sentence-case Fredoka at the same sizes (hero 52, shelf 17, bar 24), Nunito 700 body.
+     Ink flips to #e7edfb, muted to #9aa8c6. Chips keep their tilt; sticker badges keep their tilt and become dark
+     pills with a glowing accent border and accent-coloured text.
+  5. Store skin = same dark glass; only the RGB light-source triplet (--skrgb) changes. Echo swaps purple for
+     cave-cyan (95,230,255): cyan border glow, cyan header wash, cyan-filled buttons with dark text, cyan-tinted rows.
+-->
+<link rel="stylesheet" href="/assets/fonts/fonts.css">
+<style>
+:root{--bg:#0e1226;--panel:rgba(22,28,48,.85);--line:rgba(160,180,255,.18);--ink:#e7edfb;--muted:#9aa8c6;--accent:#9b6bff;--arg:155,107,255;--accent2:#2bbf95;--coin:#ffd166;--edge:rgba(155,107,255,.45);--sh:0 10px 40px rgba(0,0,0,.45);
+--g1:#8b5cf6;--g2:#38bdf8;--g3:#5fe6ff;--g4:#ecbe3c;--g5:#ff9b3c;--g6:#f6b445;--g7:#7c6cff}
+*{box-sizing:border-box}html,body{margin:0}
+body{font-family:Nunito,system-ui,sans-serif;font-weight:700;color:var(--ink);background:var(--bg);position:relative}
+body::before{content:"";position:fixed;inset:0;background:url(/design/hub/background.png) center/cover no-repeat;opacity:.18;z-index:-1}
+.ff,h1,h2,h3,.play,.buy,.tab,.stk{font-family:Fredoka,sans-serif;font-weight:700}
+.i{width:1.1em;height:1.1em;fill:none;stroke:currentColor;stroke-width:2;stroke-linecap:round;stroke-linejoin:round;flex:none}
+.panel{background:var(--panel);border:1px solid var(--edge);border-radius:22px;backdrop-filter:blur(14px);box-shadow:0 0 24px rgba(var(--arg),.16),var(--sh)}
+.wrap{max-width:1326px;margin:0 auto;padding:18px 20px 28px;min-height:100vh;display:flex;flex-direction:column;gap:18px}
+/* top bar */
+.bar{display:flex;align-items:center;gap:10px;padding:10px 16px;box-shadow:0 0 0 1px rgba(var(--arg),.12),0 0 40px rgba(var(--arg),.18),var(--sh)}
+.logo{display:flex;align-items:center;gap:12px;font-size:32px;color:var(--accent);margin-right:auto;text-shadow:0 0 14px rgba(var(--arg),.55)}
+.mark{width:48px;height:48px;border-radius:50%;background:linear-gradient(135deg,#a47dff,#5b2ed6);border:1px solid rgba(255,255,255,.25);display:grid;place-items:center;color:#fff;box-shadow:0 0 24px rgba(var(--arg),.7);position:relative}
+.mark::before{content:"";position:absolute;inset:-16px;border-radius:50%;background:radial-gradient(circle,rgba(var(--arg),.5),rgba(var(--arg),0) 70%);z-index:-1;pointer-events:none}
+.pill{display:inline-flex;align-items:center;gap:6px;background:rgba(255,255,255,.06);border:1px solid var(--line);border-radius:999px;padding:6px 12px;font-size:15px;line-height:1;white-space:nowrap}
+.pill.coin{color:var(--coin);background:rgba(255,209,102,.08);border-color:rgba(255,209,102,.4);box-shadow:0 0 14px rgba(255,209,102,.2)}
+.pill.stat{gap:7px;padding:6px 14px 6px 12px}.pill.stat .sep{color:var(--muted);margin:0 1px}.pill.stat .lv{display:inline-flex;align-items:center;gap:5px;color:var(--accent);text-shadow:0 0 10px rgba(var(--arg),.6)}
+.nav{display:inline-flex;align-items:center;gap:6px;color:var(--muted);font-size:15px;padding:7px 10px;border-radius:11px;text-decoration:none}
+.nav:hover{color:#fff;background:rgba(255,255,255,.06)}
+.who{display:flex;align-items:center;gap:8px;font-size:15px;margin:0 0 0 6px;padding:3px 10px 3px 3px;border-radius:999px;cursor:pointer}
+.who:hover{background:rgba(255,255,255,.06)}.who .dd{color:var(--muted);font-size:12px;line-height:1;margin-left:-2px}
+.av{width:36px;height:36px;border-radius:50%;border:1px solid var(--accent);background:#231d44;display:grid;place-items:center;color:var(--accent);box-shadow:0 0 12px rgba(var(--arg),.5)}
+/* hero */
+.hero{display:grid;grid-template-columns:1.25fr 1fr;gap:24px;padding:18px;height:400px;position:relative;box-shadow:0 0 0 1px rgba(139,92,246,.12),0 0 60px rgba(139,92,246,.28),var(--sh)}
+.cov{border:1px solid rgba(139,92,246,.5);border-radius:16px;background:rgba(255,255,255,.04);padding:6px;box-shadow:0 0 28px rgba(139,92,246,.35);transform:rotate(-1deg);min-height:0}
+.cov img{width:100%;height:100%;object-fit:cover;border-radius:11px;display:block}
+.tag{position:absolute;top:-16px;left:28px;transform:rotate(-3deg);background:rgba(14,18,38,.92);color:var(--coin);border:1px solid rgba(255,209,102,.6);border-radius:11px;padding:6px 14px;font-size:15px;box-shadow:0 0 16px rgba(255,209,102,.35)}
+.txt{display:flex;flex-direction:column;justify-content:center;gap:12px;padding-right:8px}
+.eyebrow{font-size:13px;letter-spacing:.1em;text-transform:uppercase;color:var(--g1);text-shadow:0 0 12px rgba(139,92,246,.8)}
+.hero h1{margin:0;font-size:52px;line-height:1.02;text-shadow:0 4px 30px rgba(0,0,0,.6)}
+.hero p{margin:0;font-size:17px;color:#cbd3ea;line-height:1.4}
+.chips{display:flex;gap:10px;flex-wrap:wrap}
+.chip{border:1px solid rgba(139,92,246,.45);border-radius:11px;padding:6px 12px;font-size:14px;background:rgba(139,92,246,.1);color:#e0d4ff;box-shadow:0 0 12px rgba(139,92,246,.2)}
+.chip:nth-child(1){transform:rotate(-2deg);background:rgba(139,92,246,.24)}.chip:nth-child(2){transform:rotate(1.5deg)}.chip:nth-child(3){transform:rotate(-1deg);background:rgba(255,155,60,.14);border-color:rgba(255,155,60,.45);color:#ffe0c4;box-shadow:0 0 12px rgba(255,155,60,.2)}
+.cta{display:flex;align-items:center;gap:16px;margin-top:6px}
+.play{display:inline-flex;align-items:center;gap:8px;background:linear-gradient(180deg,#a47dff,#7d2ae8);color:#fff;border:1px solid rgba(255,255,255,.25);border-radius:16px;padding:12px 28px;font-size:22px;box-shadow:0 0 28px rgba(139,92,246,.6),inset 0 1px 0 rgba(255,255,255,.35);text-decoration:none}
+.best{font-size:14px;color:var(--muted)}
+/* shelf */
+.shelfHd{display:flex;align-items:baseline;gap:12px;padding:0 6px;margin-bottom:-6px}
+.shelfHd h2{margin:0;font-size:24px}.shelfHd small{color:var(--muted);font-size:14px;background:var(--panel);border:1px solid var(--line);border-radius:999px;padding:2px 10px}
+.shelfHd a{margin-left:auto;font-size:14px;color:var(--accent);text-decoration:none;display:flex;align-items:center;gap:4px}
+.shelf{display:flex;gap:16px;overflow-x:auto;padding:14px 6px 10px;scrollbar-width:none}
+.tile{flex:0 0 176px;padding:8px;border-radius:16px;position:relative;text-decoration:none;color:var(--ink);border-color:color-mix(in srgb,var(--c) 45%,transparent);box-shadow:0 0 22px color-mix(in srgb,var(--c) 28%,transparent),var(--sh)}
+.tile img{width:100%;height:120px;object-fit:cover;border-radius:11px;border:1px solid color-mix(in srgb,var(--c) 35%,transparent);display:block;background:#101427}
+.tile b{display:block;font-size:17px;margin:8px 2px 2px;line-height:1.1;font-family:Fredoka}
+.tile small{display:block;color:var(--muted);font-size:12px;margin:0 2px 2px}
+.stk{position:absolute;top:-11px;right:-9px;transform:rotate(8deg);background:rgba(14,18,38,.92);color:var(--c);border:1px solid color-mix(in srgb,var(--c) 70%,transparent);border-radius:999px;padding:5px 10px;font-size:12px;letter-spacing:.05em;text-transform:uppercase;box-shadow:0 0 0 2px rgba(14,18,38,.9),0 0 14px color-mix(in srgb,var(--c) 55%,transparent)}
+/* journey + streak */
+.row{display:grid;grid-template-columns:1fr 360px;gap:18px}
+.journey{padding:8px}.journey img{width:100%;height:96px;object-fit:cover;border-radius:16px;border:1px solid var(--edge);display:block;filter:brightness(.9) saturate(1.1)}
+.streak{padding:12px 16px;display:flex;align-items:center;gap:14px}
+.streak .big{font-size:34px;color:var(--accent);line-height:1;text-shadow:0 0 16px rgba(var(--arg),.8)}
+.streak .sub{font-size:13px;color:var(--muted);margin-top:2px}
+.meter{height:12px;border:1px solid var(--line);border-radius:999px;background:rgba(255,255,255,.08);overflow:hidden;margin-top:6px}
+.meter i{display:block;height:100%;width:60%;background:linear-gradient(90deg,#2bbf95,#5fe6ff);box-shadow:0 0 12px rgba(95,230,255,.8)}
+/* store stage */
+.stage{background:rgba(6,8,20,.7);border-top:1px solid var(--line);padding:36px 20px 48px;backdrop-filter:blur(3px)}
+.stage .in{max-width:1326px;margin:0 auto}
+.stage h3{color:#fff;margin:0 0 6px;font-size:24px}.stage p{color:var(--muted);margin:0 0 20px;font-size:14px}
+.stores{display:grid;grid-template-columns:1fr 1fr;gap:28px;align-items:start}
+.store{overflow:hidden;--sk:var(--accent);--skrgb:155,107,255;--wash:linear-gradient(90deg,rgba(var(--skrgb),.22),rgba(var(--skrgb),0) 70%);--btn:var(--sk);--btnink:#fff;--tile:rgba(var(--skrgb),.16);--edge:rgba(var(--skrgb),.45);--hdink:#fff;--glow:none;box-shadow:0 0 0 1px rgba(var(--skrgb),.12),0 0 50px rgba(var(--skrgb),.25),var(--sh)}
+.store.echo{--sk:#5fe6ff;--skrgb:95,230,255;--btnink:#0b2a33;--edge:rgba(95,230,255,.55);--hdink:#e8fbff;--glow:0 0 0 1px rgba(95,230,255,.12),0 0 18px rgba(95,230,255,.22);background:rgba(11,42,51,.88)}
+.sHd{display:flex;align-items:center;gap:12px;padding:14px 18px;background:var(--wash);border-bottom:1px solid var(--edge);color:var(--hdink)}
+.sHd h4{margin:0;font-size:24px;font-family:Fredoka}.sHd h4 small{font-size:13px;font-family:Nunito;color:var(--sk);text-shadow:0 0 10px rgba(var(--skrgb),.8);margin-left:6px;letter-spacing:.06em;text-transform:uppercase}
+.sHd .pill{margin-left:auto}
+.x{width:36px;height:36px;border-radius:50%;background:rgba(255,255,255,.06);border:1px solid var(--line);display:grid;place-items:center;color:var(--ink)}
+.tabs{display:flex;gap:8px;padding:14px 18px 6px}
+.tab{border:1px solid var(--line);border-radius:11px;padding:6px 12px;font-size:14px;background:rgba(255,255,255,.05);color:var(--muted)}
+.tab.on{background:var(--btn);color:var(--btnink);border-color:transparent;box-shadow:0 0 16px rgba(var(--skrgb),.6)}
+.items{padding:10px 18px;display:grid;gap:9px}
+.it{display:flex;align-items:center;gap:12px;padding:8px;border:1px solid rgba(var(--skrgb),.22);border-radius:16px;background:rgba(var(--skrgb),.06);box-shadow:var(--glow)}
+.it .ic{width:44px;height:44px;border-radius:11px;background:var(--tile);border:1px solid rgba(var(--skrgb),.35);display:grid;place-items:center;color:var(--sk);flex:none;box-shadow:0 0 14px rgba(var(--skrgb),.3)}
+.it b{display:block;font-size:15px}.it small{color:var(--muted);font-size:12px;display:block}
+.buy{margin-left:auto;display:inline-flex;align-items:center;gap:5px;background:var(--btn);color:var(--btnink);border:1px solid rgba(255,255,255,.18);border-radius:11px;padding:7px 12px;font-size:15px;box-shadow:0 0 16px rgba(var(--skrgb),.55);white-space:nowrap}
+.own{margin-left:auto;color:var(--accent2);font-size:13px;display:inline-flex;gap:4px;align-items:center;padding-right:6px;white-space:nowrap}
+.sec{padding:8px 18px 4px;font-size:13px;letter-spacing:.08em;text-transform:uppercase;color:var(--muted)}
+.sw{display:flex;gap:12px;padding:4px 18px 18px;align-items:flex-end}
+.sw div{display:grid;justify-items:center;gap:4px;font-size:11px;color:var(--muted)}
+.sw span{width:40px;height:40px;border-radius:50%;border:1px solid rgba(255,255,255,.25);box-shadow:0 0 12px rgba(255,255,255,.12);display:grid;place-items:center;color:#0b2a33}
+.sw .eq span{box-shadow:0 0 0 3px var(--bg),0 0 0 5px var(--sk),0 0 18px rgba(var(--skrgb),.6)}
+.lbl{position:fixed;left:14px;bottom:14px;z-index:9;background:#fff;color:var(--bg);font-size:12px;padding:6px 10px;border-radius:8px;letter-spacing:.04em;font-weight:800}
+@media(max-height:880px){.hero{height:330px}.hero h1{font-size:44px}.tile img{height:100px}.journey img{height:80px}}
+@media(max-width:1240px){.hero{grid-template-columns:1.1fr 1fr}.nav span{display:none}}
+</style></head>
+<body>
+<svg style="position:absolute;width:0;height:0" aria-hidden="true">
+<symbol id="coin" viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M14.8 9A2 2 0 0 0 13 8h-2a2 2 0 0 0 0 4h2a2 2 0 0 1 0 4h-2a2 2 0 0 1-1.8-1M12 6v2m0 8v2"/></symbol>
+<symbol id="trophy" viewBox="0 0 24 24"><path d="M8 21h8M12 17v4M7 4h10v6a5 5 0 0 1-10 0zM7 6H4v2a3 3 0 0 0 3 3M17 6h3v2a3 3 0 0 1-3 3"/></symbol>
+<symbol id="bag" viewBox="0 0 24 24"><path d="M6 8h12l1 12H5zM9 8V6a3 3 0 0 1 6 0v2"/></symbol>
+<symbol id="gear" viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/><path d="M12 2v3m0 14v3M2 12h3m14 0h3M4.9 4.9l2.1 2.1m10 10l2.1 2.1M4.9 19.1L7 17m10-10l2.1-2.1"/></symbol>
+<symbol id="sun" viewBox="0 0 24 24"><circle cx="12" cy="12" r="4"/><path d="M12 2v2m0 16v2M2 12h2m16 0h2M4.9 4.9l1.4 1.4m11.4 11.4l1.4 1.4M4.9 19.1l1.4-1.4M17.7 6.3l1.4-1.4"/></symbol>
+<symbol id="moon" viewBox="0 0 24 24"><path d="M12 3a9 9 0 1 0 9 9 7 7 0 0 1-9-9z"/></symbol>
+<symbol id="x" viewBox="0 0 24 24"><path d="M18 6L6 18M6 6l12 12"/></symbol>
+<symbol id="play" viewBox="0 0 24 24"><path d="M7 4v16l13-8z" fill="currentColor"/></symbol>
+<symbol id="flame" viewBox="0 0 24 24"><path d="M12 3c1 4 5 5 5 10a5 5 0 0 1-10 0c0-2 1-3 1-3s0 3 2 3c1-3-1-6 2-10z"/></symbol>
+<symbol id="star" viewBox="0 0 24 24"><path d="M12 3l2.8 5.7 6.2.9-4.5 4.4 1 6.2L12 17.3 6.5 20.2l1-6.2L3 9.6l6.2-.9z" fill="currentColor"/></symbol>
+<symbol id="check" viewBox="0 0 24 24"><path d="M5 12l5 5L20 7"/></symbol>
+<symbol id="chev" viewBox="0 0 24 24"><path d="M9 6l6 6-6 6"/></symbol>
+<symbol id="man" viewBox="0 0 40 52"><circle cx="20" cy="8" r="6"/><path d="M20 14l-1 17M20 18l14-14M20 18L8 24M19 31L9 49M19 31l10 16"/></symbol>
+<symbol id="waves" viewBox="0 0 24 24"><circle cx="12" cy="12" r="2"/><path d="M7 7a7 7 0 0 0 0 10M17 7a7 7 0 0 1 0 10M4 4a11 11 0 0 0 0 16M20 4a11 11 0 0 1 0 16"/></symbol>
+<symbol id="bolt" viewBox="0 0 24 24"><path d="M13 2L4 14h7l-1 8 9-12h-7z"/></symbol>
+<symbol id="pulse" viewBox="0 0 24 24"><path d="M3 12h4l3-7 4 14 3-7h4"/></symbol>
+<symbol id="wall" viewBox="0 0 24 24"><path d="M4 3v18M20 3v18M8 12h8m-3-3l3 3-3 3"/></symbol>
+<symbol id="heart" viewBox="0 0 24 24"><path d="M12 20s-7-4.5-7-10a4 4 0 0 1 7-2.5A4 4 0 0 1 19 10c0 5.5-7 10-7 10z"/></symbol>
+<symbol id="clock" viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></symbol>
+<symbol id="jump" viewBox="0 0 24 24"><path d="M4 20h16M12 16V5m-4 4l4-4 4 4"/></symbol>
+</svg>
+<div class="lbl">1B-B — Bigger wordmark in bar only</div>
+
+<div class="wrap">
+  <header class="bar panel">
+    <div class="logo ff"><span class="mark"><svg class="i" style="width:28px;height:36px;stroke-width:3" viewBox="0 0 40 52"><use href="#man"/></svg></span>The Stickmen Hub</div>
+    <span class="pill coin stat ff"><svg class="i"><use href="#coin"/></svg>128<span class="sep">·</span><span class="lv"><svg class="i"><use href="#star"/></svg>Lv 3</span></span>
+    <a class="nav" href="#"><svg class="i"><use href="#bag"/></svg><span>Store</span></a>
+    <a class="nav" href="#"><svg class="i"><use href="#trophy"/></svg><span>Leaderboards</span></a>
+    <span class="who" role="button" aria-haspopup="menu"><span class="av"><svg class="i" style="stroke-width:3;width:16px;height:20px" viewBox="0 0 40 52"><use href="#man"/></svg></span>Swirly<span class="dd">▾</span></span>
+  </header>
+
+  <section class="hero panel">
+    <div class="tag">Featured today</div>
+    <div class="cov"><img src="/design/hub/lavender-cover.png" alt="Lavender Leap of Doom cover"></div>
+    <div class="txt">
+      <div class="eyebrow">Parkour · 3 modes · 4 leaderboards</div>
+      <h1>Lavender Leap of Doom</h1>
+      <p>A leveled parkour game with Time Trial, Freeplay and Hard Mode. Chain your jumps, beat the clock, and don't touch the lava.</p>
+      <div class="chips"><span class="chip">Time Trial</span><span class="chip">Freeplay</span><span class="chip">Hard Mode</span></div>
+      <div class="cta"><a class="play" href="#"><svg class="i"><use href="#play"/></svg>Play</a><span class="best">Your best · Level 12 in Time Trial 2m</span></div>
+    </div>
+  </section>
+
+  <div>
+    <div class="shelfHd"><h2>All games</h2><small>7</small><a href="#">Leaderboards <svg class="i"><use href="#chev"/></svg></a></div>
+    <div class="shelf">
+      <a class="tile panel" href="#" style="--c:var(--g1)"><span class="stk">Parkour</span><img src="/design/hub/lavender-cover.png" alt=""><b>Lavender Leap of Doom</b><small>Time Trial · Hard Mode</small></a>
+      <a class="tile panel" href="#" style="--c:var(--g2);--tc:#0b2a33"><span class="stk">Climb</span><img src="/design/hub/dontlookdown-cover.png" alt=""><b>Don't Look Down</b><small>Endless · Beat your best</small></a>
+      <a class="tile panel" href="#" style="--c:var(--g3);--tc:#0b2a33"><span class="stk">Sound</span><img src="/design/hub/echo-cover.png" alt=""><b>Echo</b><small>Collect &amp; Escape · Coin Rush</small></a>
+      <a class="tile panel" href="#" style="--c:var(--g4);--tc:#1d3a2a"><span class="stk">Aim</span><img src="/design/hub/archery-cover.svg" alt=""><b>Archery Range</b><small>16 Levels · Wind &amp; Nerve</small></a>
+      <a class="tile panel" href="#" style="--c:var(--g5)"><span class="stk">Duel</span><img src="/design/hub/riposte-cover.svg" alt=""><b>Riposte</b><small>1 or 2 Players · Fast Mode</small></a>
+      <a class="tile panel" href="#" style="--c:var(--g6);--tc:#1a1336"><span class="stk">Idle</span><img src="/design/hub/genesis-cover.svg" alt=""><b>Genesis</b><small>Idle Builder · Terraform</small></a>
+      <a class="tile panel" href="#" style="--c:var(--g7)"><span class="stk">One tap</span><img src="/design/hub/orbit-dodge-cover.svg" alt=""><b>Orbit Dodge</b><small>Endless · One-tap</small></a>
+    </div>
+  </div>
+
+  <div class="row">
+    <div class="journey panel"><img src="/design/hub/journey-strip.png" alt="Play games, earn coins, climb leaderboards, become a legend"></div>
+    <div class="streak panel">
+      <div class="big ff">Lv 3</div>
+      <div style="flex:1"><div>240 / 400 XP to Level 4</div><div class="meter"><i></i></div><div class="sub"><svg class="i" style="color:#ff9b3c"><use href="#flame"/></svg> 2-day streak — play once today to keep it</div></div>
+    </div>
+  </div>
+</div>
+
+<section class="stage"><div class="in">
+  <h3>Store overlay — same skeleton, per-game skin</h3>
+  <p>Left: the Store as it opens from the hub (hub purple). Right: the identical panel opened from inside Echo — only border, header wash, tile glow and button colour change.</p>
+  <div class="stores">
+    <div class="store panel">
+      <div class="sHd"><h4>Store<small>Lavender Leap</small></h4><span class="pill coin ff"><svg class="i"><use href="#coin"/></svg>128</span><span class="x"><svg class="i"><use href="#x"/></svg></span></div>
+      <div class="tabs"><span class="tab on">Power-ups</span><span class="tab">Avatars</span><span class="tab">All games</span></div>
+      <div class="items">
+        <div class="it"><span class="ic"><svg class="i" style="width:22px;height:22px"><use href="#heart"/></svg></span><div><b>Extra Life</b><small>Survive a fall in Hard Mode</small></div><span class="buy"><svg class="i"><use href="#coin"/></svg>15</span></div>
+        <div class="it"><span class="ic"><svg class="i" style="width:22px;height:22px"><use href="#clock"/></svg></span><div><b>+30s Time Boost</b><small>Adds 30s to your next Time Trial</small></div><span class="buy"><svg class="i"><use href="#coin"/></svg>15</span></div>
+        <div class="it"><span class="ic"><svg class="i" style="width:22px;height:22px"><use href="#jump"/></svg></span><div><b>Double Jump Pack</b><small>10 mid-air jumps · works in any mode</small></div><span class="own"><svg class="i"><use href="#check"/></svg>Owned ×4</span></div>
+      </div>
+      <div class="sec">Starter avatars</div>
+      <div class="sw"><div class="eq"><span style="background:#7d2ae8"></span>Ninja</div><div><span style="background:#4aa6d6"></span>Mecha</div><div><span style="background:#50e696"></span>Slime</div><div><span style="background:#ff7a3c"></span>Fox</div><div><span style="background:#ffd23f"></span>Cadet · 20</div></div>
+    </div>
+    <div class="store panel echo">
+      <div class="sHd"><h4>Store<small>Echo</small></h4><span class="pill coin ff"><svg class="i"><use href="#coin"/></svg>128</span><span class="x"><svg class="i"><use href="#x"/></svg></span></div>
+      <div class="tabs"><span class="tab on">Power-ups</span><span class="tab">Light colours</span><span class="tab">All games</span></div>
+      <div class="items">
+        <div class="it"><span class="ic"><svg class="i" style="width:22px;height:22px"><use href="#waves"/></svg></span><div><b>Bigger Waves</b><small>Your pulses travel much farther through the cave</small></div><span class="buy"><svg class="i"><use href="#coin"/></svg>40</span></div>
+        <div class="it"><span class="ic"><svg class="i" style="width:22px;height:22px"><use href="#bolt"/></svg></span><div><b>Faster Light</b><small>Glide through the cave noticeably faster</small></div><span class="buy"><svg class="i"><use href="#coin"/></svg>80</span></div>
+        <div class="it"><span class="ic"><svg class="i" style="width:22px;height:22px"><use href="#pulse"/></svg></span><div><b>Rapid Pulse</b><small>Less time between auto pulses (Auto mode)</small></div><span class="buy"><svg class="i"><use href="#coin"/></svg>60</span></div>
+        <div class="it"><span class="ic"><svg class="i" style="width:22px;height:22px"><use href="#wall"/></svg></span><div><b>Wall Pass</b><small>Press E to slip through walls for 2s (long cooldown)</small></div><span class="buy"><svg class="i"><use href="#coin"/></svg>200</span></div>
+      </div>
+      <div class="sec">Light colours</div>
+      <div class="sw"><div class="eq"><span style="background:#5fe6ff"><svg class="i"><use href="#check"/></svg></span>Cyan</div><div><span style="background:#a86bff"></span>Purple · 20</div><div><span style="background:#5a9bff"></span>Blue · 20</div><div><span style="background:#50e696"></span>Green · 20</div><div><span style="background:#ffd23f"></span>Yellow · 25</div></div>
+    </div>
+  </div>
+</div></section>
+</body></html>
