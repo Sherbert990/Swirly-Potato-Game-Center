@@ -1,0 +1,33 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>4B tap feel demo</title>
+<style>
+body{margin:0;background:#0e1226;color:#ecebf7;font-family:system-ui,sans-serif;padding:24px 16px;-webkit-tap-highlight-color:transparent}
+h1{font-size:20px;margin:0 0 6px}p{color:#a5a6c2;margin:0 0 20px;font-size:15px;line-height:1.4}
+.row{display:grid;gap:18px;grid-template-columns:1fr 1fr;max-width:720px}
+.tile{border-radius:16px;background:#1b1b2e;border:1px solid rgba(124,108,255,.45);padding:12px;user-select:none;touch-action:manipulation}
+.tile img{display:block;width:100%;border-radius:10px;pointer-events:none}
+.tile b{display:block;margin-top:10px;font-size:16px}.tile small{color:#a5a6c2}
+.lbl{font-size:13px;font-weight:700;color:#c9bfff;margin:0 0 8px;text-transform:uppercase;letter-spacing:.08em}
+/* Option B: mouse-only hover tilt. On iPad nothing happens when you tap. */
+.hover{transition:transform .25s;transform-style:preserve-3d}
+.hover:hover{transform:perspective(600px) rotateX(6deg) rotateY(-6deg) scale(1.03)}
+/* Option A: press feedback. Works on touch and mouse. */
+.press{transition:transform .18s cubic-bezier(.34,1.56,.64,1)}
+.press:active{transform:scale(.97);transition-duration:.12s;box-shadow:0 0 0 2px rgba(124,108,255,.6),0 0 24px rgba(124,108,255,.45)}
+@media(hover:hover){.press:hover{transform:scale(1.02)}}
+@media(prefers-reduced-motion:reduce){.press{transition-timing-function:ease-out}}
+</style></head><body>
+<h1>Tap each card</h1>
+<p>Same card, two behaviours. On an iPad only one of them reacts when you tap.</p>
+<div class="row">
+  <div>
+    <div class="lbl">Option B · hover tilt (mouse only)</div>
+    <div class="tile hover"><img src="https://raw.githubusercontent.com/Sherbert990/Swirly-Potato-Game-Center/design/mockups-2026-09/design/hub/echo-cover.png" alt=""><b>Echo</b><small>Tap me on iPad: nothing happens</small></div>
+  </div>
+  <div>
+    <div class="lbl">Option A · press squish (recommended)</div>
+    <div class="tile press"><img src="https://raw.githubusercontent.com/Sherbert990/Swirly-Potato-Game-Center/design/mockups-2026-09/design/hub/echo-cover.png" alt=""><b>Echo</b><small>Tap me: it squishes and glows</small></div>
+  </div>
+</div>
+</body></html>
