@@ -1,6 +1,6 @@
 /* The Stickmen Hub service worker — installable + offline app shell.
  * Bump CACHE on any shell change so old caches purge. */
-const CACHE = 'stickmen-v33';
+const CACHE = 'stickmen-v34';
 const SHELL = [
   '/', '/manifest.webmanifest',
   '/shared/gamecenter.js', '/shared/catalog.json',
@@ -41,6 +41,7 @@ self.addEventListener('fetch', (e) => {
   const url = new URL(req.url);
   if (url.origin !== location.origin) return;
   if (url.pathname.startsWith('/api/')) return;       // never cache auth/scores — always live
+  if (url.pathname === '/version.json') return;      // version badge — always live, never cached
 
   // Code/markup: NETWORK-FIRST so updates always show when online; cache is only
   // an offline fallback. (Prevents the stale-code problem during active dev.)
