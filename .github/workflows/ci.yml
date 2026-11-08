@@ -11,6 +11,7 @@ on:
       - "scripts/**"
       - "index.html"
       - "sw.js"
+      - "version.json"
       - ".github/workflows/ci.yml"
   pull_request:
     paths:
@@ -20,9 +21,21 @@ on:
       - "scripts/**"
       - "index.html"
       - "sw.js"
+      - "version.json"
       - ".github/workflows/ci.yml"
 
 jobs:
+  # Every PR that ships to master must bump version.json (the hub's version badge).
+  version-bump:
+    if: github.event_name == 'pull_request'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Fetch base branch
+        run: git fetch --depth=1 origin "${{ github.base_ref }}"
+      - name: Check version.json was bumped
+        run: scripts/check-version-bump.sh "origin/${{ github.base_ref }}"
+
   # Fast, no database: manifest integrity + client-JS syntax.
   checks:
     runs-on: ubuntu-latest
