@@ -1,0 +1,117 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Stickmen Hub: what's coming</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Fredoka:wght@600;700&family=Nunito:wght@600;700;800&display=swap">
+<style>
+:root{--ground:#f6f3fb;--panel:#fff;--ink:#22264a;--muted:#646a8c;--line:#dcd8ee;--accent:#7d2ae8;--tint:#efe8fc;--ok:#157a5b;--okbg:#e2f5ee;--you:#9a5b00;--youbg:#fff1d6}
+@media (prefers-color-scheme:dark){:root{--ground:#12121f;--panel:#1b1b2e;--ink:#ecebf7;--muted:#a6a8c4;--line:#2d2d47;--accent:#a983ff;--tint:#251f40;--ok:#6fe0b8;--okbg:#143a30;--you:#ffcf7a;--youbg:#3d2f12}}
+*{box-sizing:border-box}
+body{margin:0;background:var(--ground);color:var(--ink);font:600 16px/1.55 Nunito,"Segoe UI",system-ui,sans-serif}
+.wrap{max-width:780px;margin:0 auto;padding:22px 16px 60px}
+h1,h2,h3{font-family:Fredoka,Nunito,system-ui,sans-serif;font-weight:700;margin:0;text-wrap:balance}
+h1{font-size:30px;line-height:1.1}
+h2{font-size:22px;margin-top:34px}
+h3{font-size:18px}
+p{margin:8px 0 0;max-width:64ch}
+.eyebrow{font-size:12px;font-weight:800;letter-spacing:.1em;text-transform:uppercase;color:var(--muted)}
+.status{margin-top:14px;background:var(--tint);border:1px solid var(--line);border-radius:14px;padding:12px 14px}
+.status b{color:var(--accent)}
+ol.steps{list-style:none;margin:14px 0 0;padding:0;display:grid;gap:12px;counter-reset:s}
+ol.steps>li{counter-increment:s;background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:14px 14px 14px 58px;position:relative}
+ol.steps>li::before{content:counter(s);position:absolute;left:14px;top:14px;width:32px;height:32px;border-radius:50%;background:var(--accent);color:var(--ground);font:700 17px/32px Fredoka,sans-serif;text-align:center}
+ol.steps p{color:var(--muted);font-size:15px}
+figure{margin:14px 0 0;border:1px solid var(--line);border-radius:14px;overflow:hidden;background:var(--panel)}
+figure img{display:block;width:100%;height:auto}
+figcaption{padding:9px 12px;font-size:14px;color:var(--muted)}
+.crop{position:relative;aspect-ratio:1366/640;overflow:hidden}
+.crop img{position:absolute;left:0;bottom:0;width:100%}
+.sw{display:flex;flex-wrap:wrap;gap:8px;margin-top:10px}
+.sw span{display:inline-flex;align-items:center;gap:6px;font-size:13px;font-weight:800;border:1px solid var(--line);border-radius:999px;padding:4px 10px;background:var(--panel)}
+.sw i{width:14px;height:14px;border-radius:50%;display:inline-block}
+ul{margin:10px 0 0;padding-left:20px}
+li+li{margin-top:5px}
+.cols{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-top:14px}
+@media (max-width:560px){.cols{grid-template-columns:1fr}}
+.box{border:1px solid var(--line);border-radius:14px;padding:14px;background:var(--panel)}
+.box h3{font-size:14px;font-family:Nunito,sans-serif;font-weight:800;letter-spacing:.08em;text-transform:uppercase}
+.box.me h3{color:var(--ok)} .box.me{background:var(--okbg)}
+.box.you h3{color:var(--you)} .box.you{background:var(--youbg)}
+.box ul{font-size:15px}
+a{color:var(--accent)}
+</style></head><body><div class="wrap">
+
+<div class="eyebrow">The Stickmen Hub · plan recap</div>
+<h1>What's coming, in order</h1>
+<p>Everything below is agreed and written down. It covers two goals: make the hub look and feel professionally made, then put it on the App Store for iPad first and iPhone second.</p>
+<div class="status"><b>Where we are:</b> the plan and the design are finished and approved. Nothing has been built yet. One check remains before building starts: an engineering review of the plan.</div>
+
+<h2>The six steps</h2>
+<ol class="steps">
+  <li><h3>Smooth and sharp games</h3><p>Four of the seven games look blurry on an iPad screen, and two use a slow glow effect. All seven get one shared engine piece that makes them crisp, steady at 60 frames a second, and gives sound on the first tap. This comes first because you said no lag matters most.</p></li>
+  <li><h3>Each game gets its own colours</h3><p>The store, leaderboards and buttons keep the same layout everywhere, but take the colours of the game you opened them from. A new game gets this for free by adding three colours to one file.</p></li>
+  <li><h3>One front door for every game</h3><p>Today each game built its own start screen. They all move to one shared start screen: cover, title, mode buttons, Play. Each still looks like its own game.</p></li>
+  <li><h3>A new home screen</h3><p>A big featured game on top, all games in a row you swipe, and your progress at the bottom. Light mode is the storybook look. Dark mode is the same layout in neon arcade colours.</p></li>
+  <li><h3>Play first, sign in later</h3><p>Anyone can open the app and play. Sign-in buttons appear in six places, and after every game it asks "Save this score? Create an account". Scores earned as a guest are kept when they sign up.</p></li>
+  <li><h3>The App Store</h3><p>The same app is wrapped for iPhone and iPad and built in the cloud, so no Mac is needed. Friends test it through TestFlight first, then it goes to the store.</p></li>
+</ol>
+
+<h2>The new home screen, light mode</h2>
+<figure><img src="https://raw.githubusercontent.com/Sherbert990/Swirly-Potato-Game-Center/design/mockups-2026-09/design/mockups-2026-09/review/4a-a-sticker-labels.png" alt="Light mode hub: cream storybook panels, featured Lavender Leap, shelf of seven games, How it works row, level card">
+<figcaption>What a brand-new player sees. The bottom row explains how the arcade works until their first score.</figcaption></figure>
+
+<h2>The new home screen, dark mode</h2>
+<figure><img src="https://raw.githubusercontent.com/Sherbert990/Swirly-Potato-Game-Center/design/mockups-2026-09/design/mockups-2026-09/review/4c-a-solid.png" alt="Dark mode hub: same layout in dark neon colours with a Recently played row">
+<figcaption>What a returning player sees. The bottom row becomes Recently played, with a Resume button for each game.</figcaption></figure>
+<figure><img src="https://raw.githubusercontent.com/Sherbert990/Swirly-Potato-Game-Center/design/mockups-2026-09/design/mockups-2026-09/review/7a-dark-neon.png" alt="Dark mode featured game showing a live demo with a glow border and a LIVE DEMO badge">
+<figcaption>In dark mode the featured game plays a live demo of itself. In light mode it stays a painting.</figcaption></figure>
+
+<h2>Same store, each game's colours</h2>
+<figure><div class="crop"><img src="https://raw.githubusercontent.com/Sherbert990/Swirly-Potato-Game-Center/design/mockups-2026-09/design/mockups-2026-09/direction-d-hybrid-dark.png" alt="Two store panels side by side: purple for the hub, cyan for Echo, identical layout"></div>
+<figcaption>Left: the store opened from the hub. Right: the same store opened inside Echo.</figcaption></figure>
+<div class="sw">
+  <span><i style="background:#8b5cf6"></i>Lavender Leap</span><span><i style="background:#38bdf8"></i>Don't Look Down</span><span><i style="background:#5fe6ff"></i>Echo</span><span><i style="background:#ecbe3c"></i>Archery Range</span><span><i style="background:#ff9b3c"></i>Riposte</span><span><i style="background:#f6b445"></i>Genesis</span><span><i style="background:#7c6cff"></i>Orbit Dodge</span>
+</div>
+
+<h2>Small things you chose</h2>
+<ul>
+  <li>The top bar has five things: logo, coins, Store, Leaderboards, and your avatar. Everything else is in the avatar menu.</li>
+  <li>A round Stickmen Hub sticker sits on the featured picture, and the name in the bar is bigger.</li>
+  <li>The featured game changes every visit and says why, like "You haven't tried this one".</li>
+  <li>Tapping a mode button such as Hard Mode starts the game in that mode.</li>
+  <li>Cards squish and glow when you press them, on iPad, phone and computer.</li>
+  <li>Dark panels are solid, not frosted glass, so older iPads stay smooth.</li>
+  <li>Every screen has a planned look for loading, empty, offline and "can't afford it".</li>
+  <li>The phone gets its own layout with a Play button that stays under your thumb.</li>
+  <li>Every button gets a spoken label for the screen reader, and text grows with the iPad's text size.</li>
+</ul>
+
+<h2>The App Store part</h2>
+<div class="cols">
+  <div class="box me"><h3>Built for you</h3><ul>
+    <li>A new sign-in method that works inside an app</li>
+    <li>A Delete account button (Apple requires it)</li>
+    <li>Icons bundled in the app so it works offline</li>
+    <li>Taps that buzz, and layouts that respect the notch</li>
+    <li>The cloud build that makes the app without a Mac</li>
+  </ul></div>
+  <div class="box you"><h3>Only you can do</h3><ul>
+    <li>Create the app record in App Store Connect</li>
+    <li>Make the Apple key and add it to GitHub as a secret</li>
+    <li>Answer the age rating and privacy questions</li>
+    <li>Upload the icon, screenshots and description</li>
+    <li>Give Apple a test login and press Submit</li>
+  </ul></div>
+</div>
+
+<h2>Still open</h2>
+<ul>
+  <li>Which email service sends password resets, and whether that is in the first version.</li>
+  <li>Where the privacy policy page lives.</li>
+  <li>Painted covers for Archery, Riposte, Genesis and Orbit Dodge, which are still simple drawings.</li>
+  <li>A public store listing, or an unlisted link for friends only.</li>
+</ul>
+
+<h2>What happens next</h2>
+<p>Say "run the engineering review" and the plan gets its last check. After that, building starts with step 1, beginning with Echo, and you get a before and after video on the iPad.</p>
+
+</div></body></html>
