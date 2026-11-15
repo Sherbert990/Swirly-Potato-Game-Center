@@ -4,5 +4,9 @@ fastapi==0.115.6
 uvicorn[standard]==0.32.1
 SQLAlchemy==2.0.36
 PyMySQL==1.1.1
+# PyMySQL needs this to log in to MySQL 8+ (caching_sha2_password) whenever the
+# server has no cached credential, e.g. after the database restarts. Without it
+# every DB request dies with a RuntimeError and the API returns a generic 500.
+cryptography==50.0.2
 bcrypt==4.2.1
 python-dotenv==1.0.1
